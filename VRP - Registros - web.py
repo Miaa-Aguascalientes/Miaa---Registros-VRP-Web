@@ -740,7 +740,7 @@ elif st.session_state.active_tab == "➕ Añadir":
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
-  # --- MAPA PRIMERO PARA CAPTURAR CLIC Y ACTUALIZAR st.session_state ANTES DE PINTAR LOS INPUTS ---
+  # --- PROCESAR CLIC DEL MAPA ANTES DE INSTANCIAR LOS INPUTS ---
   st.markdown(
       "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
       " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
@@ -785,19 +785,19 @@ elif st.session_state.active_tab == "➕ Añadir":
         returned_objects=["last_clicked"],
     )
 
-    if (
-        map_data_add
-        and map_data_add.get("last_clicked")
-        and map_data_add["last_clicked"]
-        != st.session_state.get("last_clicked_add")
-    ):
-      st.session_state["last_clicked_add"] = map_data_add["last_clicked"]
+    if map_data_add and map_data_add.get("last_clicked"):
       lat_c = map_data_add["last_clicked"]["lat"]
       lon_c = map_data_add["last_clicked"]["lng"]
       utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-      st.session_state["add_coord_x_input"] = round(utm_x, 2)
-      st.session_state["add_coord_y_input"] = round(utm_y, 3)
-      st.rerun()
+      new_x = round(utm_x, 2)
+      new_y = round(utm_y, 3)
+      if (
+          st.session_state["add_coord_x_input"] != new_x
+          or st.session_state["add_coord_y_input"] != new_y
+      ):
+        st.session_state["add_coord_x_input"] = new_x
+        st.session_state["add_coord_y_input"] = new_y
+        st.rerun()
 
   except Exception as e_map_add:
     st.info(
@@ -1157,8 +1157,73 @@ elif st.session_state.active_tab == "⚙️ Editar":
             key=f"sec_{row['fid']}",
         )
 
-      # FILA 4 (Coord X, Coord Y, y el Mapa a la derecha abarcando las filas inferiores de coordenadas)
+      # FILA 4 (Mapa procesado PRIMERO antes de instanciar los number_input de coordenadas)
       col_coord_left, col_map_right = st.columns([1, 1])
+
+      with col_map_right:
+        st.markdown(
+            "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
+            " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+            " mapa para actualizar coordenadas automáticamente</p>",
+            unsafe_allow_html=True,
+        )
+        try:
+          if (
+              st.session_state[x_key] != 0.0
+              and st.session_state[y_key] != 0.0
+          ):
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                st.session_state[x_key], st.session_state[y_key]
+            )
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
+
+          agregar_capas_base_mapa(m_ed)
+          Fullscreen().add_to(m_ed)
+
+          if (
+              st.session_state[x_key] != 0.0
+              and st.session_state[y_key] != 0.0
+          ):
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {row['id']}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
+
+          folium.LayerControl(collapsed=False).add_to(m_ed)
+          map_data_ed = st_folium(
+              m_ed,
+              width="100%",
+              height=325,
+              key=f"map_edit_preview_{row['fid']}",
+              returned_objects=["last_clicked"],
+          )
+
+          if map_data_ed and map_data_ed.get("last_clicked"):
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            new_x = round(utm_x, 2)
+            new_y = round(utm_y, 3)
+            if (
+                st.session_state[x_key] != new_x
+                or st.session_state[y_key] != new_y
+            ):
+              st.session_state[x_key] = new_x
+              st.session_state[y_key] = new_y
+              st.rerun()
+
+        except Exception as e_map_ed:
+          st.info(
+              "Haga clic en el mapa para actualizar la posición geográfica."
+              f" ({e_map_ed})"
+          )
 
       with col_coord_left:
         e_coord_x = st.number_input(
@@ -1219,72 +1284,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"fec_{row['fid']}",
           )
           e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
-
-      with col_map_right:
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
-            " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-            " mapa para actualizar coordenadas automáticamente</p>",
-            unsafe_allow_html=True,
-        )
-        try:
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
-            lon_ed, lat_ed = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            m_ed = folium.Map(
-                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-            )
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-
-          agregar_capas_base_mapa(m_ed)
-          Fullscreen().add_to(m_ed)
-
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
-            folium.Marker(
-                location=[lat_ed, lon_ed],
-                popup=f"VRP: {row['id']}",
-                icon=folium.Icon(color="cyan", icon="info-sign"),
-            ).add_to(m_ed)
-
-          folium.LayerControl(collapsed=False).add_to(m_ed)
-          map_data_ed = st_folium(
-              m_ed,
-              width="100%",
-              height=325,
-              key=f"map_edit_preview_{row['fid']}",
-              returned_objects=["last_clicked"],
-          )
-
-          clicked_key = f"last_clicked_edit_{row['fid']}"
-          if (
-              map_data_ed
-              and map_data_ed.get("last_clicked")
-              and map_data_ed["last_clicked"]
-              != st.session_state.get(clicked_key)
-          ):
-            st.session_state[clicked_key] = map_data_ed["last_clicked"]
-            lat_c = map_data_ed["last_clicked"]["lat"]
-            lon_c = map_data_ed["last_clicked"]["lng"]
-            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-            st.session_state[x_key] = round(utm_x, 2)
-            st.session_state[y_key] = round(utm_y, 3)
-            st.rerun()
-
-        except Exception as e_map_ed:
-          st.info(
-              "Haga clic en el mapa para actualizar la posición geográfica."
-              f" ({e_map_ed})"
-          )
 
       # FILA 8: Observaciones
       e_observ = st.text_area(
