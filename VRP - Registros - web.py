@@ -571,7 +571,7 @@ if st.session_state.active_tab == "📍 Registros":
     st.info("No se encontraron registros.")
 
 # ==========================================
-# SECCIÓN: MAPA DE VRPs (POSTGIS)
+# SECCIÓN: MAPA DE VRPs (POSTGIS) CON CAPAS AGRUPADAS POR ESTADO
 # ==========================================
 elif st.session_state.active_tab == "🗺️ Mapa":
   query_mapa = """
@@ -627,7 +627,13 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     Fullscreen().add_to(m)
 
-    marker_cluster = MarkerCluster().add_to(m)
+    # Creamos un FeatureGroup independiente para cada estado de válvula para poder filtrarlas y alternarlas con capas
+    grupos_capas = {}
+    for estado_opc in OPCIONES_ESTADO_VALVULA + ["Otros / Sin Estado"]:
+      fg = folium.FeatureGroup(name=f"Válvulas: {estado_opc}", show=True)
+      fg.add_to(m)
+      grupos_capas[estado_opc] = fg
+
     success_count = 0
 
     for _, row in df_mapa.iterrows():
@@ -635,6 +641,11 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         lon, lat = transformer.transform(row["x"], row["y"])
         estado = row["estat_valv"] or "Desconocido"
         color = get_valve_color(estado)
+
+        # Asignar al grupo correspondiente según su estado exacto o clasificar en "Otros / Sin Estado"
+        grupo_destino = grupos_capas.get(
+            estado, grupos_capas["Otros / Sin Estado"]
+        )
 
         popup_html = f"""
                 <div style="font-size: 0.85rem; color: #000;">
@@ -652,16 +663,19 @@ elif st.session_state.active_tab == "🗺️ Mapa":
             fill_color=color,
             fill_opacity=0.85,
             popup=folium.Popup(popup_html, max_width=300),
-        ).add_to(marker_cluster)
+        ).add_to(grupo_destino)
         success_count += 1
       except Exception:
         continue
 
+    # Agregar el control de capas interactivo al mapa de Folium
+    folium.LayerControl(collapsed=False).add_to(m)
+
     st_folium(m, width="100%", height=650, returned_objects=[])
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top:"
-        f" 10px;'>Se renderizaron {success_count} VRPs georreferenciados en el"
-        " mapa.</p>",
+        f" 10px;'>Se renderizaron {success_count} VRPs georreferenciadas con"
+        " control de capas por estado.</p>",
         unsafe_allow_html=True,
     )
   else:
