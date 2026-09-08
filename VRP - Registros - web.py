@@ -571,7 +571,7 @@ if st.session_state.active_tab == "📍 Registros":
     st.info("No se encontraron registros.")
 
 # ==========================================
-# SECCIÓN: MAPA DE VRPs (POSTGIS) CON CAPAS AGRUPADAS POR ESTADO
+# SECCIÓN: MAPA DE VRPs (POSTGIS) CON CAPAS SOLICITADAS
 # ==========================================
 elif st.session_state.active_tab == "🗺️ Mapa":
   query_mapa = """
@@ -611,6 +611,27 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
     )
 
+    # 1. Vista Satélite (Google Maps Híbrido: Satélite + Etiquetas)
+    folium.TileLayer(
+        tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        name="Vista Satélite",
+        attr="Google",
+        max_zoom=20,
+        overlay=False,
+        control=True,
+    ).add_to(m)
+
+    # 2. Satélite (Esri World Imagery)
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        name="Satélite (Esri)",
+        attr="Esri",
+        max_zoom=20,
+        overlay=False,
+        control=True,
+    ).add_to(m)
+
+    # 3. Vista Nocturna (CARTO Dark Matter)
     folium.TileLayer(
         tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
         name="Vista Nocturna",
@@ -627,7 +648,11 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     Fullscreen().add_to(m)
 
-    # Creamos un FeatureGroup independiente para cada estado de válvula para poder filtrarlas y alternarlas con capas
+    # Capa adicional superpuesta: Límites del Sector (FeatureGroup como overlay)
+    fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
+    fg_limites.add_to(m)
+
+    # Agrupadores de capas para el estado de válvulas
     grupos_capas = {}
     for estado_opc in OPCIONES_ESTADO_VALVULA + ["Otros / Sin Estado"]:
       fg = folium.FeatureGroup(name=f"Válvulas: {estado_opc}", show=True)
@@ -642,7 +667,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         estado = row["estat_valv"] or "Desconocido"
         color = get_valve_color(estado)
 
-        # Asignar al grupo correspondiente según su estado exacto o clasificar en "Otros / Sin Estado"
         grupo_destino = grupos_capas.get(
             estado, grupos_capas["Otros / Sin Estado"]
         )
@@ -668,14 +692,14 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       except Exception:
         continue
 
-    # Agregar el control de capas interactivo al mapa de Folium
+    # Control de capas interactivo que agrupa mapas base y las capas de superposición
     folium.LayerControl(collapsed=False).add_to(m)
 
     st_folium(m, width="100%", height=650, returned_objects=[])
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top:"
         f" 10px;'>Se renderizaron {success_count} VRPs georreferenciadas con"
-        " control de capas por estado.</p>",
+        " opciones de satélite, nocturna y capas de sector.</p>",
         unsafe_allow_html=True,
     )
   else:
