@@ -168,7 +168,7 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
-# --- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO ARRIBA ---
+# --- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO MÁS ARRIBA ---
 st.write(
     """<style>
     #MainMenu, [data-testid="stHeader"] {visibility: hidden !important; display: none !important;} 
@@ -393,10 +393,10 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
 # --- BARRA LATERAL IZQUIERDA (SIDEBAR) ---
 with st.sidebar:
-  # Logotipo situado estrictamente en la parte superior con margen superior reducido
+  # Logotipo situado estrictamente en la parte superior con margen negativo para subirlo aún más
   st.markdown(
       """
-        <div style="text-align: center; padding-top: 5px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
+        <div style="text-align: center; margin-top: -35px; padding-top: 0px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 12px;">
             <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 0px;" />
         </div>
     """,
