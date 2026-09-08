@@ -393,7 +393,6 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
 # --- BARRA LATERAL IZQUIERDA (SIDEBAR) ---
 with st.sidebar:
-  # Logotipo situado estrictamente en la parte superior con margen negativo para subirlo aún más
   st.markdown(
       """
         <div style="text-align: center; margin-top: -35px; padding-top: 0px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 12px;">
@@ -403,7 +402,6 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
-  # Bloque de logeo del usuario colocado inmediatamente debajo del logotipo
   st.markdown(
       f"""
         <div style="background: #111A30; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 15px;">
@@ -425,7 +423,6 @@ with st.sidebar:
   ):
     st.session_state.active_tab = opciones_menu[0]
 
-  # Selectores de las zonas / opciones de navegación colocados debajo del logeo del usuario
   seleccion_tab = st.radio(
       "Menú de Navegación",
       options=opciones_menu,
@@ -714,6 +711,29 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_trim = st.text_input("Marca Trim", key="add_trim")
     val_sector = st.text_input("Sector Hidráulico", key="add_sector")
 
+  # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Añadir) ---
+  st.markdown(
+      "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+      unsafe_allow_html=True,
+  )
+  try:
+    transformer_add = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+    if val_coord_x != 0.0 and val_coord_y != 0.0:
+      lon_add, lat_add = transformer_add.transform(val_coord_x, val_coord_y)
+      m_add = folium.Map(location=[lat_add, lon_add], zoom_start=16, control_scale=True)
+      folium.TileLayer("cartodark_matter").add_to(m_add)
+      folium.Marker(
+          location=[lat_add, lon_add],
+          popup=f"Nueva VRP: {val_id or 'Sin ID'}",
+          icon=folium.Icon(color="cyan", icon="info-sign"),
+      ).add_to(m_add)
+    else:
+      m_add = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+      folium.TileLayer("cartodark_matter").add_to(m_add)
+    st_folium(m_add, width="100%", height=250, key="map_add_preview")
+  except Exception as e_map_add:
+    st.info("Ingrese coordenadas válidas para visualizar la posición en el mapa.")
+
   st.markdown("<br>", unsafe_allow_html=True)
   c5, c6, c7, c8 = st.columns(4)
   with c5:
@@ -990,6 +1010,29 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"cactd_{row['fid']}",
           )
 
+        # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Operador) ---
+        st.markdown(
+            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            unsafe_allow_html=True,
+        )
+        try:
+          transformer_edit = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
+            m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
+            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {e_id}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
+          else:
+            m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+            folium.TileLayer("cartodark_matter").add_to(m_ed)
+          st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
+        except Exception:
+          pass
+
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
         with e_c5:
@@ -1103,6 +1146,29 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["sector_hid"] or ""),
               key=f"sec_{row['fid']}",
           )
+
+        # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Admin) ---
+        st.markdown(
+            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            unsafe_allow_html=True,
+        )
+        try:
+          transformer_edit = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
+            m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
+            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {e_id}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
+          else:
+            m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+            folium.TileLayer("cartodark_matter").add_to(m_ed)
+          st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
+        except Exception:
+          pass
 
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
