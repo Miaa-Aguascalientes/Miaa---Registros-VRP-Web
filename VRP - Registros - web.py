@@ -195,7 +195,7 @@ st.write(
         padding-right: 2rem !important;
         background: #080C14;
         color: #F8FAFC;
-        max-width: 1500px !important;
+        max-width: 1650px !important;
     }
     body, [data-testid="stAppViewContainer"] {
         background: #080C14;
@@ -646,7 +646,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
 
 # ==========================================
-# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (DISEÑO AMPLIO PARA ESCRITORIO)
+# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (4 COLUMNAS)
 # ==========================================
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
@@ -670,7 +670,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  c1, c2, c3 = st.columns(3)
+  c1, c2, c3, c4 = st.columns(4)
   with c1:
     st.text_input(
         "ID_0 (Automático)",
@@ -680,19 +680,37 @@ elif st.session_state.active_tab == "➕ Añadir":
     )
     val_id_0 = siguiente_id_0
     val_serie = st.text_input("Serie", key="add_serie")
-    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
-    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
-    val_hora = st.text_input("Hora Calibración", key="add_hora")
-    val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
+    val_domicilio = st.text_input("Domicilio", key="add_dom")
 
   with c2:
     val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
     val_diametro = st.number_input(
         "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
     )
+    val_colonia = st.text_input("Colonia", key="add_col")
+
+  with c3:
+    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
+    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
+    val_estat = st.selectbox(
+        "Estado de la Válvula", options=OPCIONES_ESTADO_VALVULA, index=0, key="add_estat"
+    )
+
+  with c4:
+    val_marca = st.text_input("Marca Válvula", key="add_marca")
     val_trim = st.text_input("Marca Trim", key="add_trim")
-    val_domicilio = st.text_input("Domicilio", key="add_dom")
+    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
+
+  st.markdown("<br>", unsafe_allow_html=True)
+  c5, c6, c7, c8 = st.columns(4)
+  with c5:
+    val_hora = st.text_input("Hora Calibración", key="add_hora")
     val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
+  with c6:
+    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
+    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+  with c7:
+    val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
     val_fecha_obj = st.date_input(
         "Fecha última actualización",
         value=datetime.date.today(),
@@ -700,16 +718,8 @@ elif st.session_state.active_tab == "➕ Añadir":
         key="add_fecha",
     )
     val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
-
-  with c3:
-    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
-    val_marca = st.text_input("Marca Válvula", key="add_marca")
-    val_colonia = st.text_input("Colonia", key="add_col")
-    val_estat = st.selectbox(
-        "Estado de la Válvula", options=OPCIONES_ESTADO_VALVULA, index=0, key="add_estat"
-    )
-    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
-    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+  with c8:
+    pass
 
   val_observ = st.text_area("Observaciones Generales", key="add_obs")
 
@@ -829,7 +839,7 @@ elif st.session_state.active_tab == "➕ Añadir":
       st.warning("El campo ID es obligatorio.")
 
 # ==========================================
-# SECCIÓN 3: EDITAR Y ELIMINAR (DISEÑO AMPLIO PARA ESCRITORIO)
+# SECCIÓN 3: EDITAR Y ELIMINAR (4 COLUMNAS)
 # ==========================================
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.text_input(
@@ -894,7 +904,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
         e_domicilio = row["domicilio"]
         e_colonia = row["colonia"]
 
-        e_c1, e_c2, e_c3 = st.columns(3)
         e_serie_val = (
             ""
             if (
@@ -903,39 +912,39 @@ elif st.session_state.active_tab == "⚙️ Editar":
             )
             else str(row["serie"])
         )
+
+        e_c1, e_c2, e_c3, e_c4 = st.columns(4)
         with e_c1:
           e_serie = st.text_input(
               "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
           )
-          e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
-          )
-          e_cal_act_n = st.text_input(
-              "Cal Actual Noche (kg/cm)",
-              value=str(row["cal_act_n"] or ""),
-              key=f"cactn_{row['fid']}",
+          e_domicilio = st.text_input(
+              "Domicilio",
+              value=str(row["domicilio"] or ""),
+              key=f"dom_{row['fid']}",
           )
         with e_c2:
+          e_colonia = st.text_input(
+              "Colonia",
+              value=str(row["colonia"] or ""),
+              key=f"col_{row['fid']}",
+          )
           e_estat = st.selectbox(
               "Estado de la Válvula",
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
+        with e_c3:
+          e_hora = st.text_input(
+              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+          )
           e_cal_ant_d = st.text_input(
               "Cal Anterior Día (kg/cm)",
               value=str(row["cal_ant_d"] or ""),
               key=f"cand_{row['fid']}",
           )
-          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
-          e_fecha_obj = st.date_input(
-              "Fecha última actualización",
-              value=fecha_def,
-              format="DD/MM/YYYY",
-              key=f"fec_{row['fid']}",
-          )
-          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
-        with e_c3:
+        with e_c4:
           e_cal_ant_n = st.text_input(
               "Cal Anterior Noche (kg/cm)",
               value=str(row["cal_ant_n"] or ""),
@@ -947,6 +956,28 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"cactd_{row['fid']}",
           )
 
+        st.markdown("<br>", unsafe_allow_html=True)
+        e_c5, e_c6, e_c7, e_c8 = st.columns(4)
+        with e_c5:
+          e_cal_act_n = st.text_input(
+              "Cal Actual Noche (kg/cm)",
+              value=str(row["cal_act_n"] or ""),
+              key=f"cactn_{row['fid']}",
+          )
+        with e_c6:
+          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
+          e_fecha_obj = st.date_input(
+              "Fecha última actualización",
+              value=fecha_def,
+              format="DD/MM/YYYY",
+              key=f"fec_{row['fid']}",
+          )
+          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+        with e_c7:
+          pass
+        with e_c8:
+          pass
+
         e_observ = st.text_area(
             "Observaciones",
             value=str(row["observ"] or ""),
@@ -954,7 +985,16 @@ elif st.session_state.active_tab == "⚙️ Editar":
         )
 
       else:
-        e_c1, e_c2, e_c3 = st.columns(3)
+        e_serie_val = (
+            ""
+            if (
+                pd.isna(row["serie"])
+                or str(row["serie"]).strip().lower() in ["nan", "none"]
+            )
+            else str(row["serie"])
+        )
+
+        e_c1, e_c2, e_c3, e_c4 = st.columns(4)
         with e_c1:
           st.text_input(
               "ID_0 (Bloqueado)",
@@ -962,34 +1002,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
               disabled=True,
               key=f"id0_bloq_{row['fid']}",
           )
-          e_serie_val = (
-              ""
-              if (
-                  pd.isna(row["serie"])
-                  or str(row["serie"]).strip().lower() in ["nan", "none"]
-              )
-              else str(row["serie"])
-          )
           e_serie = st.text_input(
               "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
-          )
-          e_modelo = st.text_input(
-              "Modelo Valv",
-              value=str(row["model_valv"] or ""),
-              key=f"mod_{row['fid']}",
           )
           e_domicilio = st.text_input(
               "Domicilio",
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
-          )
-          e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
-          )
-          e_cal_ant_n = st.text_input(
-              "Cal Anterior Noche (kg/cm)",
-              value=str(row["cal_ant_n"] or ""),
-              key=f"cann_{row['fid']}",
           )
         with e_c2:
           e_id = st.text_input(
@@ -1000,25 +1019,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=int(row["diametro"] or 0),
               key=f"diam_{row['fid']}",
           )
-          e_trim = st.text_input(
-              "Marca Trim",
-              value=str(row["marca_trim"] or ""),
-              key=f"trim_{row['fid']}",
-          )
           e_colonia = st.text_input(
               "Colonia",
               value=str(row["colonia"] or ""),
               key=f"col_{row['fid']}",
-          )
-          e_cal_ant_d = st.text_input(
-              "Cal Anterior Día (kg/cm)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['fid']}",
-          )
-          e_cal_act_d = st.text_input(
-              "Cal Actual Día (kg/cm)",
-              value=str(row["cal_act_d"] or ""),
-              key=f"cactd_{row['fid']}",
           )
         with e_c3:
           e_cota = st.number_input(
@@ -1026,15 +1030,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=float(row["cota_terr"] or 0.0),
               key=f"cota_{row['fid']}",
           )
-          e_marca = st.text_input(
-              "Marca Valv",
-              value=str(row["marca_valv"] or ""),
-              key=f"mar_{row['fid']}",
-          )
-          e_sector = st.text_input(
-              "Sector Hid",
-              value=str(row["sector_hid"] or ""),
-              key=f"sec_{row['fid']}",
+          e_modelo = st.text_input(
+              "Modelo Valv",
+              value=str(row["model_valv"] or ""),
+              key=f"mod_{row['fid']}",
           )
           e_estat = st.selectbox(
               "Estado de la Válvula",
@@ -1042,6 +1041,46 @@ elif st.session_state.active_tab == "⚙️ Editar":
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
+        with e_c4:
+          e_marca = st.text_input(
+              "Marca Valv",
+              value=str(row["marca_valv"] or ""),
+              key=f"mar_{row['fid']}",
+          )
+          e_trim = st.text_input(
+              "Marca Trim",
+              value=str(row["marca_trim"] or ""),
+              key=f"trim_{row['fid']}",
+          )
+          e_sector = st.text_input(
+              "Sector Hid",
+              value=str(row["sector_hid"] or ""),
+              key=f"sec_{row['fid']}",
+          )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        e_c5, e_c6, e_c7, e_c8 = st.columns(4)
+        with e_c5:
+          e_hora = st.text_input(
+              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+          )
+          e_cal_ant_d = st.text_input(
+              "Cal Anterior Día (kg/cm)",
+              value=str(row["cal_ant_d"] or ""),
+              key=f"cand_{row['fid']}",
+          )
+        with e_c6:
+          e_cal_ant_n = st.text_input(
+              "Cal Anterior Noche (kg/cm)",
+              value=str(row["cal_ant_n"] or ""),
+              key=f"cann_{row['fid']}",
+          )
+          e_cal_act_d = st.text_input(
+              "Cal Actual Día (kg/cm)",
+              value=str(row["cal_act_d"] or ""),
+              key=f"cactd_{row['fid']}",
+          )
+        with e_c7:
           e_cal_act_n = st.text_input(
               "Cal Actual Noche (kg/cm)",
               value=str(row["cal_act_n"] or ""),
@@ -1055,6 +1094,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"fec_{row['fid']}",
           )
           e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+        with e_c8:
+          pass
 
         e_observ = st.text_area(
             "Observaciones",
