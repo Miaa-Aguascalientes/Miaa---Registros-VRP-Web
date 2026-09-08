@@ -29,6 +29,14 @@ if "autenticado" not in st.session_state:
 zona_mx = ZoneInfo("America/Mexico_City")
 API_KEY_CARTO = "cb1_26ji_1_864817f3cb73c0bdbe0daccd"
 
+# Transformadores de coordenadas (UTM Zona 13N <-> Lat/Lon WGS84)
+transformer_to_latlon = Transformer.from_crs(
+    "EPSG:32613", "EPSG:4326", always_xy=True
+)
+transformer_to_utm = Transformer.from_crs(
+    "EPSG:4326", "EPSG:32613", always_xy=True
+)
+
 OPCIONES_ESTADO_VALVULA = [
     "Abierta",
     "Calibrada",
@@ -171,7 +179,6 @@ def parsear_fecha_segura(val_fecha):
 
 def agregar_capas_base_mapa(m):
   """Función auxiliar para inyectar todas las capas base en cualquier mapa de Folium."""
-  # 1. Vista Satélite (Google Maps Híbrido)
   folium.TileLayer(
       tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
       name="Vista Satélite",
@@ -181,7 +188,6 @@ def agregar_capas_base_mapa(m):
       control=True,
   ).add_to(m)
 
-  # 2. Satélite (Esri World Imagery)
   folium.TileLayer(
       tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       name="Satélite (Esri)",
@@ -191,7 +197,6 @@ def agregar_capas_base_mapa(m):
       control=True,
   ).add_to(m)
 
-  # 3. Vista Nocturna (CARTO Dark Matter)
   folium.TileLayer(
       tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
       name="Vista Nocturna",
@@ -628,8 +633,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales: {err_mapa}")
   elif not df_mapa.empty:
-    transformer = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
-
     def get_valve_color(estado):
       estado_str = str(estado).strip().lower()
       if "cerrada" in estado_str:
@@ -649,16 +652,12 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
     )
 
-    # Inyectar todas las capas base de satélite y nocturna
     agregar_capas_base_mapa(m)
-
     Fullscreen().add_to(m)
 
-    # Capa adicional superpuesta: Límites del Sector
     fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
     fg_limites.add_to(m)
 
-    # Agrupadores de capas para el estado de válvulas
     grupos_capas = {}
     for estado_opc in OPCIONES_ESTADO_VALVULA + ["Otros / Sin Estado"]:
       fg = folium.FeatureGroup(name=f"Válvulas: {estado_opc}", show=True)
@@ -669,7 +668,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     for _, row in df_mapa.iterrows():
       try:
-        lon, lat = transformer.transform(row["x"], row["y"])
+        lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
         estado = row["estat_valv"] or "Desconocido"
         color = get_valve_color(estado)
 
@@ -698,7 +697,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       except Exception:
         continue
 
-    # Control de capas explícito y visible
     folium.LayerControl(collapsed=False).add_to(m)
 
     st_folium(m, width="100%", height=650, returned_objects=[])
@@ -736,6 +734,11 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
+  if "add_coord_x" not in st.session_state:
+    st.session_state["add_coord_x"] = 0.0
+  if "add_coord_y" not in st.session_state:
+    st.session_state["add_coord_y"] = 0.0
+
   c1, c2, c3, c4 = st.columns(4)
   with c1:
     st.text_input(
@@ -748,7 +751,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_serie = st.text_input("Serie", key="add_serie")
     val_domicilio = st.text_input("Domicilio", key="add_dom")
     val_coord_x = st.number_input(
-        "Coord X (geom)", value=0.0, format="%.2f", key="add_coord_x"
+        "Coord X (geom)", format="%.2f", key="add_coord_x"
     )
 
   with c2:
@@ -758,7 +761,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     )
     val_colonia = st.text_input("Colonia", key="add_col")
     val_coord_y = st.number_input(
-        "Coord Y (geom)", value=0.0, format="%.3f", key="add_coord_y"
+        "Coord Y (geom)", format="%.3f", key="add_coord_y"
     )
 
   with c3:
@@ -776,39 +779,59 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_trim = st.text_input("Marca Trim", key="add_trim")
     val_sector = st.text_input("Sector Hidráulico", key="add_sector")
 
-  # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Añadir) ---
+  # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Añadir) ---
   st.markdown(
       "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-      " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+      " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
+      " para actualizar coordenadas</p>",
       unsafe_allow_html=True,
   )
   try:
-    transformer_add = Transformer.from_crs(
-        "EPSG:32613", "EPSG:4326", always_xy=True
-    )
     if val_coord_x != 0.0 and val_coord_y != 0.0:
-      lon_add, lat_add = transformer_add.transform(val_coord_x, val_coord_y)
+      lon_add, lat_add = transformer_to_latlon.transform(
+          val_coord_x, val_coord_y
+      )
       m_add = folium.Map(
           location=[lat_add, lon_add], zoom_start=16, control_scale=True
       )
-      agregar_capas_base_mapa(m_add)
-      Fullscreen().add_to(m_add)
+    else:
+      m_add = folium.Map(
+          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+      )
+
+    agregar_capas_base_mapa(m_add)
+    Fullscreen().add_to(m_add)
+
+    if val_coord_x != 0.0 and val_coord_y != 0.0:
       folium.Marker(
           location=[lat_add, lon_add],
           popup=f"Nueva VRP: {val_id or 'Sin ID'}",
           icon=folium.Icon(color="cyan", icon="info-sign"),
       ).add_to(m_add)
-    else:
-      m_add = folium.Map(
-          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-      )
-      agregar_capas_base_mapa(m_add)
-      Fullscreen().add_to(m_add)
 
     folium.LayerControl(collapsed=False).add_to(m_add)
-    st_folium(
-        m_add, width="100%", height=250, key="map_add_preview", returned_objects=[]
+    map_data_add = st_folium(
+        m_add,
+        width="100%",
+        height=250,
+        key="map_add_preview",
+        returned_objects=["last_clicked"],
     )
+
+    if (
+        map_data_add
+        and map_data_add.get("last_clicked")
+        and map_data_add["last_clicked"]
+        != st.session_state.get("last_clicked_add")
+    ):
+      st.session_state["last_clicked_add"] = map_data_add["last_clicked"]
+      lat_c = map_data_add["last_clicked"]["lat"]
+      lon_c = map_data_add["last_clicked"]["lng"]
+      utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+      st.session_state["add_coord_x"] = round(utm_x, 2)
+      st.session_state["add_coord_y"] = round(utm_y, 3)
+      st.rerun()
+
   except Exception as e_map_add:
     st.info(
         "Ingrese coordenadas válidas para visualizar la posición en el mapa."
@@ -1012,6 +1035,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
       default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
       default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
 
+      x_key = f"coord_x_{row['fid']}"
+      y_key = f"coord_y_{row['fid']}"
+      if x_key not in st.session_state:
+        st.session_state[x_key] = default_x
+      if y_key not in st.session_state:
+        st.session_state[y_key] = default_y
+
       estado_actual = str(row["estat_valv"] or "").strip()
       idx_estado = 0
       if estado_actual in OPCIONES_ESTADO_VALVULA:
@@ -1048,10 +1078,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           e_coord_x = st.number_input(
-              "Coord X (geom)",
-              value=default_x,
-              format="%.2f",
-              key=f"coord_x_{row['fid']}",
+              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
           )
         with e_c2:
           e_colonia = st.text_input(
@@ -1066,10 +1093,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"est_{row['fid']}",
           )
           e_coord_y = st.number_input(
-              "Coord Y (geom)",
-              value=default_y,
-              format="%.3f",
-              key=f"coord_y_{row['fid']}",
+              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
           )
         with e_c3:
           e_hora = st.text_input(
@@ -1094,43 +1118,60 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"cactd_{row['fid']}",
           )
 
-        # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Operador) ---
+        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Operador) ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+            " mapa para actualizar coordenadas</p>",
             unsafe_allow_html=True,
         )
         try:
-          transformer_edit = Transformer.from_crs(
-              "EPSG:32613", "EPSG:4326", always_xy=True
-          )
           if e_coord_x != 0.0 and e_coord_y != 0.0:
-            lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                e_coord_x, e_coord_y
+            )
             m_ed = folium.Map(
                 location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
             )
-            agregar_capas_base_mapa(m_ed)
-            Fullscreen().add_to(m_ed)
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
+
+          agregar_capas_base_mapa(m_ed)
+          Fullscreen().add_to(m_ed)
+
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
                 icon=folium.Icon(color="cyan", icon="info-sign"),
             ).add_to(m_ed)
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-            agregar_capas_base_mapa(m_ed)
-            Fullscreen().add_to(m_ed)
 
           folium.LayerControl(collapsed=False).add_to(m_ed)
-          st_folium(
+          map_data_ed = st_folium(
               m_ed,
               width="100%",
               height=250,
               key=f"map_edit_preview_{row['fid']}",
-              returned_objects=[],
+              returned_objects=["last_clicked"],
           )
+
+          clicked_key = f"last_clicked_edit_{row['fid']}"
+          if (
+              map_data_ed
+              and map_data_ed.get("last_clicked")
+              and map_data_ed["last_clicked"]
+              != st.session_state.get(clicked_key)
+          ):
+            st.session_state[clicked_key] = map_data_ed["last_clicked"]
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
+            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
+            st.rerun()
+
         except Exception as e_map_ed:
           st.info(
               "Ingrese coordenadas válidas para visualizar la posición en el mapa."
@@ -1192,10 +1233,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           e_coord_x = st.number_input(
-              "Coord X (geom)",
-              value=default_x,
-              format="%.2f",
-              key=f"coord_x_{row['fid']}",
+              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
           )
         with e_c2:
           e_id = st.text_input(
@@ -1212,10 +1250,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"col_{row['fid']}",
           )
           e_coord_y = st.number_input(
-              "Coord Y (geom)",
-              value=default_y,
-              format="%.3f",
-              key=f"coord_y_{row['fid']}",
+              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
           )
         with e_c3:
           e_cota = st.number_input(
@@ -1251,43 +1286,60 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"sec_{row['fid']}",
           )
 
-        # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Admin) ---
+        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Admin) ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+            " mapa para actualizar coordenadas</p>",
             unsafe_allow_html=True,
         )
         try:
-          transformer_edit = Transformer.from_crs(
-              "EPSG:32613", "EPSG:4326", always_xy=True
-          )
           if e_coord_x != 0.0 and e_coord_y != 0.0:
-            lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                e_coord_x, e_coord_y
+            )
             m_ed = folium.Map(
                 location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
             )
-            agregar_capas_base_mapa(m_ed)
-            Fullscreen().add_to(m_ed)
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
+
+          agregar_capas_base_mapa(m_ed)
+          Fullscreen().add_to(m_ed)
+
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
                 icon=folium.Icon(color="cyan", icon="info-sign"),
             ).add_to(m_ed)
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-            agregar_capas_base_mapa(m_ed)
-            Fullscreen().add_to(m_ed)
 
           folium.LayerControl(collapsed=False).add_to(m_ed)
-          st_folium(
+          map_data_ed = st_folium(
               m_ed,
               width="100%",
               height=250,
               key=f"map_edit_preview_{row['fid']}",
-              returned_objects=[],
+              returned_objects=["last_clicked"],
           )
+
+          clicked_key = f"last_clicked_edit_{row['fid']}"
+          if (
+              map_data_ed
+              and map_data_ed.get("last_clicked")
+              and map_data_ed["last_clicked"]
+              != st.session_state.get(clicked_key)
+          ):
+            st.session_state[clicked_key] = map_data_ed["last_clicked"]
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
+            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
+            st.rerun()
+
         except Exception as e_map_ed:
           st.info(
               "Ingrese coordenadas válidas para visualizar la posición en el mapa."
