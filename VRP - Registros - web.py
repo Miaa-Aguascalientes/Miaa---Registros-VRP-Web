@@ -168,7 +168,7 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
-# --- ESTILOS CSS CON BARRA LATERAL MODERNIZADA ---
+# --- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO ARRIBA ---
 st.write(
     """<style>
     #MainMenu, [data-testid="stHeader"] {visibility: hidden !important; display: none !important;} 
@@ -202,14 +202,26 @@ st.write(
         color: #F8FAFC;
     }
 
-    /* Estilización moderna de la Barra Lateral Nativa de Streamlit */
+    /* Estilización y fijación absoluta de la Barra Lateral para que NUNCA se oculte */
     [data-testid="stSidebar"] {
         background-color: #0A0F1D !important;
         border-right: 1px solid rgba(0, 229, 255, 0.15) !important;
         padding-top: 0rem !important;
+        min-width: 280px !important;
+        max-width: 320px !important;
+        transform: none !important;
+        visibility: visible !important;
+        display: block !important;
     }
+    
+    /* Ocultar el botón de colapsar/cerrar la barra lateral para forzar que permanezca fija */
+    [data-testid="stSidebarNavSeparator"], button[kind="header"], [data-testid="collapsedControl"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     [data-testid="stSidebar"] .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 0rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
@@ -381,15 +393,17 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
 # --- BARRA LATERAL IZQUIERDA (SIDEBAR) ---
 with st.sidebar:
+  # Logotipo situado estrictamente en la parte superior con margen superior reducido
   st.markdown(
       """
-        <div style="text-align: center; padding-top: 0px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
+        <div style="text-align: center; padding-top: 5px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
             <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 0px;" />
         </div>
     """,
       unsafe_allow_html=True,
   )
 
+  # Bloque de logeo del usuario colocado inmediatamente debajo del logotipo
   st.markdown(
       f"""
         <div style="background: #111A30; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 15px;">
@@ -411,6 +425,7 @@ with st.sidebar:
   ):
     st.session_state.active_tab = opciones_menu[0]
 
+  # Selectores de las zonas / opciones de navegación colocados debajo del logeo del usuario
   seleccion_tab = st.radio(
       "Menú de Navegación",
       options=opciones_menu,
