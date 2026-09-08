@@ -168,7 +168,7 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
-# --- ESTILOS CSS OPTIMIZADOS PARA PC (ESCRITORIO) ---
+# --- ESTILOS CSS CON BARRA LATERAL MODERNIZADA ---
 st.write(
     """<style>
     #MainMenu, [data-testid="stHeader"] {visibility: hidden !important; display: none !important;} 
@@ -189,39 +189,53 @@ st.write(
     }
 
     .block-container {
-        padding-top: 1.5rem !important; 
+        padding-top: 2rem !important; 
         padding-bottom: 3rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         background: #080C14;
         color: #F8FAFC;
-        max-width: 1400px !important;
+        max-width: 1500px !important;
     }
     body, [data-testid="stAppViewContainer"] {
         background: #080C14;
         color: #F8FAFC;
     }
 
-    /* Menú de navegación horizontal superior para PC */
+    /* Estilización moderna de la Barra Lateral Nativa de Streamlit */
+    [data-testid="stSidebar"] {
+        background-color: #0A0F1D !important;
+        border-right: 1px solid rgba(0, 229, 255, 0.15) !important;
+        padding-top: 1rem;
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Botones de navegación dinámicos estilo píldora moderna */
     div.row-widget.stRadio > div {
         display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        background: #0D1424;
-        border: 1px solid rgba(0, 229, 255, 0.15);
-        border-radius: 8px;
-        padding: 6px;
+        flex-direction: column;
+        background: transparent;
+        padding: 0px;
         gap: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
     div.row-widget.stRadio > div > label {
         background: #111A30;
-        border: 1px solid rgba(0, 229, 255, 0.15) !important;
-        border-radius: 6px !important;
-        padding: 8px 20px !important;
-        text-align: center;
+        border: 1px solid rgba(0, 229, 255, 0.1) !important;
+        border-radius: 10px !important;
+        padding: 12px 18px !important;
+        text-align: left;
         cursor: pointer;
-        transition: all 0.2s ease-in-out;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    div.row-widget.stRadio > div > label:hover {
+        background: linear-gradient(135deg, #111A30 0%, #1A284A 100%);
+        border-color: rgba(0, 229, 255, 0.4) !important;
+        transform: translateX(4px);
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
     }
     div.row-widget.stRadio input[type="radio"] { display: none !important; }
     div.row-widget.stRadio div[role="radiogroup"] > label > div:first-child { display: none !important; }
@@ -229,12 +243,13 @@ st.write(
     div.row-widget.stRadio div[role="radiogroup"] label p {
         color: #94A3B8 !important;
         font-weight: 600 !important;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
     div.row-widget.stRadio > div > label[data-checked="true"] {
         background: linear-gradient(135deg, #0A2540 0%, #0077B6 100%) !important;
         border-color: #00E5FF !important;
-        box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+        box-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+        transform: translateX(6px);
     }
     div.row-widget.stRadio > div > label[data-checked="true"] span,
     div.row-widget.stRadio > div > label[data-checked="true"] p {
@@ -360,53 +375,70 @@ if not st.session_state.autenticado:
           st.warning("Por favor, ingrese usuario y contraseña.")
   st.stop()
 
-# --- CABECERA ---
-col_cab_img, col_cab_title, col_cab_user = st.columns([0.2, 0.6, 0.2])
-with col_cab_img:
+# --- DETERMINAR ROL DEL USUARIO ---
+es_operador = st.session_state.get("tipo_usuario", "") == "operador"
+
+# --- BARRA LATERAL IZQUIERDA (SIDEBAR) ---
+with st.sidebar:
   st.markdown(
-      '<img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 160px; margin-top: 5px;" />',
+      """
+        <div style="text-align: center; padding-bottom: 15px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 20px;">
+            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 10px;" />
+            <h3 style="color: #00E5FF; font-size: 1.1rem; font-weight: 800; margin: 0;">Gestión VRP's</h3>
+        </div>
+    """,
       unsafe_allow_html=True,
   )
-with col_cab_title:
+
+  if es_operador:
+    opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
+  else:
+    opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️ Editar"]
+
+  if (
+      "active_tab" not in st.session_state
+      or st.session_state.active_tab not in opciones_menu
+  ):
+    st.session_state.active_tab = opciones_menu[0]
+
+  seleccion_tab = st.radio(
+      "Menú de Navegación",
+      options=opciones_menu,
+      index=opciones_menu.index(st.session_state.active_tab),
+      label_visibility="collapsed",
+  )
+
+  if seleccion_tab != st.session_state.active_tab:
+    st.session_state.active_tab = seleccion_tab
+    st.rerun()
+
+  st.markdown("<br><br>", unsafe_allow_html=True)
   st.markdown(
-      '<h2 style="color: #00E5FF; margin: 0; font-size: 1.5rem; font-weight: 800;">Sistema de Gestión de VRP\'s</h2>',
+      f"""
+        <div style="background: #111A30; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="color: #00E5FF; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px;">👤 {st.session_state.usuario_actual}</div>
+            <div style="color: #94A3B8; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">{st.session_state.get('tipo_usuario', 'usuario')}</div>
+        </div>
+    """,
       unsafe_allow_html=True,
   )
-with col_cab_user:
-  st.markdown(
-      f'<div style="text-align: right; color: #00E5FF; font-weight: 700; font-size: 0.9rem; padding-top: 10px;">👤 {st.session_state.usuario_actual}</div>',
-      unsafe_allow_html=True,
-  )
+
   if st.button("Cerrar Sesión", key="btn_logout", use_container_width=True):
     st.session_state.autenticado = False
     st.rerun()
 
-# --- DETERMINAR ROL DEL USUARIO ---
-es_operador = st.session_state.get("tipo_usuario", "") == "operador"
-
-# --- MENÚ DE NAVEGACIÓN ---
-if es_operador:
-  opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
-else:
-  opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️ Editar"]
-
-if (
-    "active_tab" not in st.session_state
-    or st.session_state.active_tab not in opciones_menu
-):
-  st.session_state.active_tab = opciones_menu[0]
-
-seleccion_tab = st.radio(
-    "Navegación",
-    options=opciones_menu,
-    index=opciones_menu.index(st.session_state.active_tab),
-    horizontal=True,
-    label_visibility="collapsed",
-)
-
-if seleccion_tab != st.session_state.active_tab:
-  st.session_state.active_tab = seleccion_tab
-  st.rerun()
+# --- CABECERA PRINCIPAL ---
+col_cab_title, col_cab_info = st.columns([0.8, 0.2])
+with col_cab_title:
+  st.markdown(
+      f'<h2 style="color: #00E5FF; margin: 0; font-size: 1.5rem; font-weight: 800;">{st.session_state.active_tab}</h2>',
+      unsafe_allow_html=True,
+  )
+with col_cab_info:
+  st.markdown(
+      '<div style="text-align: right; color: #94A3B8; font-size: 0.85rem; padding-top: 5px;">MIAA &bull; VRP Control</div>',
+      unsafe_allow_html=True,
+  )
 
 st.markdown(
     "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
@@ -640,7 +672,6 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  # Distribución limpia de 3 columnas para PC
   c1, c2, c3 = st.columns(3)
   with c1:
     st.text_input(
