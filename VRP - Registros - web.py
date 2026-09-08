@@ -169,6 +169,44 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
+def agregar_capas_base_mapa(m):
+  """Función auxiliar para inyectar todas las capas base en cualquier mapa de Folium."""
+  # 1. Vista Satélite (Google Maps Híbrido)
+  folium.TileLayer(
+      tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      name="Vista Satélite",
+      attr="Google",
+      max_zoom=20,
+      overlay=False,
+      control=True,
+  ).add_to(m)
+
+  # 2. Satélite (Esri World Imagery)
+  folium.TileLayer(
+      tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      name="Satélite (Esri)",
+      attr="Esri",
+      max_zoom=20,
+      overlay=False,
+      control=True,
+  ).add_to(m)
+
+  # 3. Vista Nocturna (CARTO Dark Matter)
+  folium.TileLayer(
+      tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+      name="Vista Nocturna",
+      attr=(
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          ' contributors &copy; <a'
+          ' href="https://carto.com/attributions">CARTO</a>'
+      ),
+      subdomains="abcd",
+      max_zoom=20,
+      overlay=False,
+      control=True,
+  ).add_to(m)
+
+
 # --- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO MÁS ARRIBA ---
 st.write(
     """<style>
@@ -611,44 +649,12 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
     )
 
-    # 1. Vista Satélite (Google Maps Híbrido: Satélite + Etiquetas)
-    folium.TileLayer(
-        tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-        name="Vista Satélite",
-        attr="Google",
-        max_zoom=20,
-        overlay=False,
-        control=True,
-    ).add_to(m)
-
-    # 2. Satélite (Esri World Imagery)
-    folium.TileLayer(
-        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        name="Satélite (Esri)",
-        attr="Esri",
-        max_zoom=20,
-        overlay=False,
-        control=True,
-    ).add_to(m)
-
-    # 3. Vista Nocturna (CARTO Dark Matter)
-    folium.TileLayer(
-        tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-        name="Vista Nocturna",
-        attr=(
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            ' contributors &copy; <a'
-            ' href="https://carto.com/attributions">CARTO</a>'
-        ),
-        subdomains="abcd",
-        max_zoom=20,
-        overlay=False,
-        control=True,
-    ).add_to(m)
+    # Inyectar todas las capas base de satélite y nocturna
+    agregar_capas_base_mapa(m)
 
     Fullscreen().add_to(m)
 
-    # Capa adicional superpuesta: Límites del Sector (FeatureGroup como overlay)
+    # Capa adicional superpuesta: Límites del Sector
     fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
     fg_limites.add_to(m)
 
@@ -692,7 +698,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       except Exception:
         continue
 
-    # Control de capas interactivo que agrupa mapas base y las capas de superposición
+    # Control de capas explícito y visible
     folium.LayerControl(collapsed=False).add_to(m)
 
     st_folium(m, width="100%", height=650, returned_objects=[])
@@ -785,19 +791,7 @@ elif st.session_state.active_tab == "➕ Añadir":
       m_add = folium.Map(
           location=[lat_add, lon_add], zoom_start=16, control_scale=True
       )
-      folium.TileLayer(
-          tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-          name="Vista Nocturna",
-          attr=(
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              ' contributors &copy; <a'
-              ' href="https://carto.com/attributions">CARTO</a>'
-          ),
-          subdomains="abcd",
-          max_zoom=20,
-          overlay=False,
-          control=True,
-      ).add_to(m_add)
+      agregar_capas_base_mapa(m_add)
       Fullscreen().add_to(m_add)
       folium.Marker(
           location=[lat_add, lon_add],
@@ -808,20 +802,10 @@ elif st.session_state.active_tab == "➕ Añadir":
       m_add = folium.Map(
           location=[21.8853, -102.2916], zoom_start=12, control_scale=True
       )
-      folium.TileLayer(
-          tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-          name="Vista Nocturna",
-          attr=(
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              ' contributors &copy; <a'
-              ' href="https://carto.com/attributions">CARTO</a>'
-          ),
-          subdomains="abcd",
-          max_zoom=20,
-          overlay=False,
-          control=True,
-      ).add_to(m_add)
+      agregar_capas_base_mapa(m_add)
       Fullscreen().add_to(m_add)
+
+    folium.LayerControl(collapsed=False).add_to(m_add)
     st_folium(
         m_add, width="100%", height=250, key="map_add_preview", returned_objects=[]
     )
@@ -1125,19 +1109,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(
                 location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
             )
-            folium.TileLayer(
-                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-                name="Vista Nocturna",
-                attr=(
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    ' contributors &copy; <a'
-                    ' href="https://carto.com/attributions">CARTO</a>'
-                ),
-                subdomains="abcd",
-                max_zoom=20,
-                overlay=False,
-                control=True,
-            ).add_to(m_ed)
+            agregar_capas_base_mapa(m_ed)
             Fullscreen().add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
@@ -1148,20 +1120,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(
                 location=[21.8853, -102.2916], zoom_start=12, control_scale=True
             )
-            folium.TileLayer(
-                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-                name="Vista Nocturna",
-                attr=(
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    ' contributors &copy; <a'
-                    ' href="https://carto.com/attributions">CARTO</a>'
-                ),
-                subdomains="abcd",
-                max_zoom=20,
-                overlay=False,
-                control=True,
-            ).add_to(m_ed)
+            agregar_capas_base_mapa(m_ed)
             Fullscreen().add_to(m_ed)
+
+          folium.LayerControl(collapsed=False).add_to(m_ed)
           st_folium(
               m_ed,
               width="100%",
@@ -1304,19 +1266,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(
                 location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
             )
-            folium.TileLayer(
-                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-                name="Vista Nocturna",
-                attr=(
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    ' contributors &copy; <a'
-                    ' href="https://carto.com/attributions">CARTO</a>'
-                ),
-                subdomains="abcd",
-                max_zoom=20,
-                overlay=False,
-                control=True,
-            ).add_to(m_ed)
+            agregar_capas_base_mapa(m_ed)
             Fullscreen().add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
@@ -1327,20 +1277,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(
                 location=[21.8853, -102.2916], zoom_start=12, control_scale=True
             )
-            folium.TileLayer(
-                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
-                name="Vista Nocturna",
-                attr=(
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    ' contributors &copy; <a'
-                    ' href="https://carto.com/attributions">CARTO</a>'
-                ),
-                subdomains="abcd",
-                max_zoom=20,
-                overlay=False,
-                control=True,
-            ).add_to(m_ed)
+            agregar_capas_base_mapa(m_ed)
             Fullscreen().add_to(m_ed)
+
+          folium.LayerControl(collapsed=False).add_to(m_ed)
           st_folium(
               m_ed,
               width="100%",
