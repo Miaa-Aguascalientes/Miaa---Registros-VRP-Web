@@ -14,7 +14,7 @@ from streamlit_folium import st_folium
 # Configuración de página
 st.set_page_config(
     layout="wide",
-    page_title="Gestion VRP's - MIAA",
+    page_title="Gestión Válvulas Reductoras de Presión - MIAA",
     page_icon="https://www.miaa.mx/favicon.ico",
 )
 
@@ -189,7 +189,7 @@ st.write(
     }
 
     .block-container {
-        padding-top: 2rem !important; 
+        padding-top: 1rem !important; 
         padding-bottom: 3rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
@@ -206,9 +206,10 @@ st.write(
     [data-testid="stSidebar"] {
         background-color: #0A0F1D !important;
         border-right: 1px solid rgba(0, 229, 255, 0.15) !important;
-        padding-top: 1rem;
+        padding-top: 0rem !important;
     }
     [data-testid="stSidebar"] .block-container {
+        padding-top: 0.5rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
@@ -327,7 +328,7 @@ st.write(
 if not st.session_state.autenticado:
   st.markdown(
       """
-        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 20px;">
+        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 10px;">
             <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 180px; height: auto;" />
         </div>
     """,
@@ -335,7 +336,7 @@ if not st.session_state.autenticado:
   )
 
   st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.4rem; font-weight: 800; margin-bottom: 20px;">Acceso al Sistema - Gestión VRP\'s</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.4rem; font-weight: 800; margin-bottom: 20px;">Acceso al Sistema - Gestión de Válvulas Reductoras de Presión</h3>',
       unsafe_allow_html=True,
   )
 
@@ -382,9 +383,8 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 with st.sidebar:
   st.markdown(
       """
-        <div style="text-align: center; padding-bottom: 15px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 20px;">
-            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 10px;" />
-            <h3 style="color: #00E5FF; font-size: 1.1rem; font-weight: 800; margin: 0;">Gestión VRP's</h3>
+        <div style="text-align: center; padding-top: 5px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
+            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 0px;" />
         </div>
     """,
       unsafe_allow_html=True,
@@ -428,10 +428,19 @@ with st.sidebar:
     st.rerun()
 
 # --- CABECERA PRINCIPAL ---
+st.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 15px;">
+        <h1 style="color: #00E5FF; font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">Gestión de Válvulas Reductoras de Presión</h1>
+    </div>
+""",
+    unsafe_allow_html=True,
+)
+
 col_cab_title, col_cab_info = st.columns([0.8, 0.2])
 with col_cab_title:
   st.markdown(
-      f'<h2 style="color: #00E5FF; margin: 0; font-size: 1.5rem; font-weight: 800;">{st.session_state.active_tab}</h2>',
+      f'<h2 style="color: #E2E8F0; margin: 0; font-size: 1.3rem; font-weight: 700;">{st.session_state.active_tab}</h2>',
       unsafe_allow_html=True,
   )
 with col_cab_info:
