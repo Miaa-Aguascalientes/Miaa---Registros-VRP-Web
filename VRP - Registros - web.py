@@ -734,20 +734,10 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  # Inicializar session_state para coordenadas en añadir si no existen
   if "add_coord_x" not in st.session_state:
-    st.session_state.add_coord_x = 783071.41
+    st.session_state["add_coord_x"] = 0.0
   if "add_coord_y" not in st.session_state:
-    st.session_state.add_coord_y = 2421260.496
-
-  # Sincronizar lat/lon iniciales para añadir
-  init_lon_add, init_lat_add = transformer_to_latlon.transform(
-      st.session_state.add_coord_x, st.session_state.add_coord_y
-  )
-  if "add_lat" not in st.session_state:
-    st.session_state.add_lat = init_lat_add
-  if "add_lon" not in st.session_state:
-    st.session_state.add_lon = init_lon_add
+    st.session_state["add_coord_y"] = 0.0
 
   c1, c2, c3, c4 = st.columns(4)
   with c1:
@@ -760,19 +750,9 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_id_0 = siguiente_id_0
     val_serie = st.text_input("Serie", key="add_serie")
     val_domicilio = st.text_input("Domicilio", key="add_dom")
-    
-    # Input numérico limpio sin conflictos de llaves
-    new_add_x = st.number_input(
-        "Coord X (geom)", value=float(st.session_state.add_coord_x), format="%.2f"
+    val_coord_x = st.number_input(
+        "Coord X (geom)", format="%.2f", key="add_coord_x"
     )
-    if new_add_x != st.session_state.add_coord_x:
-      st.session_state.add_coord_x = new_add_x
-      lon_n, lat_n = transformer_to_latlon.transform(
-          st.session_state.add_coord_x, st.session_state.add_coord_y
-      )
-      st.session_state.add_lat = lat_n
-      st.session_state.add_lon = lon_n
-      st.rerun()
 
   with c2:
     val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
@@ -780,19 +760,9 @@ elif st.session_state.active_tab == "➕ Añadir":
         "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
     )
     val_colonia = st.text_input("Colonia", key="add_col")
-    
-    # Input numérico limpio sin conflictos de llaves
-    new_add_y = st.number_input(
-        "Coord Y (geom)", value=float(st.session_state.add_coord_y), format="%.3f"
+    val_coord_y = st.number_input(
+        "Coord Y (geom)", format="%.3f", key="add_coord_y"
     )
-    if new_add_y != st.session_state.add_coord_y:
-      st.session_state.add_coord_y = new_add_y
-      lon_n, lat_n = transformer_to_latlon.transform(
-          st.session_state.add_coord_x, st.session_state.add_coord_y
-      )
-      st.session_state.add_lat = lat_n
-      st.session_state.add_lon = lon_n
-      st.rerun()
 
   with c3:
     val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
@@ -817,21 +787,27 @@ elif st.session_state.active_tab == "➕ Añadir":
       unsafe_allow_html=True,
   )
   try:
-    m_add = folium.Map(
-        location=[st.session_state.add_lat, st.session_state.add_lon],
-        zoom_start=16,
-        tiles="CartoDB dark_matter",
-        control_scale=True
-    )
+    if val_coord_x != 0.0 and val_coord_y != 0.0:
+      lon_add, lat_add = transformer_to_latlon.transform(
+          val_coord_x, val_coord_y
+      )
+      m_add = folium.Map(
+          location=[lat_add, lon_add], zoom_start=16, control_scale=True
+      )
+    else:
+      m_add = folium.Map(
+          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+      )
 
     agregar_capas_base_mapa(m_add)
     Fullscreen().add_to(m_add)
 
-    folium.Marker(
-        location=[st.session_state.add_lat, st.session_state.add_lon],
-        popup=f"Nueva VRP: {val_id or 'Sin ID'}",
-        icon=folium.Icon(color="cyan", icon="info-sign"),
-    ).add_to(m_add)
+    if val_coord_x != 0.0 and val_coord_y != 0.0:
+      folium.Marker(
+          location=[lat_add, lon_add],
+          popup=f"Nueva VRP: {val_id or 'Sin ID'}",
+          icon=folium.Icon(color="cyan", icon="info-sign"),
+      ).add_to(m_add)
 
     folium.LayerControl(collapsed=False).add_to(m_add)
     map_data_add = st_folium(
@@ -842,20 +818,19 @@ elif st.session_state.active_tab == "➕ Añadir":
         returned_objects=["last_clicked"],
     )
 
-    if map_data_add and map_data_add.get("last_clicked"):
-      clicked_lat = map_data_add["last_clicked"]["lat"]
-      clicked_lon = map_data_add["last_clicked"]["lng"]
-
-      if (
-          clicked_lat != st.session_state.add_lat
-          or clicked_lon != st.session_state.add_lon
-      ):
-        utm_x, utm_y = transformer_to_utm.transform(clicked_lon, clicked_lat)
-        st.session_state.add_lat = clicked_lat
-        st.session_state.add_lon = clicked_lon
-        st.session_state.add_coord_x = round(utm_x, 2)
-        st.session_state.add_coord_y = round(utm_y, 3)
-        st.rerun()
+    if (
+        map_data_add
+        and map_data_add.get("last_clicked")
+        and map_data_add["last_clicked"]
+        != st.session_state.get("last_clicked_add")
+    ):
+      st.session_state["last_clicked_add"] = map_data_add["last_clicked"]
+      lat_c = map_data_add["last_clicked"]["lat"]
+      lon_c = map_data_add["last_clicked"]["lng"]
+      utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+      st.session_state["add_coord_x"] = round(utm_x, 2)
+      st.session_state["add_coord_y"] = round(utm_y, 3)
+      st.rerun()
 
   except Exception as e_map_add:
     st.info(
@@ -992,8 +967,8 @@ elif st.session_state.active_tab == "➕ Añadir":
                 "observ": val_observ,
                 "fotos": foto_bytes,
                 "fotos_2": foto_bytes_2,
-                "coord_x": st.session_state.add_coord_x,
-                "coord_y": st.session_state.add_coord_y,
+                "coord_x": val_coord_x,
+                "coord_y": val_coord_y,
             },
         )
         st.success("¡Válvula registrada con éxito!")
@@ -1057,28 +1032,15 @@ elif st.session_state.active_tab == "⚙️ Editar":
       )
 
       e_id_0 = row["id_0"]
-      
-      # INICIALIZACIÓN DIRECTA DESDE LA BASE DE DATOS (SIN VALORES FIJOS FALSOS)
       default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
       default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
 
       x_key = f"coord_x_{row['fid']}"
       y_key = f"coord_y_{row['fid']}"
-      lat_key = f"lat_{row['fid']}"
-      lon_key = f"lon_{row['fid']}"
-
       if x_key not in st.session_state:
         st.session_state[x_key] = default_x
       if y_key not in st.session_state:
         st.session_state[y_key] = default_y
-
-      init_lon_e, init_lat_e = transformer_to_latlon.transform(
-          st.session_state[x_key], st.session_state[y_key]
-      )
-      if lat_key not in st.session_state:
-        st.session_state[lat_key] = init_lat_e
-      if lon_key not in st.session_state:
-        st.session_state[lon_key] = init_lon_e
 
       estado_actual = str(row["estat_valv"] or "").strip()
       idx_estado = 0
@@ -1115,20 +1077,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
-          
-          # Input X limpio sin conflictos vinculado directamente a sesión
-          new_ex = st.number_input(
-              "Coord X (geom)", value=float(st.session_state[x_key]), format="%.2f", key=f"input_x_{row['fid']}"
+          e_coord_x = st.number_input(
+              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
           )
-          if new_ex != st.session_state[x_key]:
-            st.session_state[x_key] = new_ex
-            lon_n, lat_n = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            st.session_state[lat_key] = lat_n
-            st.session_state[lon_key] = lon_n
-            st.rerun()
-
         with e_c2:
           e_colonia = st.text_input(
               "Colonia",
@@ -1141,20 +1092,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
-          
-          # Input Y limpio sin conflictos vinculado directamente a sesión
-          new_ey = st.number_input(
-              "Coord Y (geom)", value=float(st.session_state[y_key]), format="%.3f", key=f"input_y_{row['fid']}"
+          e_coord_y = st.number_input(
+              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
           )
-          if new_ey != st.session_state[y_key]:
-            st.session_state[y_key] = new_ey
-            lon_n, lat_n = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            st.session_state[lat_key] = lat_n
-            st.session_state[lon_key] = lon_n
-            st.rerun()
-
         with e_c3:
           e_hora = st.text_input(
               "Hora Cal",
@@ -1178,7 +1118,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"cactd_{row['fid']}",
           )
 
-        # --- MAPITA INTERACTIVO CENTRADO EN LA POSICIÓN REAL DE LA BD ---
+        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Operador) ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
             " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
@@ -1186,45 +1126,51 @@ elif st.session_state.active_tab == "⚙️ Editar":
             unsafe_allow_html=True,
         )
         try:
-          m_ed = folium.Map(
-              location=[st.session_state[lat_key], st.session_state[lon_key]],
-              zoom_start=17,
-              tiles="CartoDB dark_matter",
-              control_scale=True
-          )
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                e_coord_x, e_coord_y
+            )
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
 
           agregar_capas_base_mapa(m_ed)
           Fullscreen().add_to(m_ed)
 
-          folium.Marker(
-              location=[st.session_state[lat_key], st.session_state[lon_key]],
-              popup=f"VRP: {e_id}",
-              icon=folium.Icon(color="cyan", icon="info-sign"),
-          ).add_to(m_ed)
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {e_id}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
 
           folium.LayerControl(collapsed=False).add_to(m_ed)
           map_data_ed = st_folium(
               m_ed,
               width="100%",
-              height=280,
+              height=250,
               key=f"map_edit_preview_{row['fid']}",
               returned_objects=["last_clicked"],
           )
 
-          if map_data_ed and map_data_ed.get("last_clicked"):
-            clicked_lat = map_data_ed["last_clicked"]["lat"]
-            clicked_lon = map_data_ed["last_clicked"]["lng"]
-
-            if (
-                clicked_lat != st.session_state[lat_key]
-                or clicked_lon != st.session_state[lon_key]
-            ):
-              utm_x, utm_y = transformer_to_utm.transform(clicked_lon, clicked_lat)
-              st.session_state[lat_key] = clicked_lat
-              st.session_state[lon_key] = clicked_lon
-              st.session_state[x_key] = round(utm_x, 2)
-              st.session_state[y_key] = round(utm_y, 3)
-              st.rerun()
+          clicked_key = f"last_clicked_edit_{row['fid']}"
+          if (
+              map_data_ed
+              and map_data_ed.get("last_clicked")
+              and map_data_ed["last_clicked"]
+              != st.session_state.get(clicked_key)
+          ):
+            st.session_state[clicked_key] = map_data_ed["last_clicked"]
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
+            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
+            st.rerun()
 
         except Exception as e_map_ed:
           st.info(
@@ -1286,20 +1232,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
-          
-          # Input X limpio sin conflictos vinculado directamente a sesión
-          new_ex = st.number_input(
-              "Coord X (geom)", value=float(st.session_state[x_key]), format="%.2f", key=f"input_x_{row['fid']}"
+          e_coord_x = st.number_input(
+              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
           )
-          if new_ex != st.session_state[x_key]:
-            st.session_state[x_key] = new_ex
-            lon_n, lat_n = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            st.session_state[lat_key] = lat_n
-            st.session_state[lon_key] = lon_n
-            st.rerun()
-
         with e_c2:
           e_id = st.text_input(
               "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
@@ -1314,20 +1249,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["colonia"] or ""),
               key=f"col_{row['fid']}",
           )
-          
-          # Input Y limpio sin conflictos vinculado directamente a sesión
-          new_ey = st.number_input(
-              "Coord Y (geom)", value=float(st.session_state[y_key]), format="%.3f", key=f"input_y_{row['fid']}"
+          e_coord_y = st.number_input(
+              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
           )
-          if new_ey != st.session_state[y_key]:
-            st.session_state[y_key] = new_ey
-            lon_n, lat_n = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            st.session_state[lat_key] = lat_n
-            st.session_state[lon_key] = lon_n
-            st.rerun()
-
         with e_c3:
           e_cota = st.number_input(
               "Cota Terr",
@@ -1362,7 +1286,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"sec_{row['fid']}",
           )
 
-        # --- MAPITA INTERACTIVO CENTRADO EN LA POSICIÓN REAL DE LA BD (Admin) ---
+        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Admin) ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
             " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
@@ -1370,45 +1294,51 @@ elif st.session_state.active_tab == "⚙️ Editar":
             unsafe_allow_html=True,
         )
         try:
-          m_ed = folium.Map(
-              location=[st.session_state[lat_key], st.session_state[lon_key]],
-              zoom_start=17,
-              tiles="CartoDB dark_matter",
-              control_scale=True
-          )
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                e_coord_x, e_coord_y
+            )
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
 
           agregar_capas_base_mapa(m_ed)
           Fullscreen().add_to(m_ed)
 
-          folium.Marker(
-              location=[st.session_state[lat_key], st.session_state[lon_key]],
-              popup=f"VRP: {e_id}",
-              icon=folium.Icon(color="cyan", icon="info-sign"),
-          ).add_to(m_ed)
+          if e_coord_x != 0.0 and e_coord_y != 0.0:
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {e_id}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
 
           folium.LayerControl(collapsed=False).add_to(m_ed)
           map_data_ed = st_folium(
               m_ed,
               width="100%",
-              height=280,
+              height=250,
               key=f"map_edit_preview_{row['fid']}",
               returned_objects=["last_clicked"],
           )
 
-          if map_data_ed and map_data_ed.get("last_clicked"):
-            clicked_lat = map_data_ed["last_clicked"]["lat"]
-            clicked_lon = map_data_ed["last_clicked"]["lng"]
-
-            if (
-                clicked_lat != st.session_state[lat_key]
-                or clicked_lon != st.session_state[lon_key]
-            ):
-              utm_x, utm_y = transformer_to_utm.transform(clicked_lon, clicked_lat)
-              st.session_state[lat_key] = clicked_lat
-              st.session_state[lon_key] = clicked_lon
-              st.session_state[x_key] = round(utm_x, 2)
-              st.session_state[y_key] = round(utm_y, 3)
-              st.rerun()
+          clicked_key = f"last_clicked_edit_{row['fid']}"
+          if (
+              map_data_ed
+              and map_data_ed.get("last_clicked")
+              and map_data_ed["last_clicked"]
+              != st.session_state.get(clicked_key)
+          ):
+            st.session_state[clicked_key] = map_data_ed["last_clicked"]
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
+            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
+            st.rerun()
 
         except Exception as e_map_ed:
           st.info(
@@ -1609,8 +1539,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
                   "observ": e_observ,
                   "fotos": foto_bytes_final,
                   "fotos_2": foto_bytes_final_2,
-                  "coord_x": st.session_state[x_key],
-                  "coord_y": st.session_state[y_key],
+                  "coord_x": e_coord_x,
+                  "coord_y": e_coord_y,
                   "fid": row["fid"],
               },
           )
