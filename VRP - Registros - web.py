@@ -1057,8 +1057,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
       )
 
       e_id_0 = row["id_0"]
-      default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 783071.41
-      default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 2421260.496
+      
+      # INICIALIZACIÓN DIRECTA DESDE LA BASE DE DATOS (SIN VALORES FIJOS FALSOS)
+      default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
+      default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
 
       x_key = f"coord_x_{row['fid']}"
       y_key = f"coord_y_{row['fid']}"
@@ -1114,7 +1116,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           
-          # Input X limpio sin conflictos
+          # Input X limpio sin conflictos vinculado directamente a sesión
           new_ex = st.number_input(
               "Coord X (geom)", value=float(st.session_state[x_key]), format="%.2f", key=f"input_x_{row['fid']}"
           )
@@ -1140,7 +1142,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"est_{row['fid']}",
           )
           
-          # Input Y limpio sin conflictos
+          # Input Y limpio sin conflictos vinculado directamente a sesión
           new_ey = st.number_input(
               "Coord Y (geom)", value=float(st.session_state[y_key]), format="%.3f", key=f"input_y_{row['fid']}"
           )
@@ -1176,7 +1178,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"cactd_{row['fid']}",
           )
 
-        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Operador) ---
+        # --- MAPITA INTERACTIVO CENTRADO EN LA POSICIÓN REAL DE LA BD ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
             " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
@@ -1186,7 +1188,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
         try:
           m_ed = folium.Map(
               location=[st.session_state[lat_key], st.session_state[lon_key]],
-              zoom_start=16,
+              zoom_start=17,
               tiles="CartoDB dark_matter",
               control_scale=True
           )
@@ -1204,7 +1206,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
           map_data_ed = st_folium(
               m_ed,
               width="100%",
-              height=250,
+              height=280,
               key=f"map_edit_preview_{row['fid']}",
               returned_objects=["last_clicked"],
           )
@@ -1285,7 +1287,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           
-          # Input X limpio sin conflictos
+          # Input X limpio sin conflictos vinculado directamente a sesión
           new_ex = st.number_input(
               "Coord X (geom)", value=float(st.session_state[x_key]), format="%.2f", key=f"input_x_{row['fid']}"
           )
@@ -1313,7 +1315,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"col_{row['fid']}",
           )
           
-          # Input Y limpio sin conflictos
+          # Input Y limpio sin conflictos vinculado directamente a sesión
           new_ey = st.number_input(
               "Coord Y (geom)", value=float(st.session_state[y_key]), format="%.3f", key=f"input_y_{row['fid']}"
           )
@@ -1360,7 +1362,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"sec_{row['fid']}",
           )
 
-        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Admin) ---
+        # --- MAPITA INTERACTIVO CENTRADO EN LA POSICIÓN REAL DE LA BD (Admin) ---
         st.markdown(
             "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
             " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
@@ -1370,7 +1372,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
         try:
           m_ed = folium.Map(
               location=[st.session_state[lat_key], st.session_state[lon_key]],
-              zoom_start=16,
+              zoom_start=17,
               tiles="CartoDB dark_matter",
               control_scale=True
           )
@@ -1388,7 +1390,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
           map_data_ed = st_folium(
               m_ed,
               width="100%",
-              height=250,
+              height=280,
               key=f"map_edit_preview_{row['fid']}",
               returned_objects=["last_clicked"],
           )
