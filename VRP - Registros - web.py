@@ -732,7 +732,7 @@ elif st.session_state.active_tab == "➕ Añadir":
       folium.TileLayer("cartodark_matter").add_to(m_add)
     st_folium(m_add, width="100%", height=250, key="map_add_preview")
   except Exception as e_map_add:
-    st.info("Ingrese coordenadas válidas para visualizar la posición en el mapa.")
+    st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_add})")
 
   st.markdown("<br>", unsafe_allow_html=True)
   c5, c6, c7, c8 = st.columns(4)
@@ -1030,8 +1030,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
             folium.TileLayer("cartodark_matter").add_to(m_ed)
           st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
-        except Exception:
-          pass
+        except Exception as e_map_ed:
+          st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
 
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
@@ -1167,8 +1167,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
             m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
             folium.TileLayer("cartodark_matter").add_to(m_ed)
           st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
-        except Exception:
-          pass
+        except Exception as e_map_ed:
+          st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
 
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
