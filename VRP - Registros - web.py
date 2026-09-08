@@ -18,7 +18,7 @@ st.set_page_config(
     page_icon="https://www.miaa.mx/favicon.ico",
 )
 
-# --- ESTADO DE SESIÓN ---
+# 01 SECCION ----------------------------------------------------------------------------------------------- ESTADO DE SESIÓN ----------------------------------------------------------------------------------------
 if "registro_to_delete" not in st.session_state:
   st.session_state.registro_to_delete = None
 if "active_tab" not in st.session_state:
@@ -48,7 +48,7 @@ OPCIONES_ESTADO_VALVULA = [
     "Pendiente",
 ]
 
-# --- CONEXIÓN A BASE DE DATOS POSTGRESQL (VPRS) ---
+# 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VPRS) --------------------------------------------------------------------------------------
 
 
 def crear_nuevo_engine():
