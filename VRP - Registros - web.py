@@ -710,7 +710,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
 
 # ==========================================
-# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (4 COLUMNAS)
+# SECCIÓN 2: AÑADIR NUEVA VÁLVULA
 # ==========================================
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
@@ -734,81 +734,13 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  # Inicialización segura en session_state para widgets de coordenadas
   if "add_coord_x_input" not in st.session_state:
     st.session_state["add_coord_x_input"] = 0.0
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
-  # --- MAPA PRIMERO PARA CAPTURAR CLIC Y ACTUALIZAR st.session_state ANTES DE PINTAR LOS INPUTS ---
-  st.markdown(
-      "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-      " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
-      " para capturar coordenadas automáticamente</p>",
-      unsafe_allow_html=True,
-  )
-  try:
-    if (
-        st.session_state["add_coord_x_input"] != 0.0
-        and st.session_state["add_coord_y_input"] != 0.0
-    ):
-      lon_add, lat_add = transformer_to_latlon.transform(
-          st.session_state["add_coord_x_input"], st.session_state["add_coord_y_input"]
-      )
-      m_add = folium.Map(
-          location=[lat_add, lon_add], zoom_start=16, control_scale=True
-      )
-    else:
-      m_add = folium.Map(
-          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-      )
-
-    agregar_capas_base_mapa(m_add)
-    Fullscreen().add_to(m_add)
-
-    if (
-        st.session_state["add_coord_x_input"] != 0.0
-        and st.session_state["add_coord_y_input"] != 0.0
-    ):
-      folium.Marker(
-          location=[lat_add, lon_add],
-          popup="Nueva VRP",
-          icon=folium.Icon(color="cyan", icon="info-sign"),
-      ).add_to(m_add)
-
-    folium.LayerControl(collapsed=False).add_to(m_add)
-    map_data_add = st_folium(
-        m_add,
-        width="100%",
-        height=280,
-        key="map_add_preview",
-        returned_objects=["last_clicked"],
-    )
-
-    if (
-        map_data_add
-        and map_data_add.get("last_clicked")
-        and map_data_add["last_clicked"]
-        != st.session_state.get("last_clicked_add")
-    ):
-      st.session_state["last_clicked_add"] = map_data_add["last_clicked"]
-      lat_c = map_data_add["last_clicked"]["lat"]
-      lon_c = map_data_add["last_clicked"]["lng"]
-      utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-      st.session_state["add_coord_x_input"] = round(utm_x, 2)
-      st.session_state["add_coord_y_input"] = round(utm_y, 3)
-      st.rerun()
-
-  except Exception as e_map_add:
-    st.info(
-        "Haga clic en el mapa para establecer la posición geográfica."
-        f" ({e_map_add})"
-    )
-
-  st.markdown("<br>", unsafe_allow_html=True)
-
-  c1, c2, c3, c4 = st.columns(4)
-  with c1:
+  col_top1, col_top2, col_top3, col_top4 = st.columns(4)
+  with col_top1:
     st.text_input(
         "ID_0 (Automático)",
         value=str(siguiente_id_0),
@@ -816,62 +748,150 @@ elif st.session_state.active_tab == "➕ Añadir":
         key="add_id_0_bloq",
     )
     val_id_0 = siguiente_id_0
+  with col_top2:
+    val_id = st.text_input("ID *Obligatorio", key="add_id")
+  with col_top3:
+    val_cota = st.number_input("Cota Terr", value=0.0, key="add_cota")
+  with col_top4:
+    val_marca = st.text_input("Marca Valv", key="add_marca")
+
+  col_row2_1, col_row2_2, col_row2_3, col_row2_4 = st.columns(4)
+  with col_row2_1:
     val_serie = st.text_input("Serie", key="add_serie")
-    val_domicilio = st.text_input("Domicilio", key="add_dom")
-    val_coord_x = st.number_input(
-        "Coord X (geom)",
-        format="%.2f",
-        key="add_coord_x_input",
-    )
-
-  with c2:
-    val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
+  with col_row2_2:
     val_diametro = st.number_input(
-        "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
+        "Diámetro", min_value=0, value=0, key="add_diam"
     )
-    val_colonia = st.text_input("Colonia", key="add_col")
-    val_coord_y = st.number_input(
-        "Coord Y (geom)",
-        format="%.3f",
-        key="add_coord_y_input",
-    )
+  with col_row2_3:
+    val_modelo = st.text_input("Modelo Valv", key="add_modelo")
+  with col_row2_4:
+    val_trim = st.text_input("Marca Trim", key="add_trim")
 
-  with c3:
-    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
-    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
+  col_row3_1, col_row3_2, col_row3_3, col_row3_4 = st.columns(4)
+  with col_row3_1:
+    val_domicilio = st.text_input("Domicilio", key="add_dom")
+  with col_row3_2:
+    val_colonia = st.text_input("Colonia", key="add_col")
+  with col_row3_3:
     val_estat = st.selectbox(
         "Estado de la Válvula",
         options=OPCIONES_ESTADO_VALVULA,
         index=0,
         key="add_estat",
     )
+  with col_row3_4:
+    val_sector = st.text_input("Sector Hid", key="add_sector")
 
-  with c4:
-    val_marca = st.text_input("Marca Válvula", key="add_marca")
-    val_trim = st.text_input("Marca Trim", key="add_trim")
-    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
-
-  st.markdown("<br>", unsafe_allow_html=True)
-  c5, c6, c7, c8 = st.columns(4)
-  with c5:
-    val_hora = st.text_input("Hora Calibración", key="add_hora")
-    val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
-  with c6:
-    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
-    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
-  with c7:
-    val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
-    val_fecha_obj = st.date_input(
-        "Fecha última actualización",
-        value=datetime.date.today(),
-        format="DD/MM/YYYY",
-        key="add_fecha",
+  col_row4_1, col_row4_2 = st.columns([2, 2])
+  with col_row4_1:
+    val_coord_x = st.number_input(
+        "Coord X (geom)",
+        format="%.2f",
+        key="add_coord_x_input",
     )
-    val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
-  with c8:
-    pass
+  with col_row4_2:
+    val_coord_y = st.number_input(
+        "Coord Y (geom)",
+        format="%.3f",
+        key="add_coord_y_input",
+    )
 
-  val_observ = st.text_area("Observaciones Generales", key="add_obs")
+  st.markdown(
+      "<p style='color: #00E5FF; font-size: 0.85rem; font-weight: 700;"
+      " margin-top: 5px; margin-bottom: 5px;'>📍 Ubicación geográfica"
+      " [geom] - Haga clic en el mapa para actualizar coordenadas"
+      " automáticamente</p>",
+      unsafe_allow_html=True,
+  )
+
+  col_form_izq, col_form_der = st.columns([2, 2])
+
+  with col_form_izq:
+    col_l1_1, col_l1_2 = st.columns(2)
+    with col_l1_1:
+      val_hora = st.text_input("Hora Cal", key="add_hora")
+    with col_l1_2:
+      val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
+
+    col_l2_1, col_l2_2 = st.columns(2)
+    with col_l2_1:
+      val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
+    with col_l2_2:
+      val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+
+    col_l3_1, col_l3_2 = st.columns(2)
+    with col_l3_1:
+      val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
+    with col_l3_2:
+      val_fecha_obj = st.date_input(
+          "Fecha última actualización",
+          value=datetime.date.today(),
+          format="DD/MM/YYYY",
+          key="add_fecha",
+      )
+      val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
+
+  with col_form_der:
+    try:
+      if (
+          st.session_state["add_coord_x_input"] != 0.0
+          and st.session_state["add_coord_y_input"] != 0.0
+      ):
+        lon_add, lat_add = transformer_to_latlon.transform(
+            st.session_state["add_coord_x_input"],
+            st.session_state["add_coord_y_input"],
+        )
+        m_add = folium.Map(
+            location=[lat_add, lon_add], zoom_start=16, control_scale=True
+        )
+      else:
+        m_add = folium.Map(
+            location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+        )
+
+      agregar_capas_base_mapa(m_add)
+      Fullscreen().add_to(m_add)
+
+      if (
+          st.session_state["add_coord_x_input"] != 0.0
+          and st.session_state["add_coord_y_input"] != 0.0
+      ):
+        folium.Marker(
+            location=[lat_add, lon_add],
+            popup="Nueva VRP",
+            icon=folium.Icon(color="cyan", icon="info-sign"),
+        ).add_to(m_add)
+
+      folium.LayerControl(collapsed=False).add_to(m_add)
+      map_data_add = st_folium(
+          m_add,
+          width="100%",
+          height=250,
+          key="map_add_preview",
+          returned_objects=["last_clicked"],
+      )
+
+      if (
+          map_data_add
+          and map_data_add.get("last_clicked")
+          and map_data_add["last_clicked"]
+          != st.session_state.get("last_clicked_add")
+      ):
+        st.session_state["last_clicked_add"] = map_data_add["last_clicked"]
+        lat_c = map_data_add["last_clicked"]["lat"]
+        lon_c = map_data_add["last_clicked"]["lng"]
+        utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+        st.session_state["add_coord_x_input"] = round(utm_x, 2)
+        st.session_state["add_coord_y_input"] = round(utm_y, 3)
+        st.rerun()
+
+    except Exception as e_map_add:
+      st.info(
+          "Haga clic en el mapa para establecer la posición geográfica."
+          f" ({e_map_add})"
+      )
+
+  val_observ = st.text_area("Observaciones", key="add_obs")
 
   st.markdown(
       "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 20px 0;'>",
@@ -993,7 +1013,7 @@ elif st.session_state.active_tab == "➕ Añadir":
       st.warning("El campo ID es obligatorio.")
 
 # ==========================================
-# SECCIÓN 3: EDITAR Y ELIMINAR (4 COLUMNAS)
+# SECCIÓN 3: EDITAR Y ELIMINAR
 # ==========================================
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.text_input(
@@ -1038,9 +1058,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
     for idx, row in df_vprs.iterrows():
       st.markdown(
-          f"<div style='margin-bottom: 15px;'><span style='color: #00E5FF;"
-          f" font-weight: bold;'>FID Registro: {row['fid']}</span> | <span"
-          f" style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
+          f"<div style='margin-bottom: 5px;'>"
+          f"<span style='color: #00E5FF; font-weight: bold; font-size: 1.1rem;'>FID Registro: {row['fid']}</span>"
+          f"<span style='color: #00E5FF; font-weight: bold; font-size: 1.1rem; margin-left: 15px;'>| ID: {row['id']}</span>"
+          f"</div>",
           unsafe_allow_html=True,
       )
 
@@ -1060,73 +1081,14 @@ elif st.session_state.active_tab == "⚙️ Editar":
       if estado_actual in OPCIONES_ESTADO_VALVULA:
         idx_estado = OPCIONES_ESTADO_VALVULA.index(estado_actual)
 
-      # --- MAPA PRIMERO EN EDICIÓN PARA CAPTURAR CLIC Y ACTUALIZAR st.session_state ---
-      st.markdown(
-          "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-          " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-          " mapa para actualizar coordenadas automáticamente</p>",
-          unsafe_allow_html=True,
+      e_serie_val = (
+          ""
+          if (
+              pd.isna(row["serie"])
+              or str(row["serie"]).strip().lower() in ["nan", "none"]
+          )
+          else str(row["serie"])
       )
-      try:
-        if (
-            st.session_state[x_key] != 0.0
-            and st.session_state[y_key] != 0.0
-        ):
-          lon_ed, lat_ed = transformer_to_latlon.transform(
-              st.session_state[x_key], st.session_state[y_key]
-          )
-          m_ed = folium.Map(
-              location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-          )
-        else:
-          m_ed = folium.Map(
-              location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-          )
-
-        agregar_capas_base_mapa(m_ed)
-        Fullscreen().add_to(m_ed)
-
-        if (
-            st.session_state[x_key] != 0.0
-            and st.session_state[y_key] != 0.0
-        ):
-          folium.Marker(
-              location=[lat_ed, lon_ed],
-              popup=f"VRP: {row['id']}",
-              icon=folium.Icon(color="cyan", icon="info-sign"),
-          ).add_to(m_ed)
-
-        folium.LayerControl(collapsed=False).add_to(m_ed)
-        map_data_ed = st_folium(
-            m_ed,
-            width="100%",
-            height=280,
-            key=f"map_edit_preview_{row['fid']}",
-            returned_objects=["last_clicked"],
-        )
-
-        clicked_key = f"last_clicked_edit_{row['fid']}"
-        if (
-            map_data_ed
-            and map_data_ed.get("last_clicked")
-            and map_data_ed["last_clicked"]
-            != st.session_state.get(clicked_key)
-        ):
-          st.session_state[clicked_key] = map_data_ed["last_clicked"]
-          lat_c = map_data_ed["last_clicked"]["lat"]
-          lon_c = map_data_ed["last_clicked"]["lng"]
-          utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-          st.session_state[x_key] = round(utm_x, 2)
-          st.session_state[y_key] = round(utm_y, 3)
-          st.rerun()
-
-      except Exception as e_map_ed:
-        st.info(
-            "Haga clic en el mapa para actualizar la posición geográfica."
-            f" ({e_map_ed})"
-        )
-
-      st.markdown("<br>", unsafe_allow_html=True)
 
       if es_operador:
         e_id = row["id"]
@@ -1136,215 +1098,230 @@ elif st.session_state.active_tab == "⚙️ Editar":
         e_modelo = row["model_valv"]
         e_trim = row["marca_trim"]
         e_sector = row["sector_hid"]
-        e_domicilio = row["domicilio"]
-        e_colonia = row["colonia"]
 
-        e_serie_val = (
-            ""
-            if (
-                pd.isna(row["serie"])
-                or str(row["serie"]).strip().lower() in ["nan", "none"]
-            )
-            else str(row["serie"])
-        )
+        col_top1, col_top2, col_top3, col_top4 = st.columns(4)
+        with col_top1:
+          st.text_input(
+              "ID_0 (Bloqueado)",
+              value=str(e_id_0 or 0),
+              disabled=True,
+              key=f"id0_bloq_{row['fid']}",
+          )
+        with col_top2:
+          st.text_input(
+              "ID",
+              value=str(e_id or ""),
+              disabled=True,
+              key=f"id_op_{row['fid']}",
+          )
+        with col_top3:
+          st.number_input(
+              "Cota Terr",
+              value=float(e_cota or 0.0),
+              disabled=True,
+              key=f"cota_op_{row['fid']}",
+          )
+        with col_top4:
+          st.text_input(
+              "Marca Valv",
+              value=str(e_marca or ""),
+              disabled=True,
+              key=f"mar_op_{row['fid']}",
+          )
 
-        e_c1, e_c2, e_c3, e_c4 = st.columns(4)
-        with e_c1:
+        col_row2_1, col_row2_2, col_row2_3, col_row2_4 = st.columns(4)
+        with col_row2_1:
           e_serie = st.text_input(
               "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
           )
+        with col_row2_2:
+          st.number_input(
+              "Diámetro",
+              value=int(e_diametro or 0),
+              disabled=True,
+              key=f"diam_op_{row['fid']}",
+          )
+        with col_row2_3:
+          st.text_input(
+              "Modelo Valv",
+              value=str(e_modelo or ""),
+              disabled=True,
+              key=f"mod_op_{row['fid']}",
+          )
+        with col_row2_4:
+          st.text_input(
+              "Marca Trim",
+              value=str(e_trim or ""),
+              disabled=True,
+              key=f"trim_op_{row['fid']}",
+          )
+
+        col_row3_1, col_row3_2, col_row3_3, col_row3_4 = st.columns(4)
+        with col_row3_1:
           e_domicilio = st.text_input(
               "Domicilio",
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
-          e_coord_x = st.number_input(
-              "Coord X (geom)",
-              format="%.2f",
-              key=x_key,
-          )
-        with e_c2:
+        with col_row3_2:
           e_colonia = st.text_input(
               "Colonia",
               value=str(row["colonia"] or ""),
               key=f"col_{row['fid']}",
           )
+        with col_row3_3:
           e_estat = st.selectbox(
               "Estado de la Válvula",
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
-          e_coord_y = st.number_input(
-              "Coord Y (geom)",
-              format="%.3f",
-              key=y_key,
+        with col_row3_4:
+          st.text_input(
+              "Sector Hid",
+              value=str(e_sector or ""),
+              disabled=True,
+              key=f"sec_op_{row['fid']}",
           )
-        with e_c3:
-          e_hora = st.text_input(
-              "Hora Cal",
-              value=str(row["hora_cal"] or ""),
-              key=f"hora_{row['fid']}",
-          )
-          e_cal_ant_d = st.text_input(
-              "Cal Anterior Día (kg/cm)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['fid']}",
-          )
-        with e_c4:
-          e_cal_ant_n = st.text_input(
-              "Cal Anterior Noche (kg/cm)",
-              value=str(row["cal_ant_n"] or ""),
-              key=f"cann_{row['fid']}",
-          )
-          e_cal_act_d = st.text_input(
-              "Cal Actual Día (kg/cm)",
-              value=str(row["cal_act_d"] or ""),
-              key=f"cactd_{row['fid']}",
-          )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        e_c5, e_c6, e_c7, e_c8 = st.columns(4)
-        with e_c5:
-          e_cal_act_n = st.text_input(
-              "Cal Actual Noche (kg/cm)",
-              value=str(row["cal_act_n"] or ""),
-              key=f"cactn_{row['fid']}",
-          )
-        with e_c6:
-          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
-          e_fecha_obj = st.date_input(
-              "Fecha última actualización",
-              value=fecha_def,
-              format="DD/MM/YYYY",
-              key=f"fec_{row['fid']}",
-          )
-          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
-        with e_c7:
-          pass
-        with e_c8:
-          pass
-
-        e_observ = st.text_area(
-            "Observaciones",
-            value=str(row["observ"] or ""),
-            key=f"obs_{row['fid']}",
-        )
 
       else:
-        e_serie_val = (
-            ""
-            if (
-                pd.isna(row["serie"])
-                or str(row["serie"]).strip().lower() in ["nan", "none"]
-            )
-            else str(row["serie"])
-        )
-
-        e_c1, e_c2, e_c3, e_c4 = st.columns(4)
-        with e_c1:
+        col_top1, col_top2, col_top3, col_top4 = st.columns(4)
+        with col_top1:
           st.text_input(
               "ID_0 (Bloqueado)",
-              value=str(row["id_0"] or 0),
+              value=str(e_id_0 or 0),
               disabled=True,
               key=f"id0_bloq_{row['fid']}",
           )
-          e_serie = st.text_input(
-              "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
-          )
-          e_domicilio = st.text_input(
-              "Domicilio",
-              value=str(row["domicilio"] or ""),
-              key=f"dom_{row['fid']}",
-          )
-          e_coord_x = st.number_input(
-              "Coord X (geom)",
-              format="%.2f",
-              key=x_key,
-          )
-        with e_c2:
+        with col_top2:
           e_id = st.text_input(
               "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
           )
-          e_diametro = st.number_input(
-              "Diámetro",
-              value=int(row["diametro"] or 0),
-              key=f"diam_{row['fid']}",
-          )
-          e_colonia = st.text_input(
-              "Colonia",
-              value=str(row["colonia"] or ""),
-              key=f"col_{row['fid']}",
-          )
-          e_coord_y = st.number_input(
-              "Coord Y (geom)",
-              format="%.3f",
-              key=y_key,
-          )
-        with e_c3:
+        with col_top3:
           e_cota = st.number_input(
               "Cota Terr",
               value=float(row["cota_terr"] or 0.0),
               key=f"cota_{row['fid']}",
           )
+        with col_top4:
+          e_marca = st.text_input(
+              "Marca Valv",
+              value=str(row["marca_valv"] or ""),
+              key=f"mar_{row['fid']}",
+          )
+
+        col_row2_1, col_row2_2, col_row2_3, col_row2_4 = st.columns(4)
+        with col_row2_1:
+          e_serie = st.text_input(
+              "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
+          )
+        with col_row2_2:
+          e_diametro = st.number_input(
+              "Diámetro",
+              value=int(row["diametro"] or 0),
+              key=f"diam_{row['fid']}",
+          )
+        with col_row2_3:
           e_modelo = st.text_input(
               "Modelo Valv",
               value=str(row["model_valv"] or ""),
               key=f"mod_{row['fid']}",
           )
+        with col_row2_4:
+          e_trim = st.text_input(
+              "Marca Trim",
+              value=str(row["marca_trim"] or ""),
+              key=f"trim_{row['fid']}",
+          )
+
+        col_row3_1, col_row3_2, col_row3_3, col_row3_4 = st.columns(4)
+        with col_row3_1:
+          e_domicilio = st.text_input(
+              "Domicilio",
+              value=str(row["domicilio"] or ""),
+              key=f"dom_{row['fid']}",
+          )
+        with col_row3_2:
+          e_colonia = st.text_input(
+              "Colonia",
+              value=str(row["colonia"] or ""),
+              key=f"col_{row['fid']}",
+          )
+        with col_row3_3:
           e_estat = st.selectbox(
               "Estado de la Válvula",
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
-        with e_c4:
-          e_marca = st.text_input(
-              "Marca Valv",
-              value=str(row["marca_valv"] or ""),
-              key=f"mar_{row['fid']}",
-          )
-          e_trim = st.text_input(
-              "Marca Trim",
-              value=str(row["marca_trim"] or ""),
-              key=f"trim_{row['fid']}",
-          )
+        with col_row3_4:
           e_sector = st.text_input(
               "Sector Hid",
               value=str(row["sector_hid"] or ""),
               key=f"sec_{row['fid']}",
           )
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        e_c5, e_c6, e_c7, e_c8 = st.columns(4)
-        with e_c5:
+      col_row4_1, col_row4_2 = st.columns([2, 2])
+      with col_row4_1:
+        e_coord_x = st.number_input(
+            "Coord X (geom)",
+            format="%.2f",
+            key=x_key,
+        )
+      with col_row4_2:
+        e_coord_y = st.number_input(
+            "Coord Y (geom)",
+            format="%.3f",
+            key=y_key,
+        )
+
+      st.markdown(
+          "<p style='color: #00E5FF; font-size: 0.85rem; font-weight: 700;"
+          " margin-top: 5px; margin-bottom: 5px;'>📍 Ubicación geográfica"
+          " [geom] - Haga clic en el mapa para actualizar coordenadas"
+          " automáticamente</p>",
+          unsafe_allow_html=True,
+      )
+
+      col_form_izq, col_form_der = st.columns([2, 2])
+
+      with col_form_izq:
+        col_l1_1, col_l1_2 = st.columns(2)
+        with col_l1_1:
           e_hora = st.text_input(
               "Hora Cal",
               value=str(row["hora_cal"] or ""),
               key=f"hora_{row['fid']}",
           )
-          e_cal_ant_d = st.text_input(
-              "Cal Anterior Día (kg/cm)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['fid']}",
-          )
-        with e_c6:
+        with col_l1_2:
           e_cal_ant_n = st.text_input(
               "Cal Anterior Noche (kg/cm)",
               value=str(row["cal_ant_n"] or ""),
               key=f"cann_{row['fid']}",
           )
+
+        col_l2_1, col_l2_2 = st.columns(2)
+        with col_l2_1:
+          e_cal_ant_d = st.text_input(
+              "Cal Anterior Día (kg/cm)",
+              value=str(row["cal_ant_d"] or ""),
+              key=f"cand_{row['fid']}",
+          )
+        with col_l2_2:
           e_cal_act_d = st.text_input(
               "Cal Actual Día (kg/cm)",
               value=str(row["cal_act_d"] or ""),
               key=f"cactd_{row['fid']}",
           )
-        with e_c7:
+
+        col_l3_1, col_l3_2 = st.columns(2)
+        with col_l3_1:
           e_cal_act_n = st.text_input(
               "Cal Actual Noche (kg/cm)",
               value=str(row["cal_act_n"] or ""),
               key=f"cactn_{row['fid']}",
           )
+        with col_l3_2:
           fecha_def = parsear_fecha_segura(row["fecha_ult_"])
           e_fecha_obj = st.date_input(
               "Fecha última actualización",
@@ -1353,14 +1330,72 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"fec_{row['fid']}",
           )
           e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
-        with e_c8:
-          pass
 
-        e_observ = st.text_area(
-            "Observaciones",
-            value=str(row["observ"] or ""),
-            key=f"obs_{row['fid']}",
-        )
+      with col_form_der:
+        try:
+          if (
+              st.session_state[x_key] != 0.0
+              and st.session_state[y_key] != 0.0
+          ):
+            lon_ed, lat_ed = transformer_to_latlon.transform(
+                st.session_state[x_key], st.session_state[y_key]
+            )
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
+          else:
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
+
+          agregar_capas_base_mapa(m_ed)
+          Fullscreen().add_to(m_ed)
+
+          if (
+              st.session_state[x_key] != 0.0
+              and st.session_state[y_key] != 0.0
+          ):
+            folium.Marker(
+                location=[lat_ed, lon_ed],
+                popup=f"VRP: {row['id']}",
+                icon=folium.Icon(color="cyan", icon="info-sign"),
+            ).add_to(m_ed)
+
+          folium.LayerControl(collapsed=False).add_to(m_ed)
+          map_data_ed = st_folium(
+              m_ed,
+              width="100%",
+              height=250,
+              key=f"map_edit_preview_{row['fid']}",
+              returned_objects=["last_clicked"],
+          )
+
+          clicked_key = f"last_clicked_edit_{row['fid']}"
+          if (
+              map_data_ed
+              and map_data_ed.get("last_clicked")
+              and map_data_ed["last_clicked"]
+              != st.session_state.get(clicked_key)
+          ):
+            st.session_state[clicked_key] = map_data_ed["last_clicked"]
+            lat_c = map_data_ed["last_clicked"]["lat"]
+            lon_c = map_data_ed["last_clicked"]["lng"]
+            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+            st.session_state[x_key] = round(utm_x, 2)
+            st.session_state[y_key] = round(utm_y, 3)
+            st.rerun()
+
+        except Exception as e_map_ed:
+          st.info(
+              "Haga clic en el mapa para actualizar la posición geográfica."
+              f" ({e_map_ed})"
+          )
+
+      e_observ = st.text_area(
+          "Observaciones",
+          value=str(row["observ"] or ""),
+          key=f"obs_{row['fid']}",
+      )
 
       st.markdown(
           "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
