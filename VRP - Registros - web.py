@@ -836,9 +836,17 @@ elif st.session_state.active_tab == "➕ Añadir":
     Fullscreen().add_to(m_add)
 
     if current_x != 0.0 and current_y != 0.0:
+      popup_coords_html = f"""
+            <div style="background-color: #0D1424; border: 2px solid #00E5FF; border-radius: 8px; padding: 10px; width: 220px; font-family: sans-serif;">
+                <div style="color: #00E5FF; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; letter-spacing: 0.5px;">COORDENADAS</div>
+                <div style="color: #FF3366; font-weight: 700; font-size: 0.95rem;">{lat_add:.5f},</div>
+                <div style="color: #FF3366; font-weight: 700; font-size: 0.95rem; margin-bottom: 10px;">{lon_add:.5f}</div>
+                <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={lat_add},{lon_add}" target="_blank" style="display: block; background: #00E5FF; color: #080C14; text-align: center; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; text-decoration: none;">👤 STREET VIEW</a>
+            </div>
+            """
       folium.Marker(
           location=[lat_add, lon_add],
-          popup="Nueva VRP",
+          popup=folium.Popup(popup_coords_html, max_width=260),
           icon=folium.Icon(color="cyan", icon="info-sign"),
       ).add_to(m_add)
 
@@ -1319,9 +1327,17 @@ elif st.session_state.active_tab == "⚙️ Editar":
         Fullscreen().add_to(m_ed)
 
         if current_ed_x != 0.0 and current_ed_y != 0.0:
+          popup_coords_html_ed = f"""
+                <div style="background-color: #0D1424; border: 2px solid #00E5FF; border-radius: 8px; padding: 10px; width: 220px; font-family: sans-serif;">
+                    <div style="color: #00E5FF; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; letter-spacing: 0.5px;">COORDENADAS</div>
+                    <div style="color: #FF3366; font-weight: 700; font-size: 0.95rem;">{lat_ed:.5f},</div>
+                    <div style="color: #FF3366; font-weight: 700; font-size: 0.95rem; margin-bottom: 10px;">{lon_ed:.5f}</div>
+                    <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={lat_ed},{lon_ed}" target="_blank" style="display: block; background: #00E5FF; color: #080C14; text-align: center; padding: 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; text-decoration: none;">👤 STREET VIEW</a>
+                </div>
+                """
           folium.Marker(
               location=[lat_ed, lon_ed],
-              popup=f"VRP: {row['id']}",
+              popup=folium.Popup(popup_coords_html_ed, max_width=260),
               icon=folium.Icon(color="cyan", icon="info-sign"),
           ).add_to(m_ed)
 
