@@ -202,7 +202,6 @@ st.write(
         color: #F8FAFC;
     }
 
-    /* Estilización y fijación absoluta de la Barra Lateral para que NUNCA se oculte */
     [data-testid="stSidebar"] {
         background-color: #0A0F1D !important;
         border-right: 1px solid rgba(0, 229, 255, 0.15) !important;
@@ -214,7 +213,6 @@ st.write(
         display: block !important;
     }
     
-    /* Ocultar el botón de colapsar/cerrar la barra lateral para forzar que permanezca fija */
     [data-testid="stSidebarNavSeparator"], button[kind="header"], [data-testid="collapsedControl"] {
         display: none !important;
         visibility: hidden !important;
@@ -226,7 +224,6 @@ st.write(
         padding-right: 1rem !important;
     }
 
-    /* Botones de navegación dinámicos estilo píldora moderna */
     div.row-widget.stRadio > div {
         display: flex;
         flex-direction: column;
@@ -270,7 +267,6 @@ st.write(
         font-weight: 700 !important;
     }
 
-    /* Tarjetas de registros en escritorio */
     .user-card {
         background: #0D1424;
         border: 1px solid rgba(0, 229, 255, 0.15);
@@ -281,7 +277,6 @@ st.write(
         margin-bottom: 10px;
     }
 
-    /* Etiquetas e Inputs orientados a PC */
     .stTextInput label, .stSelectbox label, .stNumberInput label, .stDateInput label, [data-testid="stWidgetLabel"] p {
         color: #E2E8F0 !important;
         font-weight: 600 !important;
@@ -609,7 +604,10 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     m = folium.Map(
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
     )
-    folium.TileLayer("cartodark_matter").add_to(m)
+    folium.TileLayer(
+        "cartodark_matter",
+        attr='&copy; <a href="https://carto.com/">CARTO</a>',
+    ).add_to(m)
 
     marker_cluster = MarkerCluster().add_to(m)
     success_count = 0
@@ -721,7 +719,10 @@ elif st.session_state.active_tab == "➕ Añadir":
     if val_coord_x != 0.0 and val_coord_y != 0.0:
       lon_add, lat_add = transformer_add.transform(val_coord_x, val_coord_y)
       m_add = folium.Map(location=[lat_add, lon_add], zoom_start=16, control_scale=True)
-      folium.TileLayer("cartodark_matter").add_to(m_add)
+      folium.TileLayer(
+          "cartodark_matter",
+          attr='&copy; <a href="https://carto.com/">CARTO</a>',
+      ).add_to(m_add)
       folium.Marker(
           location=[lat_add, lon_add],
           popup=f"Nueva VRP: {val_id or 'Sin ID'}",
@@ -729,7 +730,10 @@ elif st.session_state.active_tab == "➕ Añadir":
       ).add_to(m_add)
     else:
       m_add = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
-      folium.TileLayer("cartodark_matter").add_to(m_add)
+      folium.TileLayer(
+          "cartodark_matter",
+          attr='&copy; <a href="https://carto.com/">CARTO</a>',
+      ).add_to(m_add)
     st_folium(m_add, width="100%", height=250, key="map_add_preview")
   except Exception as e_map_add:
     st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_add})")
@@ -1020,7 +1024,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
           if e_coord_x != 0.0 and e_coord_y != 0.0:
             lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
             m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
-            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.TileLayer(
+                "cartodark_matter",
+                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+            ).add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
@@ -1028,7 +1035,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
             ).add_to(m_ed)
           else:
             m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
-            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.TileLayer(
+                "cartodark_matter",
+                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+            ).add_to(m_ed)
           st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
         except Exception as e_map_ed:
           st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
@@ -1157,7 +1167,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
           if e_coord_x != 0.0 and e_coord_y != 0.0:
             lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
             m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
-            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.TileLayer(
+                "cartodark_matter",
+                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+            ).add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
@@ -1165,7 +1178,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
             ).add_to(m_ed)
           else:
             m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
-            folium.TileLayer("cartodark_matter").add_to(m_ed)
+            folium.TileLayer(
+                "cartodark_matter",
+                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+            ).add_to(m_ed)
           st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
         except Exception as e_map_ed:
           st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
