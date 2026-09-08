@@ -189,7 +189,7 @@ st.write(
     }
 
     .block-container {
-        padding-top: 1rem !important; 
+        padding-top: 0.5rem !important; 
         padding-bottom: 3rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
@@ -328,7 +328,7 @@ st.write(
 if not st.session_state.autenticado:
   st.markdown(
       """
-        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 10px;">
+        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 0px;">
             <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 180px; height: auto;" />
         </div>
     """,
@@ -383,7 +383,7 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 with st.sidebar:
   st.markdown(
       """
-        <div style="text-align: center; padding-top: 5px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
+        <div style="text-align: center; padding-top: 0px; padding-bottom: 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 15px;">
             <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 140px; margin-bottom: 0px;" />
         </div>
     """,
@@ -430,27 +430,15 @@ with st.sidebar:
 # --- CABECERA PRINCIPAL ---
 st.markdown(
     """
-    <div style="text-align: center; margin-bottom: 15px;">
-        <h1 style="color: #00E5FF; font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">Gestión de Válvulas Reductoras de Presión</h1>
+    <div style="text-align: center; margin-bottom: 10px; margin-top: 0px;">
+        <h1 style="color: #00E5FF; font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">Gestion valvular reductoras de presión</h1>
     </div>
 """,
     unsafe_allow_html=True,
 )
 
-col_cab_title, col_cab_info = st.columns([0.8, 0.2])
-with col_cab_title:
-  st.markdown(
-      f'<h2 style="color: #E2E8F0; margin: 0; font-size: 1.3rem; font-weight: 700;">{st.session_state.active_tab}</h2>',
-      unsafe_allow_html=True,
-  )
-with col_cab_info:
-  st.markdown(
-      '<div style="text-align: right; color: #94A3B8; font-size: 0.85rem; padding-top: 5px;">MIAA &bull; VRP Control</div>',
-      unsafe_allow_html=True,
-  )
-
 st.markdown(
-    "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+    "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 10px 0;'>",
     unsafe_allow_html=True,
 )
 
@@ -464,11 +452,6 @@ COLUMNAS_VPRS = """
 # SECCIÓN 1: VER REGISTROS (VPRS)
 # ==========================================
 if st.session_state.active_tab == "📍 Registros":
-  st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">📂 Catálogo de Válvulas VPRS</h3>',
-      unsafe_allow_html=True,
-  )
-
   busqueda = st.text_input(
       "🔍 Buscar válvula (ID, Serie, Domicilio, Col.):",
       placeholder="Ej. VF01, Centro...",
@@ -570,11 +553,6 @@ if st.session_state.active_tab == "📍 Registros":
 # SECCIÓN: MAPA DE VRPs (POSTGIS)
 # ==========================================
 elif st.session_state.active_tab == "🗺️ Mapa":
-  st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">🗺️ Mapa General de VRPs</h3>',
-      unsafe_allow_html=True,
-  )
-
   query_mapa = """
         SELECT 
             id,
@@ -661,11 +639,6 @@ elif st.session_state.active_tab == "➕ Añadir":
         " infraestructura."
     )
     st.stop()
-
-  st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px;">✨ Registrar nueva VPRS (Escritorio)</h3>',
-      unsafe_allow_html=True,
-  )
 
   df_max_id0, err_max = obtener_datos(
       'SELECT MAX(id_0) as max_id FROM "Agua_potable"."VPRS"'
@@ -843,11 +816,6 @@ elif st.session_state.active_tab == "➕ Añadir":
 # SECCIÓN 3: EDITAR Y ELIMINAR (DISEÑO AMPLIO PARA ESCRITORIO)
 # ==========================================
 elif st.session_state.active_tab == "⚙️ Editar":
-  st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">🛠️ Modificar o Eliminar Válvula (Escritorio)</h3>',
-      unsafe_allow_html=True,
-  )
-
   busqueda_edit = st.text_input(
       "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Col.):",
       placeholder="Ej. VRP-01, Centro...",
