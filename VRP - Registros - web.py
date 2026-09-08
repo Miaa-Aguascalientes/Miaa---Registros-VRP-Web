@@ -168,13 +168,11 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
-# --- ESTILOS CSS CON ANCHO TOTAL Y CORRECCIÓN DE POSICIONAMIENTO EN CÁMARA ---
+# --- ESTILOS CSS OPTIMIZADOS PARA PC (ESCRITORIO) ---
 st.write(
     """<style>
-    /* Ocultar únicamente la cabecera nativa de Streamlit sin afectar los headers del calendario BaseWeb */
     #MainMenu, [data-testid="stHeader"] {visibility: hidden !important; display: none !important;} 
     
-    /* REGLA CRÍTICA: Forzar visibilidad del header de mes y año en el calendario */
     div[data-baseweb="calendar"] header,
     div[data-baseweb="popover"] header {
         display: flex !important;
@@ -191,82 +189,36 @@ st.write(
     }
 
     .block-container {
-        padding-top: 0rem !important; 
-        padding-bottom: 2.5rem !important;
-        padding-left: 0rem !important;
-        padding-right: 0rem !important;
+        padding-top: 1.5rem !important; 
+        padding-bottom: 3rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
         background: #080C14;
         color: #F8FAFC;
-        max-width: 100% !important;
-        overflow-x: hidden;
+        max-width: 1400px !important;
     }
     body, [data-testid="stAppViewContainer"] {
         background: #080C14;
         color: #F8FAFC;
-        overflow-x: hidden;
-    }
-    
-    /* REJILLA EXPANDIDA Y FORZADA A BORDE A BORDE */
-    .miaa-grid-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        margin-bottom: 3px !important;
-        padding: 0 !important;
     }
 
-    /* Anular restricciones y paddings de Streamlit en bloques horizontales */
-    [data-testid="stHorizontalBlock"] {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1px !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    [data-testid="column"] {
-        width: 100% !important;
-        flex: unset !important;
-        min-width: unset !important;
-        max-width: 100% !important;
-        padding: 0 2px !important;
-        margin: 0 !important;
-    }
-
-    /* Tarjetas de registros con ancho total absoluto */
-    .user-card {
-        background: #0D1424;
-        border: 1px solid rgba(0, 229, 255, 0.12);
-        border-left: 3px solid #00E5FF;
-        border-radius: 2px;
-        padding: 6px 4px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        word-break: break-word;
-        box-sizing: border-box;
-        width: 100% !important;
-        height: 100% !important;
-    }
-
-    /* Menú de navegación / Pestañas estilo tarjeta MIAA */
+    /* Menú de navegación horizontal superior para PC */
     div.row-widget.stRadio > div {
         display: flex;
         flex-direction: row;
-        justify-content: center;
+        justify-content: flex-start;
         background: #0D1424;
-        border: 1px solid rgba(0, 229, 255, 0.12);
+        border: 1px solid rgba(0, 229, 255, 0.15);
         border-radius: 8px;
-        padding: 3px;
-        gap: 3px;
+        padding: 6px;
+        gap: 10px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
     div.row-widget.stRadio > div > label {
         background: #111A30;
         border: 1px solid rgba(0, 229, 255, 0.15) !important;
         border-radius: 6px !important;
-        padding: 6px 2px !important;
-        flex: 1;
+        padding: 8px 20px !important;
         text-align: center;
         cursor: pointer;
         transition: all 0.2s ease-in-out;
@@ -277,7 +229,7 @@ st.write(
     div.row-widget.stRadio div[role="radiogroup"] label p {
         color: #94A3B8 !important;
         font-weight: 600 !important;
-        font-size: 0.75rem;
+        font-size: 0.9rem;
     }
     div.row-widget.stRadio > div > label[data-checked="true"] {
         background: linear-gradient(135deg, #0A2540 0%, #0077B6 100%) !important;
@@ -290,106 +242,67 @@ st.write(
         font-weight: 700 !important;
     }
 
-    /* Etiquetas de los inputs */
+    /* Tarjetas de registros en escritorio */
+    .user-card {
+        background: #0D1424;
+        border: 1px solid rgba(0, 229, 255, 0.15);
+        border-left: 4px solid #00E5FF;
+        border-radius: 6px;
+        padding: 12px 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-bottom: 10px;
+    }
+
+    /* Etiquetas e Inputs orientados a PC */
     .stTextInput label, .stSelectbox label, .stNumberInput label, .stDateInput label, [data-testid="stWidgetLabel"] p {
         color: #E2E8F0 !important;
         font-weight: 600 !important;
-        font-size: 0.75rem !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        font-size: 0.85rem !important;
     }
 
-    /* Botones principales */
     .stButton>button {
         background: linear-gradient(135deg, #023e8a 0%, #0077b6 100%) !important;
         color: #FFFFFF !important;
         border: 1px solid rgba(0, 229, 255, 0.3) !important;
-        border-radius: 4px;
+        border-radius: 6px;
         font-weight: 700;
-        padding: 0.5rem 1rem;
-        width: 100%;
-        box-shadow: 0 4px 15px rgba(2, 62, 138, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        padding: 0.6rem 1.2rem;
+        box-shadow: 0 4px 15px rgba(2, 62, 138, 0.4);
         transition: all 0.2s ease-in-out;
     }
     .stButton>button:hover {
         background: linear-gradient(135deg, #03045e 0%, #023e8a 100%) !important;
         border-color: #00E5FF !important;
-        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        opacity: 1;
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
     }
 
-    /* FORZAR ANCHO TOTAL Y MAYOR EXPANSIÓN LATERAL EN TODOS LOS CUADROS DE TEXTO Y ENTRADAS */
-    .stTextInput, .stNumberInput, .stSelectbox, .stDateInput, .stTextArea {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    div[data-baseweb="input"], div[data-baseweb="base-input"], div[data-baseweb="select"], div[data-baseweb="textarea"] {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
     div[data-baseweb="input"] input, div[data-baseweb="base-input"] input, div[data-baseweb="textarea"] textarea {
         background-color: #080C14 !important;
         color: #F8FAFC !important;
         border-color: rgba(0, 229, 255, 0.25) !important;
-        border-radius: 4px !important;
-        font-size: 0.8rem !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        border-radius: 6px !important;
+        font-size: 0.9rem !important;
     }
     
-    .stTextInput > div, .stNumberInput > div, .stSelectbox > div, .stDateInput > div {
-        width: 100% !important;
-    }
-
-    /* ESTILO PARA EL EXPANDER DENTRO DE LOS REGISTROS */
     [data-testid="stExpander"] {
         background-color: #080C14 !important;
         border: 1px solid rgba(0, 229, 255, 0.15) !important;
-        border-radius: 4px !important;
-        margin-top: 4px !important;
-        margin-bottom: 4px !important;
+        border-radius: 6px !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
     }
     [data-testid="stExpander"] summary {
         color: #00E5FF !important;
-        font-size: 0.72rem !important;
+        font-size: 0.85rem !important;
         font-weight: 600 !important;
     }
 
-    [data-testid="stFileUploader"] {
-        display: none !important;
-    }
-    
-    /* CORRECCIÓN DE CÁMARA: ESTRUCTURA FLEX PARA EVITAR SOLAPAMIENTO DEL BOTÓN */
-    [data-testid="stCameraInput"] {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    [data-testid="stCameraInput"] > div {
-        width: 100% !important;
-        max-width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-    }
     [data-testid="stCameraInput"] video, 
     [data-testid="stCameraInput"] img {
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 640px !important;
         height: auto !important;
-        min-height: 350px !important;
-        max-height: 450px !important;
-        object-fit: contain !important;
-        border-radius: 6px !important;
-        position: relative !important;
-    }
-    [data-testid="stCameraInput"] button {
-        width: 100% !important;
-        margin-top: 8px !important;
-        position: relative !important;
-        z-index: 5 !important;
+        border-radius: 8px !important;
     }
 </style>""",
     unsafe_allow_html=True,
@@ -399,85 +312,79 @@ st.write(
 if not st.session_state.autenticado:
   st.markdown(
       """
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 20px; margin-top: 40px;">
-            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 160px; height: auto;" />
+        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 20px;">
+            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 180px; height: auto;" />
         </div>
     """,
       unsafe_allow_html=True,
   )
 
   st.markdown(
-      '<h3 style="color: #00E5FF; text-align: center; font-size: 1.2rem;'
-      ' font-weight: 800;">Acceso al Sistema - Gestión VRP\'s</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.4rem; font-weight: 800; margin-bottom: 20px;">Acceso al Sistema - Gestión VRP\'s</h3>',
       unsafe_allow_html=True,
   )
 
-  with st.form("login_form"):
-    usuario_input = st.text_input("Usuario")
-    password_input = st.text_input("Contraseña", type="password")
-    submit_login = st.form_submit_button(
-        "Iniciar Sesión", use_container_width=True
-    )
+  col_login1, col_login2 = st.columns([1, 2])
+  with col_login1:
+    with st.form("login_form"):
+      usuario_input = st.text_input("Usuario")
+      password_input = st.text_input("Contraseña", type="password")
+      submit_login = st.form_submit_button(
+          "Iniciar Sesión", use_container_width=True
+      )
 
-    if submit_login:
-      if usuario_input and password_input:
-        query_login = """
-                    SELECT id, usuario, tipo_usuario, departamento 
-                    FROM usuarios_vrp 
-                    WHERE usuario = :usu AND password = :pas
-                """
-        df_user, err_login = obtener_datos_mysql(
-            query_login, {"usu": usuario_input.strip(), "pas": password_input.strip()}
-        )
-
-        if not err_login and not df_user.empty:
-          st.session_state.autenticado = True
-          st.session_state.usuario_actual = df_user.iloc[0]["usuario"]
-          st.session_state.tipo_usuario = (
-              str(df_user.iloc[0]["tipo_usuario"]).strip().lower()
+      if submit_login:
+        if usuario_input and password_input:
+          query_login = """
+                        SELECT id, usuario, tipo_usuario, departamento 
+                        FROM usuarios_vrp 
+                        WHERE usuario = :usu AND password = :pas
+                    """
+          df_user, err_login = obtener_datos_mysql(
+              query_login, {"usu": usuario_input.strip(), "pas": password_input.strip()}
           )
-          st.session_state.departamento = df_user.iloc[0]["departamento"]
-          st.success("¡Acceso concedido!")
-          t.sleep(0.5)
-          st.rerun()
+
+          if not err_login and not df_user.empty:
+            st.session_state.autenticado = True
+            st.session_state.usuario_actual = df_user.iloc[0]["usuario"]
+            st.session_state.tipo_usuario = (
+                str(df_user.iloc[0]["tipo_usuario"]).strip().lower()
+            )
+            st.session_state.departamento = df_user.iloc[0]["departamento"]
+            st.success("¡Acceso concedido!")
+            t.sleep(0.5)
+            st.rerun()
+          else:
+            st.error("Usuario o contraseña incorrectos.")
         else:
-          st.error("Usuario o contraseña incorrectos.")
-      else:
-        st.warning("Por favor, ingrese usuario y contraseña.")
+          st.warning("Por favor, ingrese usuario y contraseña.")
   st.stop()
 
 # --- CABECERA ---
-st.markdown(
-    """
-    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 4px; padding: 0 2px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 160px; height: auto; flex-shrink: 0;" />
-            <h2 style="color: #00E5FF; margin: 0; font-size: 1.1rem; font-weight: 800; line-height: 1.2;">Gestion VRP's</h2>
-        </div>
-    </div>
-""",
-    unsafe_allow_html=True,
-)
-
-col_cab1, col_cab2 = st.columns([0.45, 0.55])
-with col_cab1:
+col_cab_img, col_cab_title, col_cab_user = st.columns([0.2, 0.6, 0.2])
+with col_cab_img:
+  st.markdown(
+      '<img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 160px; margin-top: 5px;" />',
+      unsafe_allow_html=True,
+  )
+with col_cab_title:
+  st.markdown(
+      '<h2 style="color: #00E5FF; margin: 0; font-size: 1.5rem; font-weight: 800;">Sistema de Gestión de VRP\'s</h2>',
+      unsafe_allow_html=True,
+  )
+with col_cab_user:
+  st.markdown(
+      f'<div style="text-align: right; color: #00E5FF; font-weight: 700; font-size: 0.9rem; padding-top: 10px;">👤 {st.session_state.usuario_actual}</div>',
+      unsafe_allow_html=True,
+  )
   if st.button("Cerrar Sesión", key="btn_logout", use_container_width=True):
     st.session_state.autenticado = False
     st.rerun()
-with col_cab2:
-  st.markdown(
-      f"""
-        <div style="display: flex; justify-content: flex-start; align-items: center; height: 100%; margin-top: 6px;">
-            <span style="color: #00E5FF; font-weight: 700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">👤 {st.session_state.usuario_actual}</span>
-        </div>
-    """,
-      unsafe_allow_html=True,
-  )
 
 # --- DETERMINAR ROL DEL USUARIO ---
 es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
-# --- MENÚ DE NAVEGACIÓN (DINÁMICO SEGÚN ROL) ---
+# --- MENÚ DE NAVEGACIÓN ---
 if es_operador:
   opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
 else:
@@ -502,7 +409,7 @@ if seleccion_tab != st.session_state.active_tab:
   st.rerun()
 
 st.markdown(
-    "<hr style='border: 0.5px solid rgba(0,229,255,0.15); margin: 8px 0;'>",
+    "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
     unsafe_allow_html=True,
 )
 
@@ -517,8 +424,7 @@ COLUMNAS_VPRS = """
 # ==========================================
 if st.session_state.active_tab == "📍 Registros":
   st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.05rem; font-weight: 700;'
-      ' margin-bottom: 8px; padding: 0 2px;">📂 Catálogo de Válvulas VPRS</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">📂 Catálogo de Válvulas VPRS</h3>',
       unsafe_allow_html=True,
   )
 
@@ -541,7 +447,7 @@ if st.session_state.active_tab == "📍 Registros":
     df_vprs, error_db = obtener_datos(query, {"filtro": filtro})
   else:
     query = (
-        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid LIMIT 10'
+        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid LIMIT 15'
     )
     df_vprs, error_db = obtener_datos(query)
 
@@ -550,14 +456,12 @@ if st.session_state.active_tab == "📍 Registros":
   elif not df_vprs.empty:
     if not busqueda or busqueda.strip() == "":
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.78rem; margin-bottom: 4px;"
-          " padding: 0 2px;'>Mostrando primeros 10 registros.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando primeros 15 registros.</p>",
           unsafe_allow_html=True,
       )
     else:
       st.markdown(
-          f"<p style='color: #94A3B8; font-size: 0.78rem; margin-bottom: 4px;"
-          f" padding: 0 2px;'>Se encontraron {len(df_vprs)} registros.</p>",
+          f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
           unsafe_allow_html=True,
       )
 
@@ -573,52 +477,51 @@ if st.session_state.active_tab == "📍 Registros":
       )
 
       card_html = f"""
-                <div class="user-card" style="margin-bottom: 2px;">
-                    <span style="font-size: 0.8rem; font-weight: bold; color: #F8FAFC;">ID: {row['id']}{serie_texto}</span><br>
-                    <span style="color: #00E5FF; font-size: 0.77rem;">📍 {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}</span>
+                <div class="user-card">
+                    <span style="font-size: 0.95rem; font-weight: bold; color: #F8FAFC;">ID: {row['id']}{serie_texto}</span><br>
+                    <span style="color: #00E5FF; font-size: 0.85rem;">📍 {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}</span>
                 </div>
             """
       st.markdown(card_html, unsafe_allow_html=True)
 
-      with st.expander("🔍 Ver detalles completos"):
+      with st.expander("🔍 Ver detalles completos y fotografías"):
         detalle_html = f"""
-                    <span style="color: #94A3B8; font-size: 0.68rem; line-height: 1.4;">
-                        Diámetro: {row['diametro']} pulgadas | Marca: {row['marca_valv']} | Modelo: {row['model_valv']} | Trim: {row['marca_trim']} | Cota: {row['cota_terr']}<br>
-                        Sector: {row['sector_hid']} | Estado de la Válvula: {row['estat_valv']} | Hora Cal: {row['hora_cal']} | Fecha ultima actualización: {row['fecha_ult_']}<br>
-                        Cal Anterior Día (kg/cm): {row['cal_ant_d']} | Cal Anterior Noche (kg/cm): {row['cal_ant_n']}<br>
-                        Cal Actual Día (kg/cm): {row['cal_act_d']} | Cal Actual Noche (kg/cm): {row['cal_act_n']}<br>
-                        Obs: {row['observ']}
+                    <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
+                        <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca_valv']} &nbsp;|&nbsp; <b>Modelo:</b> {row['model_valv']} &nbsp;|&nbsp; <b>Trim:</b> {row['marca_trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
+                        <b>Sector:</b> {row['sector_hid']} &nbsp;|&nbsp; <b>Estado:</b> {row['estat_valv']} &nbsp;|&nbsp; <b>Hora Cal:</b> {row['hora_cal']} &nbsp;|&nbsp; <b>Última Actualización:</b> {row['fecha_ult_']}<br>
+                        <b>Cal Anterior Día:</b> {row['cal_ant_d']} kg/cm &nbsp;|&nbsp; <b>Cal Anterior Noche:</b> {row['cal_ant_n']} kg/cm<br>
+                        <b>Cal Actual Día:</b> {row['cal_act_d']} kg/cm &nbsp;|&nbsp; <b>Cal Actual Noche:</b> {row['cal_act_n']} kg/cm<br>
+                        <b>Observaciones:</b> {row['observ']}
                     </span>
                 """
         st.markdown(detalle_html, unsafe_allow_html=True)
 
-        img_bytes = procesar_bytes_foto(row["fotos"])
-        if img_bytes is not None and len(img_bytes) > 0:
-          st.markdown(
-              "<p style='color: #00E5FF; font-size: 0.75rem; margin-top: 6px;"
-              " margin-bottom: 2px;'>📸 Fotografía 1 registrada:</p>",
-              unsafe_allow_html=True,
-          )
-          st.image(
-              img_bytes,
-              caption=f"ID: {row['id']} (Foto 1)",
-              use_container_width=True,
-          )
+        col_img1, col_img2 = st.columns(2)
+        with col_img1:
+          img_bytes = procesar_bytes_foto(row["fotos"])
+          if img_bytes is not None and len(img_bytes) > 0:
+            st.markdown(
+                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top: 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
+                unsafe_allow_html=True,
+            )
+            st.image(
+                img_bytes,
+                caption=f"ID: {row['id']} (Foto 1)",
+                use_container_width=True,
+            )
 
-        img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-        if img_bytes_2 is not None and len(img_bytes_2) > 0:
-          st.markdown(
-              "<p style='color: #00E5FF; font-size: 0.75rem; margin-top: 6px;"
-              " margin-bottom: 2px;'>📸 Fotografía 2 registrada:</p>",
-              unsafe_allow_html=True,
-          )
-          st.image(
-              img_bytes_2,
-              caption=f"ID: {row['id']} (Foto 2)",
-              use_container_width=True,
-          )
-
-      st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+        with col_img2:
+          img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+          if img_bytes_2 is not None and len(img_bytes_2) > 0:
+            st.markdown(
+                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top: 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
+                unsafe_allow_html=True,
+            )
+            st.image(
+                img_bytes_2,
+                caption=f"ID: {row['id']} (Foto 2)",
+                use_container_width=True,
+            )
   else:
     st.info("No se encontraron registros.")
 
@@ -627,8 +530,7 @@ if st.session_state.active_tab == "📍 Registros":
 # ==========================================
 elif st.session_state.active_tab == "🗺️ Mapa":
   st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.05rem; font-weight: 700;'
-      ' margin-bottom: 8px; padding: 0 2px;">🗺️ Mapa General de VRPs</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">🗺️ Mapa General de VRPs</h3>',
       unsafe_allow_html=True,
   )
 
@@ -680,7 +582,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         color = get_valve_color(estado)
 
         popup_html = f"""
-                <div style="font-size: 0.8rem; color: #000;">
+                <div style="font-size: 0.85rem; color: #000;">
                     <b>ID:</b> {row['id']}<br>
                     <b>Estado:</b> {estado}<br>
                     <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
@@ -689,7 +591,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
         folium.CircleMarker(
             location=[lat, lon],
-            radius=7,
+            radius=8,
             color=color,
             fill=True,
             fill_color=color,
@@ -700,17 +602,16 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       except Exception:
         continue
 
-    st_folium(m, width="100%", height=600)
+    st_folium(m, width="100%", height=650)
     st.markdown(
-        f"<p style='color: #94A3B8; font-size: 0.78rem; margin-top: 6px;'>Se"
-        f" renderizaron {success_count} VRPs georreferenciados en el mapa.</p>",
+        f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se renderizaron {success_count} VRPs georreferenciados en el mapa.</p>",
         unsafe_allow_html=True,
     )
   else:
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
 
 # ==========================================
-# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (SOLO ADMIN / NO OPERADOR)
+# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (DISEÑO AMPLIO PARA ESCRITORIO)
 # ==========================================
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
@@ -721,8 +622,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     st.stop()
 
   st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.05rem; font-weight: 700;'
-      ' margin-bottom: 8px; padding: 0 2px;">✨ Registrar nueva VPRS</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px;">✨ Registrar nueva VPRS (Escritorio)</h3>',
       unsafe_allow_html=True,
   )
 
@@ -740,8 +640,9 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  r1c1, r1c2 = st.columns(2)
-  with r1c1:
+  # Distribución limpia de 3 columnas para PC
+  c1, c2, c3 = st.columns(3)
+  with c1:
     st.text_input(
         "ID_0 (Automático)",
         value=str(siguiente_id_0),
@@ -749,136 +650,101 @@ elif st.session_state.active_tab == "➕ Añadir":
         key="add_id_0_bloq",
     )
     val_id_0 = siguiente_id_0
-  with r1c2:
-    val_id = st.text_input("ID (VRP)", key="add_id")
-
-  r2c1, r2c2 = st.columns(2)
-  with r2c1:
     val_serie = st.text_input("Serie", key="add_serie")
-  with r2c2:
-    val_diametro = st.number_input("Diámetro", min_value=0, value=0, key="add_diam")
-
-  r3c1, r3c2 = st.columns(2)
-  with r3c1:
-    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
-  with r3c2:
-    val_marca = st.text_input("Marca Válvula", key="add_marca")
-
-  r4c1, r4c2 = st.columns(2)
-  with r4c1:
     val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
-  with r4c2:
-    val_trim = st.text_input("Marca Trim", key="add_trim")
-
-  r5c1, r5c2 = st.columns(2)
-  with r5c1:
     val_sector = st.text_input("Sector Hidráulico", key="add_sector")
-  with r5c2:
-    val_domicilio = st.text_input("Domicilio", key="add_dom")
-
-  r6c1, r6c2 = st.columns(2)
-  with r6c1:
-    val_colonia = st.text_input("Colonia", key="add_col")
-  with r6c2:
-    val_estat = st.selectbox(
-        "Estado de la Válvula", options=OPCIONES_ESTADO_VALVULA, index=0, key="add_estat"
-    )
-
-  r7c1, r7c2 = st.columns(2)
-  with r7c1:
     val_hora = st.text_input("Hora Calibración", key="add_hora")
-  with r7c2:
-    val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
-
-  r8c1, r8c2 = st.columns(2)
-  with r8c1:
-    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
-  with r8c2:
-    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
-
-  r9c1, r9c2 = st.columns(2)
-  with r9c1:
     val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
-  with r9c2:
+
+  with c2:
+    val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
+    val_diametro = st.number_input(
+        "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
+    )
+    val_trim = st.text_input("Marca Trim", key="add_trim")
+    val_domicilio = st.text_input("Domicilio", key="add_dom")
+    val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
     val_fecha_obj = st.date_input(
         "Fecha última actualización",
         value=datetime.date.today(),
-        min_value=datetime.date(2000, 1, 1),
-        max_value=datetime.date(2035, 12, 31),
         format="DD/MM/YYYY",
         key="add_fecha",
     )
     val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
 
-  val_observ = st.text_input("Observaciones", key="add_obs")
+  with c3:
+    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
+    val_marca = st.text_input("Marca Válvula", key="add_marca")
+    val_colonia = st.text_input("Colonia", key="add_col")
+    val_estat = st.selectbox(
+        "Estado de la Válvula", options=OPCIONES_ESTADO_VALVULA, index=0, key="add_estat"
+    )
+    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
+    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+
+  val_observ = st.text_area("Observaciones Generales", key="add_obs")
 
   st.markdown(
-      "<hr style='border: 0.3px solid rgba(0,229,255,0.2);'>",
+      "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 20px 0;'>",
       unsafe_allow_html=True,
   )
   st.markdown(
-      "<p style='color: #00E5FF; font-weight: 600; font-size: 0.8rem; padding:"
-      " 0 2px;'>📸 Fotografía 1:</p>",
+      '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸 Registro de Fotografías</h4>',
       unsafe_allow_html=True,
   )
 
-  cam_key_nuevo = "cam_open_nuevo"
-  if cam_key_nuevo not in st.session_state:
-    st.session_state[cam_key_nuevo] = False
+  col_foto1, col_foto2 = st.columns(2)
 
-  if not st.session_state[cam_key_nuevo]:
-    if st.button(
-        "📷 Activar Cámara 1", key="btn_open_cam_nuevo", use_container_width=True
-    ):
-      st.session_state[cam_key_nuevo] = True
-      st.rerun()
-  else:
-    if st.button(
-        "❌ Cerrar Cámara 1", key="btn_close_cam_nuevo", use_container_width=True
-    ):
+  with col_foto1:
+    st.markdown(
+        "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 1</p>",
+        unsafe_allow_html=True,
+    )
+    cam_key_nuevo = "cam_open_nuevo"
+    if cam_key_nuevo not in st.session_state:
       st.session_state[cam_key_nuevo] = False
-      st.rerun()
 
-  foto_camara = None
-  if st.session_state[cam_key_nuevo]:
-    foto_camara = st.camera_input(
-        "Capturar 1", key="camara_nuevo", label_visibility="collapsed"
+    if not st.session_state[cam_key_nuevo]:
+      if st.button("📷 Activar Cámara 1", key="btn_open_cam_nuevo"):
+        st.session_state[cam_key_nuevo] = True
+        st.rerun()
+    else:
+      if st.button("❌ Cerrar Cámara 1", key="btn_close_cam_nuevo"):
+        st.session_state[cam_key_nuevo] = False
+        st.rerun()
+
+    foto_camara = None
+    if st.session_state[cam_key_nuevo]:
+      foto_camara = st.camera_input(
+          "Capturar 1", key="camara_nuevo", label_visibility="collapsed"
+      )
+
+  with col_foto2:
+    st.markdown(
+        "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 2</p>",
+        unsafe_allow_html=True,
     )
-
-  st.markdown(
-      "<p style='color: #00E5FF; font-weight: 600; font-size: 0.8rem; padding:"
-      " 0 2px; margin-top: 10px;'>📸 Fotografía 2:</p>",
-      unsafe_allow_html=True,
-  )
-
-  cam_key_nuevo_2 = "cam_open_nuevo_2"
-  if cam_key_nuevo_2 not in st.session_state:
-    st.session_state[cam_key_nuevo_2] = False
-
-  if not st.session_state[cam_key_nuevo_2]:
-    if st.button(
-        "📷 Activar Cámara 2",
-        key="btn_open_cam_nuevo_2",
-        use_container_width=True,
-    ):
-      st.session_state[cam_key_nuevo_2] = True
-      st.rerun()
-  else:
-    if st.button(
-        "❌ Cerrar Cámara 2",
-        key="btn_close_cam_nuevo_2",
-        use_container_width=True,
-    ):
+    cam_key_nuevo_2 = "cam_open_nuevo_2"
+    if cam_key_nuevo_2 not in st.session_state:
       st.session_state[cam_key_nuevo_2] = False
-      st.rerun()
 
-  foto_camara_2 = None
-  if st.session_state[cam_key_nuevo_2]:
-    foto_camara_2 = st.camera_input(
-        "Capturar 2", key="camara_nuevo_2", label_visibility="collapsed"
-    )
+    if not st.session_state[cam_key_nuevo_2]:
+      if st.button("📷 Activar Cámara 2", key="btn_open_cam_nuevo_2"):
+        st.session_state[cam_key_nuevo_2] = True
+        st.rerun()
+    else:
+      if st.button("❌ Cerrar Cámara 2", key="btn_close_cam_nuevo_2"):
+        st.session_state[cam_key_nuevo_2] = False
+        st.rerun()
 
-  if st.button("💾 Guardar Registro", key="btn_guardar_nuevo", use_container_width=True):
+    foto_camara_2 = None
+    if st.session_state[cam_key_nuevo_2]:
+      foto_camara_2 = st.camera_input(
+          "Capturar 2", key="camara_nuevo_2", label_visibility="collapsed"
+      )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+  if st.button("💾 Guardar Nuevo Registro VPRS", key="btn_guardar_nuevo"):
     if val_id:
       try:
         foto_bytes = (
@@ -934,13 +800,11 @@ elif st.session_state.active_tab == "➕ Añadir":
       st.warning("El campo ID es obligatorio.")
 
 # ==========================================
-# SECCIÓN 3: EDITAR Y ELIMINAR (SOLO 1 REGISTRO A LA VEZ)
+# SECCIÓN 3: EDITAR Y ELIMINAR (DISEÑO AMPLIO PARA ESCRITORIO)
 # ==========================================
 elif st.session_state.active_tab == "⚙️ Editar":
   st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.05rem; font-weight: 700;'
-      ' margin-bottom: 8px; padding: 0 2px;">🛠️ Modificar o Eliminar'
-      ' Válvula</h3>',
+      '<h3 style="color: #00E5FF; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px;">🛠️ Modificar o Eliminar Válvula (Escritorio)</h3>',
       unsafe_allow_html=True,
   )
 
@@ -973,24 +837,18 @@ elif st.session_state.active_tab == "⚙️ Editar":
   elif not df_vprs.empty:
     if not busqueda_edit or busqueda_edit.strip() == "":
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.78rem; margin-bottom: 4px;"
-          " padding: 0 2px;'>Mostrando el primer registro de la base de"
-          " datos.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando el primer registro de la base de datos.</p>",
           unsafe_allow_html=True,
       )
     else:
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.78rem; margin-bottom: 4px;"
-          " padding: 0 2px;'>Mostrando la primera coincidencia"
-          " encontrada.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando la primera coincidencia encontrada.</p>",
           unsafe_allow_html=True,
       )
 
     for idx, row in df_vprs.iterrows():
       st.markdown(
-          f"<div style='padding: 0 2px;'><span style='color: #00E5FF;"
-          f" font-weight: bold;'>FID Registro: {row['fid']}</span> | <span"
-          f" style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
+          f"<div style='margin-bottom: 15px;'><span style='color: #00E5FF; font-weight: bold;'>FID Registro: {row['fid']}</span> | <span style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
           unsafe_allow_html=True,
       )
 
@@ -1012,7 +870,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
         e_domicilio = row["domicilio"]
         e_colonia = row["colonia"]
 
-        e_r1c1, e_r1c2 = st.columns(2)
+        e_c1, e_c2, e_c3 = st.columns(3)
         e_serie_val = (
             ""
             if (
@@ -1021,318 +879,253 @@ elif st.session_state.active_tab == "⚙️ Editar":
             )
             else str(row["serie"])
         )
-        with e_r1c1:
+        with e_c1:
           e_serie = st.text_input(
               "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
           )
-        with e_r1c2:
+          e_hora = st.text_input(
+              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+          )
+          e_cal_act_n = st.text_input(
+              "Cal Actual Noche (kg/cm)",
+              value=str(row["cal_act_n"] or ""),
+              key=f"cactn_{row['fid']}",
+          )
+        with e_c2:
           e_estat = st.selectbox(
               "Estado de la Válvula",
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
-
-        e_r2c1, e_r2c2 = st.columns(2)
-        with e_r2c1:
-          e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
-          )
-        with e_r2c2:
           e_cal_ant_d = st.text_input(
               "Cal Anterior Día (kg/cm)",
               value=str(row["cal_ant_d"] or ""),
               key=f"cand_{row['fid']}",
           )
-
-        e_r3c1, e_r3c2 = st.columns(2)
-        with e_r3c1:
+          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
+          e_fecha_obj = st.date_input(
+              "Fecha última actualización",
+              value=fecha_def,
+              format="DD/MM/YYYY",
+              key=f"fec_{row['fid']}",
+          )
+          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+        with e_c3:
           e_cal_ant_n = st.text_input(
               "Cal Anterior Noche (kg/cm)",
               value=str(row["cal_ant_n"] or ""),
               key=f"cann_{row['fid']}",
           )
-        with e_r3c2:
           e_cal_act_d = st.text_input(
               "Cal Actual Día (kg/cm)",
               value=str(row["cal_act_d"] or ""),
               key=f"cactd_{row['fid']}",
           )
 
-        e_r4c1, e_r4c2 = st.columns(2)
-        with e_r4c1:
-          e_cal_act_n = st.text_input(
-              "Cal Actual Noche (kg/cm)",
-              value=str(row["cal_act_n"] or ""),
-              key=f"cactn_{row['fid']}",
-          )
-        with e_r4c2:
-          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
-          e_fecha_obj = st.date_input(
-              "Fecha última actualización",
-              value=fecha_def,
-              min_value=datetime.date(2000, 1, 1),
-              max_value=datetime.date(2035, 12, 31),
-              format="DD/MM/YYYY",
-              key=f"fec_{row['fid']}",
-          )
-          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
-
-        e_observ = st.text_input(
+        e_observ = st.text_area(
             "Observaciones",
             value=str(row["observ"] or ""),
             key=f"obs_{row['fid']}",
         )
 
       else:
-        e_r1c1, e_r1c2 = st.columns(2)
-        with e_r1c1:
+        e_c1, e_c2, e_c3 = st.columns(3)
+        with e_c1:
           st.text_input(
               "ID_0 (Bloqueado)",
               value=str(row["id_0"] or 0),
               disabled=True,
               key=f"id0_bloq_{row['fid']}",
           )
-        with e_r1c2:
-          e_id = st.text_input(
-              "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+          e_serie_val = (
+              ""
+              if (
+                  pd.isna(row["serie"])
+                  or str(row["serie"]).strip().lower() in ["nan", "none"]
+              )
+              else str(row["serie"])
           )
-
-        e_r2c1, e_r2c2 = st.columns(2)
-        e_serie_val = (
-            ""
-            if (
-                pd.isna(row["serie"])
-                or str(row["serie"]).strip().lower() in ["nan", "none"]
-            )
-            else str(row["serie"])
-        )
-        with e_r2c1:
           e_serie = st.text_input(
               "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
           )
-        with e_r2c2:
-          e_diametro = st.number_input(
-              "Diámetro",
-              value=int(row["diametro"] or 0),
-              key=f"diam_{row['fid']}",
-          )
-
-        e_r3c1, e_r3c2 = st.columns(2)
-        with e_r3c1:
-          e_cota = st.number_input(
-              "Cota Terr",
-              value=float(row["cota_terr"] or 0.0),
-              key=f"cota_{row['fid']}",
-          )
-        with e_r3c2:
-          e_marca = st.text_input(
-              "Marca Valv",
-              value=str(row["marca_valv"] or ""),
-              key=f"mar_{row['fid']}",
-          )
-
-        e_r4c1, e_r4c2 = st.columns(2)
-        with e_r4c1:
           e_modelo = st.text_input(
               "Modelo Valv",
               value=str(row["model_valv"] or ""),
               key=f"mod_{row['fid']}",
           )
-        with e_r4c2:
-          e_trim = st.text_input(
-              "Marca Trim",
-              value=str(row["marca_trim"] or ""),
-              key=f"trim_{row['fid']}",
-          )
-
-        e_r5c1, e_r5c2 = st.columns(2)
-        with e_r5c1:
-          e_sector = st.text_input(
-              "Sector Hid",
-              value=str(row["sector_hid"] or ""),
-              key=f"sec_{row['fid']}",
-          )
-        with e_r5c2:
           e_domicilio = st.text_input(
               "Domicilio",
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
-
-        e_r6c1, e_r6c2 = st.columns(2)
-        with e_r6c1:
+          e_hora = st.text_input(
+              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+          )
+          e_cal_ant_n = st.text_input(
+              "Cal Anterior Noche (kg/cm)",
+              value=str(row["cal_ant_n"] or ""),
+              key=f"cann_{row['fid']}",
+          )
+        with e_c2:
+          e_id = st.text_input(
+              "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+          )
+          e_diametro = st.number_input(
+              "Diámetro",
+              value=int(row["diametro"] or 0),
+              key=f"diam_{row['fid']}",
+          )
+          e_trim = st.text_input(
+              "Marca Trim",
+              value=str(row["marca_trim"] or ""),
+              key=f"trim_{row['fid']}",
+          )
           e_colonia = st.text_input(
               "Colonia",
               value=str(row["colonia"] or ""),
               key=f"col_{row['fid']}",
           )
-        with e_r6c2:
+          e_cal_ant_d = st.text_input(
+              "Cal Anterior Día (kg/cm)",
+              value=str(row["cal_ant_d"] or ""),
+              key=f"cand_{row['fid']}",
+          )
+          e_cal_act_d = st.text_input(
+              "Cal Actual Día (kg/cm)",
+              value=str(row["cal_act_d"] or ""),
+              key=f"cactd_{row['fid']}",
+          )
+        with e_c3:
+          e_cota = st.number_input(
+              "Cota Terr",
+              value=float(row["cota_terr"] or 0.0),
+              key=f"cota_{row['fid']}",
+          )
+          e_marca = st.text_input(
+              "Marca Valv",
+              value=str(row["marca_valv"] or ""),
+              key=f"mar_{row['fid']}",
+          )
+          e_sector = st.text_input(
+              "Sector Hid",
+              value=str(row["sector_hid"] or ""),
+              key=f"sec_{row['fid']}",
+          )
           e_estat = st.selectbox(
               "Estado de la Válvula",
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
           )
-
-        e_r7c1, e_r7c2 = st.columns(2)
-        with e_r7c1:
-          e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
-          )
-        with e_r7c2:
-          e_cal_ant_d = st.text_input(
-              "Cal Anterior Día (kg/cm)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['fid']}",
-          )
-
-        e_r8c1, e_r8c2 = st.columns(2)
-        with e_r8c1:
-          e_cal_ant_n = st.text_input(
-              "Cal Anterior Noche (kg/cm)",
-              value=str(row["cal_ant_n"] or ""),
-              key=f"cann_{row['fid']}",
-          )
-        with e_r8c2:
-          e_cal_act_d = st.text_input(
-              "Cal Actual Día (kg/cm)",
-              value=str(row["cal_act_d"] or ""),
-              key=f"cactd_{row['fid']}",
-          )
-
-        e_r9c1, e_r9c2 = st.columns(2)
-        with e_r9c1:
           e_cal_act_n = st.text_input(
               "Cal Actual Noche (kg/cm)",
               value=str(row["cal_act_n"] or ""),
               key=f"cactn_{row['fid']}",
           )
-        with e_r9c2:
           fecha_def = parsear_fecha_segura(row["fecha_ult_"])
           e_fecha_obj = st.date_input(
               "Fecha última actualización",
               value=fecha_def,
-              min_value=datetime.date(2000, 1, 1),
-              max_value=datetime.date(2035, 12, 31),
               format="DD/MM/YYYY",
               key=f"fec_{row['fid']}",
           )
           e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
 
-        e_observ = st.text_input(
+        e_observ = st.text_area(
             "Observaciones",
             value=str(row["observ"] or ""),
             key=f"obs_{row['fid']}",
         )
 
-      foto_actual_bytes = procesar_bytes_foto(row["fotos"])
-      eliminar_foto = False
-
-      if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.75rem; margin-top: 10px;"
-            " margin-bottom: 2px;'>📸 Fotografía 1 actual:</p>",
-            unsafe_allow_html=True,
-        )
-        st.image(
-            foto_actual_bytes,
-            caption=f"ID: {row['id']} (Foto 1)",
-            use_container_width=True,
-        )
-        eliminar_foto = st.checkbox(
-            "🗑️ Eliminar la fotografía 1 actual", key=f"del_foto_{row['fid']}"
-        )
-
       st.markdown(
-          "<p style='color: #00E5FF; font-weight: 600; font-size: 0.78rem;"
-          " padding: 0 2px; margin-top: 10px;'>📸 Reemplazar o capturar nueva"
-          " Foto 1:</p>",
+          "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸 Gestión de Fotografías</h4>',
           unsafe_allow_html=True,
       )
 
-      cam_key_edit = f"cam_open_edit_{row['fid']}"
-      if cam_key_edit not in st.session_state:
-        st.session_state[cam_key_edit] = False
+      col_edit_f1, col_edit_f2 = st.columns(2)
 
-      if not st.session_state[cam_key_edit]:
-        if st.button(
-            "📷 Activar Cámara 1",
-            key=f"btn_open_cam_edit_{row['fid']}",
-            use_container_width=True,
-        ):
-          st.session_state[cam_key_edit] = True
-          st.rerun()
-      else:
-        if st.button(
-            "❌ Cerrar Cámara 1",
-            key=f"btn_close_cam_edit_{row['fid']}",
-            use_container_width=True,
-        ):
+      with col_edit_f1:
+        foto_actual_bytes = procesar_bytes_foto(row["fotos"])
+        eliminar_foto = False
+
+        if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
+          st.image(
+              foto_actual_bytes,
+              caption=f"ID: {row['id']} (Foto 1 Actual)",
+              use_container_width=True,
+          )
+          eliminar_foto = st.checkbox(
+              "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
+          )
+
+        cam_key_edit = f"cam_open_edit_{row['fid']}"
+        if cam_key_edit not in st.session_state:
           st.session_state[cam_key_edit] = False
-          st.rerun()
 
-      nueva_foto_camara = None
-      if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
-        nueva_foto_camara = st.camera_input(
-            "Tomar foto 1", key=f"cam_edit_{row['fid']}", label_visibility="collapsed"
-        )
+        if not st.session_state[cam_key_edit]:
+          if st.button(
+              "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
+          ):
+            st.session_state[cam_key_edit] = True
+            st.rerun()
+        else:
+          if st.button(
+              "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
+          ):
+            st.session_state[cam_key_edit] = False
+            st.rerun()
 
-      foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-      eliminar_foto_2 = False
+        nueva_foto_camara = None
+        if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
+          nueva_foto_camara = st.camera_input(
+              "Tomar foto 1", key=f"cam_edit_{row['fid']}", label_visibility="collapsed"
+          )
 
-      if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.75rem; margin-top: 15px;"
-            " margin-bottom: 2px;'>📸 Fotografía 2 actual:</p>",
-            unsafe_allow_html=True,
-        )
-        st.image(
-            foto_actual_bytes_2,
-            caption=f"ID: {row['id']} (Foto 2)",
-            use_container_width=True,
-        )
-        eliminar_foto_2 = st.checkbox(
-            "🗑️ Eliminar la fotografía 2 actual", key=f"del_foto_2_{row['fid']}"
-        )
+      with col_edit_f2:
+        foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+        eliminar_foto_2 = False
 
-      st.markdown(
-          "<p style='color: #00E5FF; font-weight: 600; font-size: 0.78rem;"
-          " padding: 0 2px; margin-top: 10px;'>📸 Reemplazar o capturar nueva"
-          " Foto 2:</p>",
-          unsafe_allow_html=True,
-      )
+        if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
+          st.image(
+              foto_actual_bytes_2,
+              caption=f"ID: {row['id']} (Foto 2 Actual)",
+              use_container_width=True,
+          )
+          eliminar_foto_2 = st.checkbox(
+              "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
+          )
 
-      cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
-      if cam_key_edit_2 not in st.session_state:
-        st.session_state[cam_key_edit_2] = False
-
-      if not st.session_state[cam_key_edit_2]:
-        if st.button(
-            "📷 Activar Cámara 2",
-            key=f"btn_open_cam_edit_2_{row['fid']}",
-            use_container_width=True,
-        ):
-          st.session_state[cam_key_edit_2] = True
-          st.rerun()
-      else:
-        if st.button(
-            "❌ Cerrar Cámara 2",
-            key=f"btn_close_cam_edit_2_{row['fid']}",
-            use_container_width=True,
-        ):
+        cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
+        if cam_key_edit_2 not in st.session_state:
           st.session_state[cam_key_edit_2] = False
-          st.rerun()
 
-      nueva_foto_camara_2 = None
-      if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
-        nueva_foto_camara_2 = st.camera_input(
-            "Tomar foto 2", key=f"cam_edit_2_{row['fid']}", label_visibility="collapsed"
-        )
+        if not st.session_state[cam_key_edit_2]:
+          if st.button(
+              "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
+          ):
+            st.session_state[cam_key_edit_2] = True
+            st.rerun()
+        else:
+          if st.button(
+              "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
+          ):
+            st.session_state[cam_key_edit_2] = False
+            st.rerun()
+
+        nueva_foto_camara_2 = None
+        if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
+          nueva_foto_camara_2 = st.camera_input(
+              "Tomar foto 2", key=f"cam_edit_2_{row['fid']}", label_visibility="collapsed"
+          )
 
       st.markdown("<br>", unsafe_allow_html=True)
       actualizar_click = st.button(
-          "💾 Actualizar Registro", key=f"btn_act_{row['fid']}", use_container_width=True
+          "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
       )
 
       if actualizar_click:
@@ -1396,16 +1189,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
       if not es_operador:
         st.markdown(
-            "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 15px"
-            " 0;'>",
+            "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px 0;'>",
             unsafe_allow_html=True,
         )
 
         if st.session_state.registro_to_delete == row["fid"]:
           st.markdown(
-              f"<p style='color: #ff4d4d; font-size: 0.8rem; font-weight:"
-              f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
-              f" {row['id']}), escribe la palabra 'delete':</p>",
+              f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight: bold;'>Para eliminar el registro FID {row['fid']} (ID: {row['id']}), escribe la palabra 'delete':</p>",
               unsafe_allow_html=True,
           )
           confirm_text = st.text_input(
@@ -1414,11 +1204,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
           col_y, col_n = st.columns(2)
           with col_y:
-            if st.button(
-                "Sí, eliminar",
-                key=f"confirm_del_{row['fid']}",
-                use_container_width=True,
-            ):
+            if st.button("Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"):
               if confirm_text.strip() == "delete":
                 try:
                   ejecutar_sql(
@@ -1432,39 +1218,23 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 except Exception as ex_del:
                   st.error(f"Error al eliminar: {ex_del}")
               else:
-                st.error(
-                    "Debes escribir exactamente la palabra 'delete' para"
-                    " confirmar."
-                )
+                st.error("Debes escribir exactamente la palabra 'delete' para confirmar.")
           with col_n:
-            if st.button(
-                "Cancelar",
-                key=f"cancel_del_{row['fid']}",
-                use_container_width=True,
-            ):
+            if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
               st.session_state.registro_to_delete = None
               st.rerun()
         else:
-          if st.button(
-              "🗑️ Eliminar este registro",
-              key=f"btn_del_{row['fid']}",
-              use_container_width=True,
-          ):
+          if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
             st.session_state.registro_to_delete = row["fid"]
             st.rerun()
-
-      st.markdown(
-          "<hr style='border: 1px solid rgba(0,229,255,0.2); margin: 20px 0;'>",
-          unsafe_allow_html=True,
-      )
   else:
     st.info("No se encontró ningún registro para editar.")
 
 # --- PIE DE PÁGINA ---
 st.markdown(
     """
-    <div style="text-align: center; color: #94A3B8; font-size: 0.78rem; margin-top: 2rem; border-top: 1px solid rgba(0, 229, 255, 0.12); padding-top: 0.8rem;">
-        © 2026 MIAA &bull; Sistema de Gestión PostGIS y MySQL
+    <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(0, 229, 255, 0.15); padding-top: 1rem;">
+        © 2026 MIAA &bull; Sistema de Gestión PostGIS y MySQL (Escritorio)
     </div>
 """,
     unsafe_allow_html=True,
