@@ -390,6 +390,16 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
+  st.markdown(
+      f"""
+        <div style="background: #111A30; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 15px;">
+            <div style="color: #00E5FF; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px;">👤 {st.session_state.usuario_actual}</div>
+            <div style="color: #94A3B8; font-size: 0.75rem; text-transform: uppercase;">{st.session_state.get('tipo_usuario', 'usuario')}</div>
+        </div>
+    """,
+      unsafe_allow_html=True,
+  )
+
   if es_operador:
     opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
   else:
@@ -413,15 +423,6 @@ with st.sidebar:
     st.rerun()
 
   st.markdown("<br><br>", unsafe_allow_html=True)
-  st.markdown(
-      f"""
-        <div style="background: #111A30; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
-            <div style="color: #00E5FF; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px;">👤 {st.session_state.usuario_actual}</div>
-            <div style="color: #94A3B8; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">{st.session_state.get('tipo_usuario', 'usuario')}</div>
-        </div>
-    """,
-      unsafe_allow_html=True,
-  )
 
   if st.button("Cerrar Sesión", key="btn_logout", use_container_width=True):
     st.session_state.autenticado = False
