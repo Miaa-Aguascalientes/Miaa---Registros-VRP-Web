@@ -4,7 +4,7 @@ import datetime
 import time as t
 from zoneinfo import ZoneInfo
 import folium
-from folium.plugins import MarkerCluster
+from folium.plugins import Fullscreen, MarkerCluster
 import pandas as pd
 from pyproj import Transformer
 from sqlalchemy import create_engine, text
@@ -27,6 +27,7 @@ if "autenticado" not in st.session_state:
   st.session_state.autenticado = False
 
 zona_mx = ZoneInfo("America/Mexico_City")
+API_KEY_CARTO = "cb1_26ji_1_864817f3cb73c0bdbe0daccd"
 
 OPCIONES_ESTADO_VALVULA = [
     "Abierta",
@@ -364,7 +365,8 @@ if not st.session_state.autenticado:
                         WHERE usuario = :usu AND password = :pas
                     """
           df_user, err_login = obtener_datos_mysql(
-              query_login, {"usu": usuario_input.strip(), "pas": password_input.strip()}
+              query_login,
+              {"usu": usuario_input.strip(), "pas": password_input.strip()},
           )
 
           if not err_login and not df_user.empty:
@@ -489,12 +491,14 @@ if st.session_state.active_tab == "📍 Registros":
   elif not df_vprs.empty:
     if not busqueda or busqueda.strip() == "":
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando primeros 15 registros.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+          " 10px;'>Mostrando primeros 15 registros.</p>",
           unsafe_allow_html=True,
       )
     else:
       st.markdown(
-          f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
+          f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+          f" 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
           unsafe_allow_html=True,
       )
 
@@ -540,7 +544,8 @@ if st.session_state.active_tab == "📍 Registros":
           img_bytes = procesar_bytes_foto(row["fotos"])
           if img_bytes is not None and len(img_bytes) > 0:
             st.markdown(
-                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top: 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
+                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                " 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
                 unsafe_allow_html=True,
             )
             st.image(
@@ -553,7 +558,8 @@ if st.session_state.active_tab == "📍 Registros":
           img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
           if img_bytes_2 is not None and len(img_bytes_2) > 0:
             st.markdown(
-                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top: 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
+                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                " 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
                 unsafe_allow_html=True,
             )
             st.image(
@@ -604,10 +610,22 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     m = folium.Map(
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
     )
+
     folium.TileLayer(
-        "cartodark_matter",
-        attr='&copy; <a href="https://carto.com/">CARTO</a>',
+        tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+        name="Vista Nocturna",
+        attr=(
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            ' contributors &copy; <a'
+            ' href="https://carto.com/attributions">CARTO</a>'
+        ),
+        subdomains="abcd",
+        max_zoom=20,
+        overlay=False,
+        control=True,
     ).add_to(m)
+
+    Fullscreen().add_to(m)
 
     marker_cluster = MarkerCluster().add_to(m)
     success_count = 0
@@ -639,9 +657,11 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       except Exception:
         continue
 
-    st_folium(m, width="100%", height=650)
+    st_folium(m, width="100%", height=650, returned_objects=[])
     st.markdown(
-        f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se renderizaron {success_count} VRPs georreferenciados en el mapa.</p>",
+        f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top:"
+        f" 10px;'>Se renderizaron {success_count} VRPs georreferenciados en el"
+        " mapa.</p>",
         unsafe_allow_html=True,
     )
   else:
@@ -701,7 +721,10 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
     val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
     val_estat = st.selectbox(
-        "Estado de la Válvula", options=OPCIONES_ESTADO_VALVULA, index=0, key="add_estat"
+        "Estado de la Válvula",
+        options=OPCIONES_ESTADO_VALVULA,
+        index=0,
+        key="add_estat",
     )
 
   with c4:
@@ -711,32 +734,64 @@ elif st.session_state.active_tab == "➕ Añadir":
 
   # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Añadir) ---
   st.markdown(
-      "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+      "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
+      " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
       unsafe_allow_html=True,
   )
   try:
-    transformer_add = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+    transformer_add = Transformer.from_crs(
+        "EPSG:32613", "EPSG:4326", always_xy=True
+    )
     if val_coord_x != 0.0 and val_coord_y != 0.0:
       lon_add, lat_add = transformer_add.transform(val_coord_x, val_coord_y)
-      m_add = folium.Map(location=[lat_add, lon_add], zoom_start=16, control_scale=True)
+      m_add = folium.Map(
+          location=[lat_add, lon_add], zoom_start=16, control_scale=True
+      )
       folium.TileLayer(
-          "cartodark_matter",
-          attr='&copy; <a href="https://carto.com/">CARTO</a>',
+          tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+          name="Vista Nocturna",
+          attr=(
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              ' contributors &copy; <a'
+              ' href="https://carto.com/attributions">CARTO</a>'
+          ),
+          subdomains="abcd",
+          max_zoom=20,
+          overlay=False,
+          control=True,
       ).add_to(m_add)
+      Fullscreen().add_to(m_add)
       folium.Marker(
           location=[lat_add, lon_add],
           popup=f"Nueva VRP: {val_id or 'Sin ID'}",
           icon=folium.Icon(color="cyan", icon="info-sign"),
       ).add_to(m_add)
     else:
-      m_add = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+      m_add = folium.Map(
+          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+      )
       folium.TileLayer(
-          "cartodark_matter",
-          attr='&copy; <a href="https://carto.com/">CARTO</a>',
+          tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+          name="Vista Nocturna",
+          attr=(
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              ' contributors &copy; <a'
+              ' href="https://carto.com/attributions">CARTO</a>'
+          ),
+          subdomains="abcd",
+          max_zoom=20,
+          overlay=False,
+          control=True,
       ).add_to(m_add)
-    st_folium(m_add, width="100%", height=250, key="map_add_preview")
+      Fullscreen().add_to(m_add)
+    st_folium(
+        m_add, width="100%", height=250, key="map_add_preview", returned_objects=[]
+    )
   except Exception as e_map_add:
-    st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_add})")
+    st.info(
+        "Ingrese coordenadas válidas para visualizar la posición en el mapa."
+        f" ({e_map_add})"
+    )
 
   st.markdown("<br>", unsafe_allow_html=True)
   c5, c6, c7, c8 = st.columns(4)
@@ -765,7 +820,8 @@ elif st.session_state.active_tab == "➕ Añadir":
       unsafe_allow_html=True,
   )
   st.markdown(
-      '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸 Registro de Fotografías</h4>',
+      '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+      " Registro de Fotografías</h4>",
       unsafe_allow_html=True,
   )
 
@@ -911,28 +967,28 @@ elif st.session_state.active_tab == "⚙️ Editar":
   elif not df_vprs.empty:
     if not busqueda_edit or busqueda_edit.strip() == "":
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando el primer registro de la base de datos.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+          " 10px;'>Mostrando el primer registro de la base de datos.</p>",
           unsafe_allow_html=True,
       )
     else:
       st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px;'>Mostrando la primera coincidencia encontrada.</p>",
+          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+          " 10px;'>Mostrando la primera coincidencia encontrada.</p>",
           unsafe_allow_html=True,
       )
 
     for idx, row in df_vprs.iterrows():
       st.markdown(
-          f"<div style='margin-bottom: 15px;'><span style='color: #00E5FF; font-weight: bold;'>FID Registro: {row['fid']}</span> | <span style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
+          f"<div style='margin-bottom: 15px;'><span style='color: #00E5FF;"
+          f" font-weight: bold;'>FID Registro: {row['fid']}</span> | <span"
+          f" style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
           unsafe_allow_html=True,
       )
 
       e_id_0 = row["id_0"]
-      default_x = (
-          float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
-      )
-      default_y = (
-          float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
-      )
+      default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
+      default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
 
       estado_actual = str(row["estat_valv"] or "").strip()
       idx_estado = 0
@@ -995,7 +1051,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
           )
         with e_c3:
           e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+              "Hora Cal",
+              value=str(row["hora_cal"] or ""),
+              key=f"hora_{row['fid']}",
           )
           e_cal_ant_d = st.text_input(
               "Cal Anterior Día (kg/cm)",
@@ -1016,32 +1074,68 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Operador) ---
         st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
+            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
             unsafe_allow_html=True,
         )
         try:
-          transformer_edit = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+          transformer_edit = Transformer.from_crs(
+              "EPSG:32613", "EPSG:4326", always_xy=True
+          )
           if e_coord_x != 0.0 and e_coord_y != 0.0:
             lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
-            m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
             folium.TileLayer(
-                "cartodark_matter",
-                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+                name="Vista Nocturna",
+                attr=(
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    ' contributors &copy; <a'
+                    ' href="https://carto.com/attributions">CARTO</a>'
+                ),
+                subdomains="abcd",
+                max_zoom=20,
+                overlay=False,
+                control=True,
             ).add_to(m_ed)
+            Fullscreen().add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
                 icon=folium.Icon(color="cyan", icon="info-sign"),
             ).add_to(m_ed)
           else:
-            m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
             folium.TileLayer(
-                "cartodark_matter",
-                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+                name="Vista Nocturna",
+                attr=(
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    ' contributors &copy; <a'
+                    ' href="https://carto.com/attributions">CARTO</a>'
+                ),
+                subdomains="abcd",
+                max_zoom=20,
+                overlay=False,
+                control=True,
             ).add_to(m_ed)
-          st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
+            Fullscreen().add_to(m_ed)
+          st_folium(
+              m_ed,
+              width="100%",
+              height=250,
+              key=f"map_edit_preview_{row['fid']}",
+              returned_objects=[],
+          )
         except Exception as e_map_ed:
-          st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
+          st.info(
+              "Ingrese coordenadas válidas para visualizar la posición en el mapa."
+              f" ({e_map_ed})"
+          )
 
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
@@ -1159,38 +1253,76 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         # --- MAPITA DE VISTA PREVIA DE COORDENADAS (Editar - Admin) ---
         st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700; margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
+            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
+            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom)</p>",
             unsafe_allow_html=True,
         )
         try:
-          transformer_edit = Transformer.from_crs("EPSG:32613", "EPSG:4326", always_xy=True)
+          transformer_edit = Transformer.from_crs(
+              "EPSG:32613", "EPSG:4326", always_xy=True
+          )
           if e_coord_x != 0.0 and e_coord_y != 0.0:
             lon_ed, lat_ed = transformer_edit.transform(e_coord_x, e_coord_y)
-            m_ed = folium.Map(location=[lat_ed, lon_ed], zoom_start=16, control_scale=True)
+            m_ed = folium.Map(
+                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+            )
             folium.TileLayer(
-                "cartodark_matter",
-                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+                name="Vista Nocturna",
+                attr=(
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    ' contributors &copy; <a'
+                    ' href="https://carto.com/attributions">CARTO</a>'
+                ),
+                subdomains="abcd",
+                max_zoom=20,
+                overlay=False,
+                control=True,
             ).add_to(m_ed)
+            Fullscreen().add_to(m_ed)
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {e_id}",
                 icon=folium.Icon(color="cyan", icon="info-sign"),
             ).add_to(m_ed)
           else:
-            m_ed = folium.Map(location=[21.8853, -102.2916], zoom_start=12, control_scale=True)
+            m_ed = folium.Map(
+                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+            )
             folium.TileLayer(
-                "cartodark_matter",
-                attr='&copy; <a href="https://carto.com/">CARTO</a>',
+                tiles=f"https://{{s}}.basemaps.cartocdn.com/rastertiles/dark_all/{{z}}/{{x}}/{{y}}.png?key={API_KEY_CARTO}",
+                name="Vista Nocturna",
+                attr=(
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    ' contributors &copy; <a'
+                    ' href="https://carto.com/attributions">CARTO</a>'
+                ),
+                subdomains="abcd",
+                max_zoom=20,
+                overlay=False,
+                control=True,
             ).add_to(m_ed)
-          st_folium(m_ed, width="100%", height=250, key=f"map_edit_preview_{row['fid']}")
+            Fullscreen().add_to(m_ed)
+          st_folium(
+              m_ed,
+              width="100%",
+              height=250,
+              key=f"map_edit_preview_{row['fid']}",
+              returned_objects=[],
+          )
         except Exception as e_map_ed:
-          st.info(f"Ingrese coordenadas válidas para visualizar la posición en el mapa. ({e_map_ed})")
+          st.info(
+              "Ingrese coordenadas válidas para visualizar la posición en el mapa."
+              f" ({e_map_ed})"
+          )
 
         st.markdown("<br>", unsafe_allow_html=True)
         e_c5, e_c6, e_c7, e_c8 = st.columns(4)
         with e_c5:
           e_hora = st.text_input(
-              "Hora Cal", value=str(row["hora_cal"] or ""), key=f"hora_{row['fid']}"
+              "Hora Cal",
+              value=str(row["hora_cal"] or ""),
+              key=f"hora_{row['fid']}",
           )
           e_cal_ant_d = st.text_input(
               "Cal Anterior Día (kg/cm)",
@@ -1236,7 +1368,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸 Gestión de Fotografías</h4>',
+          '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+          " Gestión de Fotografías</h4>",
           unsafe_allow_html=True,
       )
 
@@ -1276,7 +1409,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
         nueva_foto_camara = None
         if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
           nueva_foto_camara = st.camera_input(
-              "Tomar foto 1", key=f"cam_edit_{row['fid']}", label_visibility="collapsed"
+              "Tomar foto 1",
+              key=f"cam_edit_{row['fid']}",
+              label_visibility="collapsed",
           )
 
       with col_edit_f2:
@@ -1313,7 +1448,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
         nueva_foto_camara_2 = None
         if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
           nueva_foto_camara_2 = st.camera_input(
-              "Tomar foto 2", key=f"cam_edit_2_{row['fid']}", label_visibility="collapsed"
+              "Tomar foto 2",
+              key=f"cam_edit_2_{row['fid']}",
+              label_visibility="collapsed",
           )
 
       st.markdown("<br>", unsafe_allow_html=True)
@@ -1385,13 +1522,16 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
       if not es_operador:
         st.markdown(
-            "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px 0;'>",
+            "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
+            " 0;'>",
             unsafe_allow_html=True,
         )
 
         if st.session_state.registro_to_delete == row["fid"]:
           st.markdown(
-              f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight: bold;'>Para eliminar el registro FID {row['fid']} (ID: {row['id']}), escribe la palabra 'delete':</p>",
+              f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
+              f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
+              f" {row['id']}), escribe la palabra 'delete':</p>",
               unsafe_allow_html=True,
           )
           confirm_text = st.text_input(
@@ -1400,7 +1540,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
           col_y, col_n = st.columns(2)
           with col_y:
-            if st.button("Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"):
+            if st.button(
+                "Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"
+            ):
               if confirm_text.strip() == "delete":
                 try:
                   ejecutar_sql(
@@ -1414,7 +1556,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 except Exception as ex_del:
                   st.error(f"Error al eliminar: {ex_del}")
               else:
-                st.error("Debes escribir exactamente la palabra 'delete' para confirmar.")
+                st.error(
+                    "Debes escribir exactamente la palabra 'delete' para"
+                    " confirmar."
+                )
           with col_n:
             if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
               st.session_state.registro_to_delete = None
