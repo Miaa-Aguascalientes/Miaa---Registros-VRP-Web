@@ -461,7 +461,8 @@ st.markdown(
 COLUMNAS_VPRS = """
     fid, id_0, id, serie, diametro, marca_valv, model_valv, marca_trim, domicilio, colonia, 
     cota_terr, sector_hid, cal_ant_d, cal_ant_n, fecha_ult_, cal_act_d, cal_act_n, 
-    hora_cal, estat_valv, observ, fotos, fotos_2
+    hora_cal, estat_valv, observ, fotos, fotos_2,
+    ST_X(geom) as coord_x, ST_Y(geom) as coord_y
 """
 
 # ==========================================
@@ -525,10 +526,16 @@ if st.session_state.active_tab == "📍 Registros":
       st.markdown(card_html, unsafe_allow_html=True)
 
       with st.expander("🔍 Ver detalles completos y fotografías"):
+        geom_str = (
+            f"POINT ({row['coord_x']} {row['coord_y']})"
+            if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
+            else "Sin geometría"
+        )
         detalle_html = f"""
                     <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
                         <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca_valv']} &nbsp;|&nbsp; <b>Modelo:</b> {row['model_valv']} &nbsp;|&nbsp; <b>Trim:</b> {row['marca_trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
                         <b>Sector:</b> {row['sector_hid']} &nbsp;|&nbsp; <b>Estado:</b> {row['estat_valv']} &nbsp;|&nbsp; <b>Hora Cal:</b> {row['hora_cal']} &nbsp;|&nbsp; <b>Última Actualización:</b> {row['fecha_ult_']}<br>
+                        <b>Geom:</b> {geom_str}<br>
                         <b>Cal Anterior Día:</b> {row['cal_ant_d']} kg/cm &nbsp;|&nbsp; <b>Cal Anterior Noche:</b> {row['cal_ant_n']} kg/cm<br>
                         <b>Cal Actual Día:</b> {row['cal_act_d']} kg/cm &nbsp;|&nbsp; <b>Cal Actual Noche:</b> {row['cal_act_n']} kg/cm<br>
                         <b>Observaciones:</b> {row['observ']}
@@ -681,6 +688,9 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_id_0 = siguiente_id_0
     val_serie = st.text_input("Serie", key="add_serie")
     val_domicilio = st.text_input("Domicilio", key="add_dom")
+    val_coord_x = st.number_input(
+        "Coord X (geom)", value=0.0, format="%.2f", key="add_coord_x"
+    )
 
   with c2:
     val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
@@ -688,6 +698,9 @@ elif st.session_state.active_tab == "➕ Añadir":
         "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
     )
     val_colonia = st.text_input("Colonia", key="add_col")
+    val_coord_y = st.number_input(
+        "Coord Y (geom)", value=0.0, format="%.3f", key="add_coord_y"
+    )
 
   with c3:
     val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
@@ -797,11 +810,12 @@ elif st.session_state.active_tab == "➕ Añadir":
                     INSERT INTO "Agua_potable"."VPRS" (
                         id_0, id, serie, diametro, marca_valv, model_valv, marca_trim, domicilio, colonia, 
                         cota_terr, sector_hid, cal_ant_d, cal_ant_n, fecha_ult_, cal_act_d, cal_act_n, 
-                        hora_cal, estat_valv, observ, fotos, fotos_2
+                        hora_cal, estat_valv, observ, fotos, fotos_2, geom
                     ) VALUES (
                         :id_0, :id, :serie, :diametro, :marca_valv, :model_valv, :marca_trim, :domicilio, :colonia, 
                         :cota_terr, :sector_hid, :cal_ant_d, :cal_ant_n, :fecha_ult_, :cal_act_d, :cal_act_n, 
-                        :hora_cal, :estat_valv, :observ, :fotos, :fotos_2
+                        :hora_cal, :estat_valv, :observ, :fotos, :fotos_2, 
+                        ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                     )
                 """
         ejecutar_sql(
@@ -828,6 +842,8 @@ elif st.session_state.active_tab == "➕ Añadir":
                 "observ": val_observ,
                 "fotos": foto_bytes,
                 "fotos_2": foto_bytes_2,
+                "coord_x": val_coord_x,
+                "coord_y": val_coord_y,
             },
         )
         st.success("¡Válvula registrada con éxito!")
@@ -887,6 +903,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
       )
 
       e_id_0 = row["id_0"]
+      default_x = (
+          float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
+      )
+      default_y = (
+          float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
+      )
 
       estado_actual = str(row["estat_valv"] or "").strip()
       idx_estado = 0
@@ -923,6 +945,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
+          e_coord_x = st.number_input(
+              "Coord X (geom)",
+              value=default_x,
+              format="%.2f",
+              key=f"coord_x_{row['fid']}",
+          )
         with e_c2:
           e_colonia = st.text_input(
               "Colonia",
@@ -934,6 +962,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               options=OPCIONES_ESTADO_VALVULA,
               index=idx_estado,
               key=f"est_{row['fid']}",
+          )
+          e_coord_y = st.number_input(
+              "Coord Y (geom)",
+              value=default_y,
+              format="%.3f",
+              key=f"coord_y_{row['fid']}",
           )
         with e_c3:
           e_hora = st.text_input(
@@ -1010,6 +1044,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               value=str(row["domicilio"] or ""),
               key=f"dom_{row['fid']}",
           )
+          e_coord_x = st.number_input(
+              "Coord X (geom)",
+              value=default_x,
+              format="%.2f",
+              key=f"coord_x_{row['fid']}",
+          )
         with e_c2:
           e_id = st.text_input(
               "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
@@ -1023,6 +1063,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               "Colonia",
               value=str(row["colonia"] or ""),
               key=f"col_{row['fid']}",
+          )
+          e_coord_y = st.number_input(
+              "Coord Y (geom)",
+              value=default_y,
+              format="%.3f",
+              key=f"coord_y_{row['fid']}",
           )
         with e_c3:
           e_cota = st.number_input(
@@ -1216,7 +1262,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
                             colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
                             cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
                             cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
-                            estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2 
+                            estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
+                            geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                         WHERE fid = :fid
                     """
           ejecutar_sql(
@@ -1243,6 +1290,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
                   "observ": e_observ,
                   "fotos": foto_bytes_final,
                   "fotos_2": foto_bytes_final_2,
+                  "coord_x": e_coord_x,
+                  "coord_y": e_coord_y,
                   "fid": row["fid"],
               },
           )
