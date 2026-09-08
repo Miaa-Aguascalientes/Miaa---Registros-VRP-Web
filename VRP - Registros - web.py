@@ -739,57 +739,20 @@ elif st.session_state.active_tab == "➕ Añadir":
   if "add_coord_y" not in st.session_state:
     st.session_state["add_coord_y"] = 0.0
 
-  c1, c2, c3, c4 = st.columns(4)
-  with c1:
-    st.text_input(
-        "ID_0 (Automático)",
-        value=str(siguiente_id_0),
-        disabled=True,
-        key="add_id_0_bloq",
-    )
-    val_id_0 = siguiente_id_0
-    val_serie = st.text_input("Serie", key="add_serie")
-    val_domicilio = st.text_input("Domicilio", key="add_dom")
-    val_coord_x = st.number_input(
-        "Coord X (geom)", format="%.2f", key="add_coord_x"
-    )
-
-  with c2:
-    val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
-    val_diametro = st.number_input(
-        "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
-    )
-    val_colonia = st.text_input("Colonia", key="add_col")
-    val_coord_y = st.number_input(
-        "Coord Y (geom)", format="%.3f", key="add_coord_y"
-    )
-
-  with c3:
-    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
-    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
-    val_estat = st.selectbox(
-        "Estado de la Válvula",
-        options=OPCIONES_ESTADO_VALVULA,
-        index=0,
-        key="add_estat",
-    )
-
-  with c4:
-    val_marca = st.text_input("Marca Válvula", key="add_marca")
-    val_trim = st.text_input("Marca Trim", key="add_trim")
-    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
-
-  # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Añadir) ---
+  # --- MAPA PRIMERO PARA CAPTURAR CLIC Y ACTUALIZAR st.session_state ANTES DE PINTAR LOS INPUTS ---
   st.markdown(
       "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-      " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
-      " para actualizar coordenadas</p>",
+      " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
+      " para capturar coordenadas automáticamente</p>",
       unsafe_allow_html=True,
   )
   try:
-    if val_coord_x != 0.0 and val_coord_y != 0.0:
+    if (
+        st.session_state["add_coord_x"] != 0.0
+        and st.session_state["add_coord_y"] != 0.0
+    ):
       lon_add, lat_add = transformer_to_latlon.transform(
-          val_coord_x, val_coord_y
+          st.session_state["add_coord_x"], st.session_state["add_coord_y"]
       )
       m_add = folium.Map(
           location=[lat_add, lon_add], zoom_start=16, control_scale=True
@@ -802,10 +765,13 @@ elif st.session_state.active_tab == "➕ Añadir":
     agregar_capas_base_mapa(m_add)
     Fullscreen().add_to(m_add)
 
-    if val_coord_x != 0.0 and val_coord_y != 0.0:
+    if (
+        st.session_state["add_coord_x"] != 0.0
+        and st.session_state["add_coord_y"] != 0.0
+    ):
       folium.Marker(
           location=[lat_add, lon_add],
-          popup=f"Nueva VRP: {val_id or 'Sin ID'}",
+          popup="Nueva VRP",
           icon=folium.Icon(color="cyan", icon="info-sign"),
       ).add_to(m_add)
 
@@ -813,7 +779,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     map_data_add = st_folium(
         m_add,
         width="100%",
-        height=250,
+        height=280,
         key="map_add_preview",
         returned_objects=["last_clicked"],
     )
@@ -834,9 +800,59 @@ elif st.session_state.active_tab == "➕ Añadir":
 
   except Exception as e_map_add:
     st.info(
-        "Ingrese coordenadas válidas para visualizar la posición en el mapa."
+        "Haga clic en el mapa para establecer la posición geográfica."
         f" ({e_map_add})"
     )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+
+  c1, c2, c3, c4 = st.columns(4)
+  with c1:
+    st.text_input(
+        "ID_0 (Automático)",
+        value=str(siguiente_id_0),
+        disabled=True,
+        key="add_id_0_bloq",
+    )
+    val_id_0 = siguiente_id_0
+    val_serie = st.text_input("Serie", key="add_serie")
+    val_domicilio = st.text_input("Domicilio", key="add_dom")
+    val_coord_x = st.number_input(
+        "Coord X (geom)",
+        value=st.session_state["add_coord_x"],
+        format="%.2f",
+        key="add_coord_x_input",
+    )
+    st.session_state["add_coord_x"] = val_coord_x
+
+  with c2:
+    val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
+    val_diametro = st.number_input(
+        "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
+    )
+    val_colonia = st.text_input("Colonia", key="add_col")
+    val_coord_y = st.number_input(
+        "Coord Y (geom)",
+        value=st.session_state["add_coord_y"],
+        format="%.3f",
+        key="add_coord_y_input",
+    )
+    st.session_state["add_coord_y"] = val_coord_y
+
+  with c3:
+    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
+    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
+    val_estat = st.selectbox(
+        "Estado de la Válvula",
+        options=OPCIONES_ESTADO_VALVULA,
+        index=0,
+        key="add_estat",
+    )
+
+  with c4:
+    val_marca = st.text_input("Marca Válvula", key="add_marca")
+    val_trim = st.text_input("Marca Trim", key="add_trim")
+    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
 
   st.markdown("<br>", unsafe_allow_html=True)
   c5, c6, c7, c8 = st.columns(4)
@@ -1047,6 +1063,74 @@ elif st.session_state.active_tab == "⚙️ Editar":
       if estado_actual in OPCIONES_ESTADO_VALVULA:
         idx_estado = OPCIONES_ESTADO_VALVULA.index(estado_actual)
 
+      # --- MAPA PRIMERO EN EDICIÓN PARA CAPTURAR CLIC Y ACTUALIZAR st.session_state ---
+      st.markdown(
+          "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
+          " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+          " mapa para actualizar coordenadas automáticamente</p>",
+          unsafe_allow_html=True,
+      )
+      try:
+        if (
+            st.session_state[x_key] != 0.0
+            and st.session_state[y_key] != 0.0
+        ):
+          lon_ed, lat_ed = transformer_to_latlon.transform(
+              st.session_state[x_key], st.session_state[y_key]
+          )
+          m_ed = folium.Map(
+              location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+          )
+        else:
+          m_ed = folium.Map(
+              location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+          )
+
+        agregar_capas_base_mapa(m_ed)
+        Fullscreen().add_to(m_ed)
+
+        if (
+            st.session_state[x_key] != 0.0
+            and st.session_state[y_key] != 0.0
+        ):
+          folium.Marker(
+              location=[lat_ed, lon_ed],
+              popup=f"VRP: {row['id']}",
+              icon=folium.Icon(color="cyan", icon="info-sign"),
+          ).add_to(m_ed)
+
+        folium.LayerControl(collapsed=False).add_to(m_ed)
+        map_data_ed = st_folium(
+            m_ed,
+            width="100%",
+            height=280,
+            key=f"map_edit_preview_{row['fid']}",
+            returned_objects=["last_clicked"],
+        )
+
+        clicked_key = f"last_clicked_edit_{row['fid']}"
+        if (
+            map_data_ed
+            and map_data_ed.get("last_clicked")
+            and map_data_ed["last_clicked"]
+            != st.session_state.get(clicked_key)
+        ):
+          st.session_state[clicked_key] = map_data_ed["last_clicked"]
+          lat_c = map_data_ed["last_clicked"]["lat"]
+          lon_c = map_data_ed["last_clicked"]["lng"]
+          utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+          st.session_state[x_key] = round(utm_x, 2)
+          st.session_state[y_key] = round(utm_y, 3)
+          st.rerun()
+
+      except Exception as e_map_ed:
+        st.info(
+            "Haga clic en el mapa para actualizar la posición geográfica."
+            f" ({e_map_ed})"
+        )
+
+      st.markdown("<br>", unsafe_allow_html=True)
+
       if es_operador:
         e_id = row["id"]
         e_diametro = row["diametro"]
@@ -1078,8 +1162,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           e_coord_x = st.number_input(
-              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
+              "Coord X (geom)",
+              value=st.session_state[x_key],
+              format="%.2f",
+              key=f"coord_x_input_{row['fid']}",
           )
+          st.session_state[x_key] = e_coord_x
         with e_c2:
           e_colonia = st.text_input(
               "Colonia",
@@ -1093,8 +1181,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"est_{row['fid']}",
           )
           e_coord_y = st.number_input(
-              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
+              "Coord Y (geom)",
+              value=st.session_state[y_key],
+              format="%.3f",
+              key=f"coord_y_input_{row['fid']}",
           )
+          st.session_state[y_key] = e_coord_y
         with e_c3:
           e_hora = st.text_input(
               "Hora Cal",
@@ -1116,66 +1208,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
               "Cal Actual Día (kg/cm)",
               value=str(row["cal_act_d"] or ""),
               key=f"cactd_{row['fid']}",
-          )
-
-        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Operador) ---
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-            " mapa para actualizar coordenadas</p>",
-            unsafe_allow_html=True,
-        )
-        try:
-          if e_coord_x != 0.0 and e_coord_y != 0.0:
-            lon_ed, lat_ed = transformer_to_latlon.transform(
-                e_coord_x, e_coord_y
-            )
-            m_ed = folium.Map(
-                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-            )
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-
-          agregar_capas_base_mapa(m_ed)
-          Fullscreen().add_to(m_ed)
-
-          if e_coord_x != 0.0 and e_coord_y != 0.0:
-            folium.Marker(
-                location=[lat_ed, lon_ed],
-                popup=f"VRP: {e_id}",
-                icon=folium.Icon(color="cyan", icon="info-sign"),
-            ).add_to(m_ed)
-
-          folium.LayerControl(collapsed=False).add_to(m_ed)
-          map_data_ed = st_folium(
-              m_ed,
-              width="100%",
-              height=250,
-              key=f"map_edit_preview_{row['fid']}",
-              returned_objects=["last_clicked"],
-          )
-
-          clicked_key = f"last_clicked_edit_{row['fid']}"
-          if (
-              map_data_ed
-              and map_data_ed.get("last_clicked")
-              and map_data_ed["last_clicked"]
-              != st.session_state.get(clicked_key)
-          ):
-            st.session_state[clicked_key] = map_data_ed["last_clicked"]
-            lat_c = map_data_ed["last_clicked"]["lat"]
-            lon_c = map_data_ed["last_clicked"]["lng"]
-            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
-            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
-            st.rerun()
-
-        except Exception as e_map_ed:
-          st.info(
-              "Ingrese coordenadas válidas para visualizar la posición en el mapa."
-              f" ({e_map_ed})"
           )
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1233,8 +1265,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"dom_{row['fid']}",
           )
           e_coord_x = st.number_input(
-              "Coord X (geom)", format="%.2f", key=f"coord_x_{row['fid']}"
+              "Coord X (geom)",
+              value=st.session_state[x_key],
+              format="%.2f",
+              key=f"coord_x_input_{row['fid']}",
           )
+          st.session_state[x_key] = e_coord_x
         with e_c2:
           e_id = st.text_input(
               "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
@@ -1250,8 +1286,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
               key=f"col_{row['fid']}",
           )
           e_coord_y = st.number_input(
-              "Coord Y (geom)", format="%.3f", key=f"coord_y_{row['fid']}"
+              "Coord Y (geom)",
+              value=st.session_state[y_key],
+              format="%.3f",
+              key=f"coord_y_input_{row['fid']}",
           )
+          st.session_state[y_key] = e_coord_y
         with e_c3:
           e_cota = st.number_input(
               "Cota Terr",
@@ -1284,66 +1324,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
               "Sector Hid",
               value=str(row["sector_hid"] or ""),
               key=f"sec_{row['fid']}",
-          )
-
-        # --- MAPITA DE VISTA PREVIA Y CLIC PARA COORDENADAS (Editar - Admin) ---
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-            " margin-top: 15px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-            " mapa para actualizar coordenadas</p>",
-            unsafe_allow_html=True,
-        )
-        try:
-          if e_coord_x != 0.0 and e_coord_y != 0.0:
-            lon_ed, lat_ed = transformer_to_latlon.transform(
-                e_coord_x, e_coord_y
-            )
-            m_ed = folium.Map(
-                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-            )
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-
-          agregar_capas_base_mapa(m_ed)
-          Fullscreen().add_to(m_ed)
-
-          if e_coord_x != 0.0 and e_coord_y != 0.0:
-            folium.Marker(
-                location=[lat_ed, lon_ed],
-                popup=f"VRP: {e_id}",
-                icon=folium.Icon(color="cyan", icon="info-sign"),
-            ).add_to(m_ed)
-
-          folium.LayerControl(collapsed=False).add_to(m_ed)
-          map_data_ed = st_folium(
-              m_ed,
-              width="100%",
-              height=250,
-              key=f"map_edit_preview_{row['fid']}",
-              returned_objects=["last_clicked"],
-          )
-
-          clicked_key = f"last_clicked_edit_{row['fid']}"
-          if (
-              map_data_ed
-              and map_data_ed.get("last_clicked")
-              and map_data_ed["last_clicked"]
-              != st.session_state.get(clicked_key)
-          ):
-            st.session_state[clicked_key] = map_data_ed["last_clicked"]
-            lat_c = map_data_ed["last_clicked"]["lat"]
-            lon_c = map_data_ed["last_clicked"]["lng"]
-            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-            st.session_state[f"coord_x_{row['fid']}"] = round(utm_x, 2)
-            st.session_state[f"coord_y_{row['fid']}"] = round(utm_y, 3)
-            st.rerun()
-
-        except Exception as e_map_ed:
-          st.info(
-              "Ingrese coordenadas válidas para visualizar la posición en el mapa."
-              f" ({e_map_ed})"
           )
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1539,8 +1519,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
                   "observ": e_observ,
                   "fotos": foto_bytes_final,
                   "fotos_2": foto_bytes_final_2,
-                  "coord_x": e_coord_x,
-                  "coord_y": e_coord_y,
+                  "coord_x": st.session_state[x_key],
+                  "coord_y": st.session_state[y_key],
                   "fid": row["fid"],
               },
           )
