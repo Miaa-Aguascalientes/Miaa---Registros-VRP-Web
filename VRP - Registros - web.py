@@ -1076,6 +1076,34 @@ elif st.session_state.active_tab == "⚙️ Editar":
       if y_key not in st.session_state:
         st.session_state[y_key] = default_y
 
+      # --- CAPTURA PREVIA DEL MAPA ANTES DE RENDERIZAR LOS WIDGETS ---
+      try:
+        if st.session_state[x_key] != 0.0 and st.session_state[y_key] != 0.0:
+          lon_ed, lat_ed = transformer_to_latlon.transform(
+              st.session_state[x_key], st.session_state[y_key]
+          )
+          m_ed = folium.Map(
+              location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+          )
+        else:
+          m_ed = folium.Map(
+              location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+          )
+
+        agregar_capas_base_mapa(m_ed)
+        Fullscreen().add_to(m_ed)
+
+        if st.session_state[x_key] != 0.0 and st.session_state[y_key] != 0.0:
+          folium.Marker(
+              location=[lat_ed, lon_ed],
+              popup=f"VRP: {row['id']}",
+              icon=folium.Icon(color="cyan", icon="info-sign"),
+          ).add_to(m_ed)
+
+        folium.LayerControl(collapsed=False).add_to(m_ed)
+      except Exception:
+        m_ed = None
+
       estado_actual = str(row["estat_valv"] or "").strip()
       idx_estado = 0
       if estado_actual in OPCIONES_ESTADO_VALVULA:
@@ -1332,36 +1360,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
           e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
 
       with col_form_der:
-        try:
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
-            lon_ed, lat_ed = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            m_ed = folium.Map(
-                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-            )
-          else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-            )
-
-          agregar_capas_base_mapa(m_ed)
-          Fullscreen().add_to(m_ed)
-
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
-            folium.Marker(
-                location=[lat_ed, lon_ed],
-                popup=f"VRP: {row['id']}",
-                icon=folium.Icon(color="cyan", icon="info-sign"),
-            ).add_to(m_ed)
-
-          folium.LayerControl(collapsed=False).add_to(m_ed)
+        if m_ed is not None:
           map_data_ed = st_folium(
               m_ed,
               width="100%",
@@ -1384,12 +1383,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
             st.session_state[x_key] = round(utm_x, 2)
             st.session_state[y_key] = round(utm_y, 3)
             st.rerun()
-
-        except Exception as e_map_ed:
-          st.info(
-              "Haga clic en el mapa para actualizar la posición geográfica."
-              f" ({e_map_ed})"
-          )
 
       e_observ = st.text_area(
           "Observaciones",
