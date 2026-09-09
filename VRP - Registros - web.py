@@ -1414,6 +1414,16 @@ elif st.session_state.active_tab == "⚙️ Editar":
                             "fid": row["fid"],
                         },
                     )
+
+                    # --- RESETEAR WIDGETS DE ARCHIVO CARGADO ---
+                    key_file_1 = f"file_edit_1_{row['fid']}"
+                    key_file_2 = f"file_edit_2_{row['fid']}"
+
+                    if key_file_1 in st.session_state:
+                        del st.session_state[key_file_1]
+                    if key_file_2 in st.session_state:
+                        del st.session_state[key_file_2]
+
                     st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
                     t.sleep(1)
                     st.rerun()
