@@ -790,20 +790,20 @@ elif st.session_state.active_tab == "➕ Añadir":
     with a_c2:
         val_id = st.text_input("ID VRP *Obligatorio", key="add_id")
     with a_c3:
-        val_cota = st.number_input("Cota Terr", value=0.0, key="add_cota")
+        val_cota = st.number_input("Cota Terreno", value=0.0, key="add_cota")
     with a_c4:
-        val_marca = st.text_input("Marca Valv", key="add_marca")
+        val_marca = st.text_input("Marca Valvula", key="add_marca")
 
     # FILA 2 (4 columnas)
     a_c5, a_c6, a_c7, a_c8 = st.columns(4)
     with a_c5:
-        val_serie = st.text_input("Serie", key="add_serie")
+        val_serie = st.text_input("Serie de la Valvula", key="add_serie")
     with a_c6:
         val_diametro = st.number_input(
             "Diámetro", min_value=0, value=0, key="add_diam"
         )
     with a_c7:
-        val_modelo = st.text_input("Modelo Valv", key="add_modelo")
+        val_modelo = st.text_input("Modelo Valvula", key="add_modelo")
     with a_c8:
         val_trim = st.text_input("Marca Trim", key="add_trim")
 
@@ -910,23 +910,23 @@ elif st.session_state.active_tab == "➕ Añadir":
         # Hora Cal, Cal Anterior Noche
         cc1, cc2 = st.columns(2)
         with cc1:
-            val_hora = st.text_input("Hora Cal", key="add_hora")
+            val_hora = st.text_input("Hora de Calibración", key="add_hora")
         with cc2:
             val_cal_ant_n = st.text_input(
-                "Cal Anterior Noche (kg/cm)", key="add_cann"
+                "Calibración Anterior Noche (kg/cm)", key="add_cann"
             )
 
         # Cal Anterior Día, Cal Actual Día
         cc3, cc4 = st.columns(2)
         with cc3:
-            val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
+            val_cal_ant_d = st.text_input("Calibración Anterior Día (kg/cm)", key="add_cand")
         with cc4:
-            val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+            val_cal_act_d = st.text_input("Calibración Actual Día (kg/cm)", key="add_cactd")
 
         # Cal Actual Noche, Fecha última actualización
         cc5, cc6 = st.columns(2)
         with cc5:
-            val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
+            val_cal_act_n = st.text_input("Calibración Actual Noche (kg/cm)", key="add_cactn")
         with cc6:
             val_fecha_obj = st.date_input(
                 "Fecha última actualización",
