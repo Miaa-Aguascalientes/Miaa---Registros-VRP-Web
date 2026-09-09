@@ -995,28 +995,28 @@ elif st.session_state.active_tab == "➕ Añadir":
 # 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
-    # --- ESTILO PERSONALIZADO PARA BOTONES AZUL OSCURO ---
+    # --- ESTILO PERSONALIZADO PARA BOTONES NEGROS ---
     st.markdown(
         """
         <style>
-        /* Botones primarios y secundarios de Streamlit */
+        /* Botones de Streamlit en fondo negro */
         div.stButton > button {
-            background-color: #0F172A !important; /* Azul muy oscuro / Navy */
-            color: #F8FAFC !important;           /* Texto claro */
-            border: 1px solid #1E293B !important; /* Borde sutil */
-            transition: background-color 0.3s ease;
+            background-color: #000000 !important; /* Fondo negro puro */
+            color: #FFFFFF !important;           /* Texto blanco */
+            border: 1px solid #333333 !important; /* Borde gris oscuro */
+            transition: all 0.3s ease;
         }
         
         /* Efecto al pasar el mouse (Hover) */
         div.stButton > button:hover {
-            background-color: #1E293B !important; /* Azul ligeramente más claro al pasar el cursor */
-            color: #00E5FF !important;           /* Texto en cian para dar retroalimentación */
+            background-color: #1A1A1A !important; /* Negro ligeramente más claro */
+            color: #00E5FF !important;           /* Texto cian para resaltar */
             border-color: #00E5FF !important;
         }
 
         /* Efecto al hacer clic (Active) */
         div.stButton > button:active {
-            background-color: #0284C7 !important;
+            background-color: #333333 !important;
             color: #FFFFFF !important;
         }
         </style>
