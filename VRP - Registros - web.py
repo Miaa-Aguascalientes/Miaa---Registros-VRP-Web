@@ -837,7 +837,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         try:
           geom_json = json.loads(sec_row["geojson"])
 
-          # Estructurar como Feature oficial GeoJSON para corregir la compatibilidad con GeoJsonTooltip
           feature_estructurado = {
               "type": "Feature",
               "geometry": geom_json,
@@ -966,7 +965,21 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     folium.LayerControl(collapsed=False).add_to(m)
 
-    st_folium(m, width="100%", height=750, returned_objects=[])
+    # 9.5. --- INYECCIÓN CSS Y RENDERIZADO DEL MAPA ---
+    # Inyectamos el estilo para forzar al iframe de streamlit_folium a tomar el 85% del alto de la ventana
+    st.markdown(
+        """
+        <style>
+        iframe[title="streamlit_folium.st_folium"] {
+            height: 85vh !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Se conserva el height alto en px como fallback
+    st_folium(m, width="100%", height=800, returned_objects=[])
 
     total_sectores = len(df_sectores) if not df_sectores.empty else 0
     st.markdown(
