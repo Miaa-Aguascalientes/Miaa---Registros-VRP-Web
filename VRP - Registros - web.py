@@ -1304,9 +1304,20 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 unsafe_allow_html=True,
             )
 
-# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS
+# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER)
+            st.markdown(
+                "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+                " Gestión de Fotografías</h4>",
+                unsafe_allow_html=True,
+            )
+
             col_edit_f1, col_edit_f2 = st.columns(2)
 
+            # --- FOTO 1 ---
             with col_edit_f1:
                 foto_actual_bytes = procesar_bytes_foto(row["fotos"])
                 eliminar_foto = False
@@ -1321,35 +1332,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                         "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
                     )
 
-                cam_key_edit = f"cam_open_edit_{row['fid']}"
-                if cam_key_edit not in st.session_state:
-                    st.session_state[cam_key_edit] = False
+                nueva_foto_archivo = st.file_uploader(
+                    "📁 Cargar/Reemplazar Foto 1 desde PC",
+                    type=["png", "jpg", "jpeg", "webp"],
+                    key=f"file_edit_1_{row['fid']}",
+                )
 
-                if not st.session_state[cam_key_edit]:
-                    if st.button(
-                        "📷 Reemplazar Foto 1",
-                        key=f"btn_open_cam_edit_{row['fid']}",
-                        use_container_width=True,  # <--- Ancho completo en col 1
-                    ):
-                        st.session_state[cam_key_edit] = True
-                        st.rerun()
-                else:
-                    if st.button(
-                        "❌ Cerrar Cámara 1",
-                        key=f"btn_close_cam_edit_{row['fid']}",
-                        use_container_width=True,  # <--- Ancho completo en col 1
-                    ):
-                        st.session_state[cam_key_edit] = False
-                        st.rerun()
-
-                nueva_foto_camara = None
-                if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
-                    nueva_foto_camara = st.camera_input(
-                        "Tomar foto 1",
-                        key=f"cam_edit_{row['fid']}",
-                        label_visibility="collapsed",
-                    )
-
+            # --- FOTO 2 ---
             with col_edit_f2:
                 foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
                 eliminar_foto_2 = False
@@ -1364,38 +1353,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                         "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
                     )
 
-                cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
-                if cam_key_edit_2 not in st.session_state:
-                    st.session_state[cam_key_edit_2] = False
-
-                if not st.session_state[cam_key_edit_2]:
-                    if st.button(
-                        "📷 Reemplazar Foto 2",
-                        key=f"btn_open_cam_edit_2_{row['fid']}",
-                        use_container_width=True,  # <--- Ancho completo en col 2
-                    ):
-                        st.session_state[cam_key_edit_2] = True
-                        st.rerun()
-                else:
-                    if st.button(
-                        "❌ Cerrar Cámara 2",
-                        key=f"btn_close_cam_edit_2_{row['fid']}",
-                        use_container_width=True,  # <--- Ancho completo en col 2
-                    ):
-                        st.session_state[cam_key_edit_2] = False
-                        st.rerun()
-
-                nueva_foto_camara_2 = None
-                if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
-                    nueva_foto_camara_2 = st.camera_input(
-                        "Tomar foto 2",
-                        key=f"cam_edit_2_{row['fid']}",
-                        label_visibility="collapsed",
-                    )
+                nueva_foto_archivo_2 = st.file_uploader(
+                    "📁 Cargar/Reemplazar Foto 2 desde PC",
+                    type=["png", "jpg", "jpeg", "webp"],
+                    key=f"file_edit_2_{row['fid']}",
+                )
 
             st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Botón de Actualizar al 100% del ancho
             actualizar_click = st.button(
                 "💾 Actualizar Registro en Base de Datos",
                 key=f"btn_act_{row['fid']}",
@@ -1404,19 +1368,21 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
             if actualizar_click:
                 try:
+                    # Lógica de guardado Foto 1
                     if eliminar_foto:
                         foto_bytes_final = None
                     else:
                         foto_bytes_final = foto_actual_bytes
-                        if nueva_foto_camara is not None:
-                            foto_bytes_final = nueva_foto_camara.getvalue()
+                        if nueva_foto_archivo is not None:
+                            foto_bytes_final = nueva_foto_archivo.getvalue()
 
+                    # Lógica de guardado Foto 2
                     if eliminar_foto_2:
                         foto_bytes_final_2 = None
                     else:
                         foto_bytes_final_2 = foto_actual_bytes_2
-                        if nueva_foto_camara_2 is not None:
-                            foto_bytes_final_2 = nueva_foto_camara_2.getvalue()
+                        if nueva_foto_archivo_2 is not None:
+                            foto_bytes_final_2 = nueva_foto_archivo_2.getvalue()
 
                     sql_update = """
                                 UPDATE "Agua_potable"."VPRS" 
@@ -1463,6 +1429,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
                     st.rerun()
                 except Exception as ex:
                     st.error(f"Error al actualizar: {ex}")
+
+            # --------------------------------------------------------------------------------------------------------------------------------------------------------
 
             if not es_operador:
                 st.markdown(
