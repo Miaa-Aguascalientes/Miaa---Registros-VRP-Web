@@ -801,20 +801,20 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           geom_json = json.loads(sec_row["geojson"])
           nombre_sector = sec_row.get("sector", "Sin Nombre")
 
-          # Polígono del sector con estilo oscuro y borde azul neón tipo CARTO Dark
+          # Estilo exacto de la imagen: Azul marino translúcido con borde cyan brillante
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#080F1E",
-                  "color": "#0091FF",
-                  "weight": 1.5,
-                  "fillOpacity": 0.35,
+                  "fillColor": "#0A2246",  # Relleno azul marino medio
+                  "color": "#38B6FF",  # Línea del límite en azul cian claro
+                  "weight": 1.8,  # Grosor del borde
+                  "fillOpacity": 0.55,  # Opacidad del relleno
               },
               highlight_function=lambda feature: {
-                  "fillColor": "#0A192F",
+                  "fillColor": "#13376B",
                   "color": "#00E5FF",
                   "weight": 2.5,
-                  "fillOpacity": 0.60,
+                  "fillOpacity": 0.75,
               },
               tooltip=folium.Tooltip(
                   f"<b>Sector:</b> {nombre_sector}", sticky=True
@@ -823,10 +823,9 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         except Exception:
           continue
 
-    # Agregar la capa de sectores al mapa
     fg_sectores.add_to(m)
 
-    # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS ---
+    # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS CON ETIQUETA AL LADO ---
     grupos_capas = {}
     success_count = 0
 
@@ -838,7 +837,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
                 == estado_opc.lower()
             ]
         )
-        icono_estado = ICONOS_ESTADO.get(estado_opc, "⚪")
+        icono_estado = ICONOS_ESTADO.get(estado_opc, "🟢")
 
         fg = folium.FeatureGroup(
             name=f"{icono_estado} {estado_opc} ({count_est})", show=True
@@ -854,36 +853,44 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
           estado_raw = str(row["estat_valv"] or "Desconocido").strip()
           estado_key = estado_raw.lower()
-
-          emoji_punto = "⚪"
-          for est_nombre, est_emoji in ICONOS_ESTADO.items():
-            if est_nombre.lower() == estado_key:
-              emoji_punto = est_emoji
-              break
+          id_vrp = str(row["id"])
 
           grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
           popup_html = f"""
                     <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
-                        <b>ID:</b> {row['id']}<br>
-                        <b>Estado:</b> {emoji_punto} {estado_raw}<br>
+                        <b>ID:</b> {id_vrp}<br>
+                        <b>Estado:</b> {estado_raw}<br>
                         <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
                     </div>
                     """
 
+          # Marcador exacto de la imagen: Punto verde neón + ID alineado a la derecha
           icon_html = f"""
-                    <div style="
-                        font-size: 12px; 
-                        line-height: 12px; 
-                        text-align: center; 
-                        filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.7));
-                    ">{emoji_punto}</div>
+                    <div style="display: flex; align-items: center; white-space: nowrap;">
+                        <span style="
+                            height: 10px; 
+                            width: 10px; 
+                            background-color: #00FF00; 
+                            border-radius: 50%; 
+                            display: inline-block;
+                            box-shadow: 0 0 4px #00FF00;
+                        "></span>
+                        <span style="
+                            color: #00FF00; 
+                            font-size: 11px; 
+                            font-weight: bold; 
+                            font-family: monospace, sans-serif;
+                            margin-left: 6px; 
+                            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+                        ">{id_vrp}</span>
+                    </div>
                     """
 
           folium.Marker(
               location=[lat, lon],
               icon=folium.DivIcon(
-                  html=icon_html, icon_size=(14, 14), icon_anchor=(7, 7)
+                  html=icon_html, icon_size=(150, 16), icon_anchor=(5, 8)
               ),
               popup=folium.Popup(popup_html, max_width=300),
           ).add_to(grupo_destino)
