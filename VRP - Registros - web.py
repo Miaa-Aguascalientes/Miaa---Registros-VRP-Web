@@ -759,20 +759,23 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.error(f"❌ Error al cargar datos espaciales: {err_mapa}")
   elif not df_mapa.empty:
 
+    # Mapeo unificado de colores en código HEX exacto
+    MAPEO_COLORES = {
+        "calibrada": "#2ECC71",  # Verde
+        "abierta": "#3498DB",  # Azul
+        "cerrada": "#E74C3C",  # Rojo
+        "dañada": "#E84393",  # Rosa Neón
+        "descalibrada": "#E67E22",  # Naranja
+        "habilitada": "#00E5FF",  # Cyan Neón
+        "no opera": "#34495E",  # Gris Oscuro / Negro
+        "pendiente": "#F1C40F",  # Amarillo
+    }
+
     def get_valve_color(estado):
       estado_str = str(estado).strip().lower()
-      if "cerrada" in estado_str:
-        return "red"
-      elif "calibrada" in estado_str:
-        return "green"
-      elif "habilitada" in estado_str:
-        return "blue"
-      elif "mantenimiento" in estado_str or "pendiente" in estado_str:
-        return "orange"
-      elif "dañada" in estado_str or "no opera" in estado_str:
-        return "darkred"
-      else:
-        return "gray"
+      return MAPEO_COLORES.get(
+          estado_str, "#95A5A6"
+      )  # Gris claro solo para estados desconocidos
 
     m = folium.Map(
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
@@ -784,59 +787,55 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
     fg_limites.add_to(m)
 
-    # Crear FeatureGroups dinámicos con el conteo de cada estado
+    # Crear FeatureGroups dinámicos con clave normalizada (minúsculas) para evitar fallos de coincidencia
     grupos_capas = {}
-    for estado_opc in OPCIONES_ESTADO_VALVULA + ["Otros / Sin Estado"]:
-      if estado_opc != "Otros / Sin Estado":
-        count_est = len(
-            df_mapa[
-                df_mapa["estat_valv"].str.strip().str.lower()
-                == estado_opc.lower()
-            ]
-        )
-      else:
-        count_est = len(
-            df_mapa[
-                ~df_mapa["estat_valv"]
-                .str.strip()
-                .isin(OPCIONES_ESTADO_VALVULA)
-            ]
-        )
+    for estado_opc in OPCIONES_ESTADO_VALVULA:
+      count_est = len(
+          df_mapa[
+              df_mapa["estat_valv"].str.strip().str.lower()
+              == estado_opc.lower()
+          ]
+      )
 
-      # Nombre con conteo visible en las capas del mapa
       fg = folium.FeatureGroup(
           name=f"Válvulas {estado_opc} ({count_est})", show=True
       )
       fg.add_to(m)
-      grupos_capas[estado_opc] = fg
+      grupos_capas[estado_opc.lower()] = fg
+
+    # Capa comodín para registros sin estado o fuera de catálogo
+    fg_otros = folium.FeatureGroup(name="Otros / Sin Estado", show=True)
+    fg_otros.add_to(m)
 
     success_count = 0
 
     for _, row in df_mapa.iterrows():
       try:
         lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
-        estado = row["estat_valv"] or "Desconocido"
-        color = get_valve_color(estado)
+        estado_raw = str(row["estat_valv"] or "Desconocido").strip()
+        estado_key = estado_raw.lower()
 
-        grupo_destino = grupos_capas.get(
-            estado, grupos_capas["Otros / Sin Estado"]
-        )
+        color = get_valve_color(estado_raw)
+
+        # Asignar al FeatureGroup correspondiente
+        grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
         popup_html = f"""
                 <div style="font-size: 0.85rem; color: #000;">
                     <b>ID:</b> {row['id']}<br>
-                    <b>Estado:</b> {estado}<br>
+                    <b>Estado:</b> {estado_raw}<br>
                     <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
                 </div>
                 """
 
         folium.CircleMarker(
             location=[lat, lon],
-            radius=8,
+            radius=7,
             color=color,
             fill=True,
             fill_color=color,
-            fill_opacity=0.85,
+            fill_opacity=0.9,
+            weight=1.5,
             popup=folium.Popup(popup_html, max_width=300),
         ).add_to(grupo_destino)
         success_count += 1
@@ -853,7 +852,9 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         unsafe_allow_html=True,
     )
   else:
-    st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
+    st.info(
+        "No se encontraron geometrías de VRPs disponibles en la base de datos."
+    )
 
 # 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
 
