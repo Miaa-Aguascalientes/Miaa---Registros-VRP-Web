@@ -632,19 +632,17 @@ COLUMNAS_VPRS = """
 
 if st.session_state.active_tab == "📍 Registros":
 
-  # 1. INYECCIÓN CSS PARA DISEÑO DE PESTAÑAS TIPO FOLDER/FICHA (Estilo de la imagen)
+  # 1. INYECCIÓN CSS PARA DISEÑO DE PESTAÑAS TIPO FOLDER/FICHA
   st.markdown(
       """
         <style>
-        /* Contenedor principal de pestañas */
         div[data-baseweb="tab-list"] {
             gap: 2px;
-            background-color: #5B63B7; /* Fondo general de la barra */
+            background-color: #5B63B7;
             padding: 4px 4px 0px 4px;
             border-radius: 6px 6px 0px 0px;
         }
 
-        /* Estilo base de cada pestaña (Inactivas) */
         div[data-baseweb="tab-list"] button {
             background-color: #8C93D3 !important;
             color: #FFFFFF !important;
@@ -655,14 +653,12 @@ if st.session_state.active_tab == "📍 Registros":
             margin-right: 2px !important;
         }
 
-        /* Estilo de la pestaña seleccionada (Activa) */
         div[data-baseweb="tab-list"] button[aria-selected="true"] {
             background-color: #FFFFFF !important;
             color: #4A52A0 !important;
             border-top: 3px solid #3F468F !important;
         }
 
-        /* Ocultar la barra inferior por defecto de Streamlit */
         div[data-baseweb="tab-highlight"] {
             background-color: transparent !important;
         }
@@ -671,11 +667,12 @@ if st.session_state.active_tab == "📍 Registros":
       unsafe_allow_html=True,
   )
 
-  # 2. DEFINICIÓN DE PESTAÑAS
-  tab_registros, tab_bd_completa, tab_sheets = st.tabs([
+  # 2. DEFINICIÓN DE LAS 4 PESTAÑAS
+  tab_registros, tab_bd_completa, tab_sheets, tab_comparativa = st.tabs([
       "📍 Registros",
       "🗄️ Tabla Base de Datos Completa",
       "📊 2.Informe visitas a VRP´s (Sheets)",
+      "🔍 Comparativa (BD vs Sheets)",
   ])
 
   # =========================================================================
@@ -817,8 +814,7 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    # URL configurada para forzar la apertura en la pestaña gid=769091515
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/edit?gid=769091515#gid=769091515"
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/htmlembed?gid=769091515&widget=false&chrome=false"
 
     st.markdown(
         f"""
@@ -833,8 +829,202 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/edit?gid=769091515#gid=769091515",
+        "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit#gid=769091515",
     )
+
+  # =========================================================================
+  # PESTAÑA 4: COMPARATIVA Y AUDITORÍA DE DATOS (BD vs GOOGLE SHEETS)
+  # =========================================================================
+  with tab_comparativa:
+    st.markdown("### 🔍 Auditoría y Comparativa entre Base de Datos y Sheets")
+    st.info(
+        "📌 **Prioridad:** Base de Datos. Esta herramienta evalúa las"
+        " inconsistencias y detecta elementos faltantes."
+    )
+
+    if st.button("🔄 Ejecutar Comparación de Datos"):
+      with st.spinner("Cargando y procesando datos de ambas fuentes..."):
+        # 1. Obtener datos de la Base de Datos (PostgreSQL)
+        query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
+        df_bd, err_audit_bd = obtener_datos(query_audit)
+
+        # 2. Descargar e ingestar los datos de Google Sheets
+        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/gviz/tq?tqx=out:csv&gid=769091515"
+
+        try:
+          df_sheets = pd.read_csv(csv_sheets_url)
+          err_sheets = None
+        except Exception as e:
+          err_sheets = str(e)
+          df_sheets = pd.DataFrame()
+
+        if err_audit_bd:
+          st.error(f"❌ Error al consultar la Base de Datos: {err_audit_bd}")
+        elif err_sheets:
+          st.error(
+              f"❌ Error al leer Google Sheets (Asegúrate de que la hoja sea"
+              f" accesible publicamente): {err_sheets}"
+          )
+        else:
+          # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
+          col_id_sheets = [
+              c for c in df_sheets.columns if str(c).strip().lower() == "id"
+          ]
+
+          if not col_id_sheets:
+            st.error(
+                "❌ No se encontró la columna 'id' en la hoja de Google Sheets."
+                f" Columnas detectadas: {list(df_sheets.columns)}"
+            )
+          else:
+            name_id_sheets = col_id_sheets[0]
+
+            # Limpiar IDs de espacios en blanco y estandarizar a mayúsculas
+            df_bd["id_clean"] = df_bd["id"].astype(str).str.strip().str.upper()
+            df_sheets["id_clean"] = (
+                df_sheets[name_id_sheets].astype(str).str.strip().str.upper()
+            )
+
+            ids_bd = set(df_bd["id_clean"].unique())
+            ids_sheets = set(df_sheets["id_clean"].unique())
+
+            # --- DETECCIÓN DE REGISTROS ---
+            # 1. En Sheets pero NO en BD (Prioridad solicitada)
+            ids_solo_sheets = ids_sheets - ids_bd
+            df_solo_sheets = df_sheets[
+                df_sheets["id_clean"].isin(ids_solo_sheets)
+            ]
+
+            # 2. En BD pero NO en Sheets
+            ids_solo_bd = ids_bd - ids_sheets
+            df_solo_bd = df_bd[df_bd["id_clean"].isin(ids_solo_bd)]
+
+            # 3. En ambos lados
+            ids_comunes = ids_bd.intersection(ids_sheets)
+
+            # --- MÉTRICAS GENERALES ---
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            col_m1.metric("Registros BD", len(ids_bd))
+            col_m2.metric("Registros Sheets", len(ids_sheets))
+            col_m3.metric(
+                "⚠️ En Sheets y NO en BD",
+                len(ids_solo_sheets),
+                delta_color="inverse",
+            )
+            col_m4.metric("Coinciden en ID", len(ids_comunes))
+
+            st.markdown("---")
+
+            # --- SECCIÓN A: REGISTROS EN SHEETS QUE FALTAN EN LA BD ---
+            st.markdown(
+                "#### 🚨 1. Registros presentes en Google Sheets que NO"
+                " existen en la Base de Datos"
+            )
+            if not df_solo_sheets.empty:
+              st.warning(
+                  f"Se encontraron **{len(df_solo_sheets)}** registros en"
+                  " Sheets que no están registrados en PostgreSQL:"
+              )
+              cols_mostrar_sheets = [
+                  c for c in df_solo_sheets.columns if c != "id_clean"
+              ]
+              st.dataframe(
+                  df_solo_sheets[cols_mostrar_sheets],
+                  use_container_width=True,
+                  hide_index=True,
+              )
+            else:
+              st.success(
+                  "✅ Todos los registros de la hoja de Sheets existen en la"
+                  " Base de Datos."
+              )
+
+            # --- SECCIÓN B: REGISTROS EN LA BD QUE NO ESTÁN EN SHEETS ---
+            with st.expander("ℹ️ 2. Registros en Base de Datos que FALTAN en Sheets"):
+              if not df_solo_bd.empty:
+                st.info(
+                    f"Hay **{len(df_solo_bd)}** registros de PostgreSQL que no"
+                    " se encuentran en la hoja de Sheets:"
+                )
+                cols_mostrar_bd = [
+                    c for c in df_bd.columns if c != "id_clean"
+                ]
+                st.dataframe(
+                    df_solo_bd[cols_mostrar_bd],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+              else:
+                st.success(
+                    "✅ Todos los registros de la Base de Datos están"
+                    " presentes en Sheets."
+                )
+
+            # --- SECCIÓN C: COMPARACIÓN DE VALORES (CAMPOS COMUNES) ---
+            with st.expander("🔍 3. Diferencias de atributos en IDs comunes"):
+              # Detectar nombres de columnas con el mismo nombre
+              columnas_comunes = list(
+                  set(df_bd.columns).intersection(set(df_sheets.columns))
+                  - {"id_clean", "id"}
+              )
+
+              if not columnas_comunes:
+                st.caption(
+                    "No se detectaron nombres de columnas adicionales exactos"
+                    " entre ambas fuentes para comparar contenido campo a"
+                    " campo."
+                )
+              else:
+                df_merged = pd.merge(
+                    df_bd,
+                    df_sheets,
+                    on="id_clean",
+                    suffixes=("_BD", "_Sheets"),
+                )
+                diferencias_list = []
+
+                for col_c in columnas_comunes:
+                  col_bd_name = f"{col_c}_BD"
+                  col_sh_name = f"{col_c}_Sheets"
+
+                  # Comparar convirtiendo a texto para evitar falsas alarmas por tipo de dato
+                  mask_diff = (
+                      df_merged[col_bd_name]
+                      .astype(str)
+                      .str.strip()
+                      .str.lower()
+                      != df_merged[col_sh_name]
+                      .astype(str)
+                      .str.strip()
+                      .str.lower()
+                  )
+                  df_diff = df_merged[mask_diff]
+
+                  if not df_diff.empty:
+                    for _, row_d in df_diff.iterrows():
+                      diferencias_list.append({
+                          "ID Válvula": row_d["id_clean"],
+                          "Campo": col_c,
+                          "Valor en BD (Prioritario)": row_d[col_bd_name],
+                          "Valor en Sheets": row_d[col_sh_name],
+                      })
+
+                if diferencias_list:
+                  df_diff_final = pd.DataFrame(diferencias_list)
+                  st.warning(
+                      f"Se detectaron **{len(df_diff_final)}** diferencias en"
+                      " campos para registros con el mismo ID:"
+                  )
+                  st.dataframe(
+                      df_diff_final,
+                      use_container_width=True,
+                      hide_index=True,
+                  )
+                else:
+                  st.success(
+                      "✅ Los valores en las columnas coincidentes son"
+                      " idénticos para todos los IDs en común."
+                  )
 
 
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
