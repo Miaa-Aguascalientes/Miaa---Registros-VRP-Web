@@ -801,29 +801,35 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           geom_json = json.loads(sec_row["geojson"])
           nombre_sector = sec_row.get("sector", "Sin Nombre")
 
-          # Agregar el polígono del sector con tono azul sólido / opaco
-          
+          # Polígono del sector con estilo oscuro y borde azul neón tipo CARTO Dark
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#080F1E",  # Fondo azul noche muy oscuro (casi transparente)
-                  "color": "#0091FF",  # Borde azul cian/eléctrico definido
-                  "weight": 1.5,  # Grosor fino para la frontera del sector
-                  "fillOpacity": 0.35,  # Relleno sutil que deja ver las calles
+                  "fillColor": "#080F1E",
+                  "color": "#0091FF",
+                  "weight": 1.5,
+                  "fillOpacity": 0.35,
               },
               highlight_function=lambda feature: {
-                  "fillColor": "#0A192F",  # Un tono ligeramente más claro en hover
-                  "color": "#00E5FF",  # Borde cian neón brillante
-                  "weight": 2.5,  # Resalta el contorno al pasar el cursor
+                  "fillColor": "#0A192F",
+                  "color": "#00E5FF",
+                  "weight": 2.5,
                   "fillOpacity": 0.60,
               },
               tooltip=folium.Tooltip(
                   f"<b>Sector:</b> {nombre_sector}", sticky=True
               ),
           ).add_to(fg_sectores)
+        except Exception:
+          continue
+
+    # Agregar la capa de sectores al mapa
+    fg_sectores.add_to(m)
 
     # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS ---
     grupos_capas = {}
+    success_count = 0
+
     if not df_mapa.empty:
       for estado_opc in OPCIONES_ESTADO_VALVULA:
         count_est = len(
@@ -842,8 +848,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
       fg_otros = folium.FeatureGroup(name="⚪ Otros / Sin Estado", show=True)
       fg_otros.add_to(m)
-
-      success_count = 0
 
       for _, row in df_mapa.iterrows():
         try:
@@ -891,9 +895,11 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     folium.LayerControl(collapsed=False).add_to(m)
 
     st_folium(m, width="100%", height=650, returned_objects=[])
+
+    total_sectores = len(df_sectores) if not df_sectores.empty else 0
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se"
-        f" renderizaron {len(df_sectores)} sectores hidráulicos y"
+        f" renderizaron {total_sectores} sectores hidráulicos y"
         f" {success_count} VRPs georreferenciadas.</p>",
         unsafe_allow_html=True,
     )
