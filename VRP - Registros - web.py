@@ -770,16 +770,53 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales de VPRs: {err_mapa}")
   else:
-    # Mapeo de colores HEX y emojis dinámicos por estado
+    # Configuración de formas (HTML/SVG/Emoji), colores y símbolos por estado
     CONFIG_ESTADOS = {
-        "calibrada": {"color": "#2ECC71", "emoji": "🟢"},
-        "abierta": {"color": "#3498DB", "emoji": "🔵"},
-        "cerrada": {"color": "#E74C3C", "emoji": "🔴"},
-        "dañada": {"color": "#E84393", "emoji": "⛔"},
-        "descalibrada": {"color": "#E67E22", "emoji": "🟠"},
-        "habilitada": {"color": "#00E5FF", "emoji": "🔷"},
-        "no opera": {"color": "#A0A0A0", "emoji": "⚫"},
-        "pendiente": {"color": "#F1C40F", "emoji": "⚠️"},
+        "calibrada": {
+            "color": "#2ECC71",
+            "emoji": "🟢",
+            "forma": "circulo",
+        },  # Círculo verde
+        "abierta": {
+            "color": "#3498DB",
+            "emoji": "🔵",
+            "forma": "circulo",
+        },  # Círculo azul
+        "cerrada": {
+            "color": "#E74C3C",
+            "emoji": "🔴",
+            "forma": "circulo",
+        },  # Círculo rojo
+        "dañada": {
+            "color": "#E84393",
+            "emoji": "⛔",
+            "forma": "circulo",
+        },  # Círculo/Icono daño
+        "descalibrada": {
+            "color": "#F1C40F",
+            "emoji": "⚠️",
+            "forma": "triangulo",
+        },  # Triángulo advertencia amarillo
+        "habilitada": {
+            "color": "#38B6FF",
+            "emoji": "🔷",
+            "forma": "rombo",
+        },  # Rombo azul
+        "no opera": {
+            "color": "#A0A0A0",
+            "emoji": "⚫",
+            "forma": "circulo",
+        },  # Círculo gris/negro
+        "pendiente": {
+            "color": "#F1C40F",
+            "emoji": "⚠️",
+            "forma": "triangulo",
+        },  # Triángulo advertencia
+        "amarillo": {
+            "color": "#F1C40F",
+            "emoji": "🟡",
+            "forma": "circulo",
+        },  # Círculo amarillo con ID amarillo
     }
 
     m = folium.Map(
@@ -825,7 +862,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     fg_sectores.add_to(m)
 
-    # 9.4. --- DIBUJAR VÁLVULAS CON SU COLOR/EMOJI CORRESPONDIENTE + ID ---
+    # 9.4. --- DIBUJAR VÁLVULAS CON SU SÍMBOLO Y ETIQUETA CORRESPONDIENTE ---
     grupos_capas = {}
     success_count = 0
 
@@ -838,7 +875,8 @@ elif st.session_state.active_tab == "🗺️ Mapa":
             ]
         )
         conf = CONFIG_ESTADOS.get(
-            estado_opc.lower(), {"color": "#95A5A6", "emoji": "⚪"}
+            estado_opc.lower(),
+            {"color": "#95A5A6", "emoji": "⚪", "forma": "circulo"},
         )
 
         fg = folium.FeatureGroup(
@@ -857,14 +895,38 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           estado_key = estado_raw.lower()
           id_vrp = str(row["id"])
 
-          # Obtener color y emoji específicos según el estado de este punto
           conf_punto = CONFIG_ESTADOS.get(
-              estado_key, {"color": "#95A5A6", "emoji": "⚪"}
+              estado_key, {"color": "#95A5A6", "emoji": "⚪", "forma": "circulo"}
           )
           color_hex = conf_punto["color"]
           emoji_punto = conf_punto["emoji"]
+          tipo_forma = conf_punto["forma"]
 
           grupo_destino = grupos_capas.get(estado_key, fg_otros)
+
+          # Definición de la figura geométrica / icono
+          if tipo_forma == "triangulo":
+            simbolo_html = f'<span style="font-size: 13px; line-height: 1; filter: drop-shadow(0 0 3px {color_hex});">⚠️</span>'
+          elif tipo_forma == "rombo":
+            simbolo_html = f"""
+                        <span style="
+                            height: 10px; 
+                            width: 10px; 
+                            background-color: {color_hex}; 
+                            transform: rotate(45deg); 
+                            display: inline-block;
+                            box-shadow: 0 0 5px {color_hex};
+                        "></span>"""
+          else:  # circulo por defecto
+            simbolo_html = f"""
+                        <span style="
+                            height: 10px; 
+                            width: 10px; 
+                            background-color: {color_hex}; 
+                            border-radius: 50%; 
+                            display: inline-block;
+                            box-shadow: 0 0 5px {color_hex};
+                        "></span>"""
 
           popup_html = f"""
                     <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
@@ -874,17 +936,9 @@ elif st.session_state.active_tab == "🗺️ Mapa":
                     </div>
                     """
 
-          # Renderizado del punto con el color de su estado y el ID al lado
           icon_html = f"""
                     <div style="display: flex; align-items: center; white-space: nowrap;">
-                        <span style="
-                            height: 10px; 
-                            width: 10px; 
-                            background-color: {color_hex}; 
-                            border-radius: 50%; 
-                            display: inline-block;
-                            box-shadow: 0 0 5px {color_hex};
-                        "></span>
+                        {simbolo_html}
                         <span style="
                             color: {color_hex}; 
                             font-size: 11px; 
@@ -916,7 +970,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se"
         f" renderizaron {total_sectores} sectores hidráulicos y"
-        f" {success_count} VRPs georreferenciadas con simbología individual.</p>",
+        f" {success_count} VRPs georreferenciadas con simbología técnica.</p>",
         unsafe_allow_html=True,
     )
 
