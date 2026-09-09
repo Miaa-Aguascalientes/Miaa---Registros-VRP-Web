@@ -491,7 +491,7 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
 # 06 SECCION ------------------------------------------------------------ BARRA LATERAL IZQUIERDA (SIDEBAR) --------------------------------------------------------------------------------------------------------
 with st.sidebar:
- 
+
   st.markdown(
       """
         <div style="text-align: center; margin-top: -35px; padding-top: 0px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 12px;">
@@ -511,6 +511,7 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
+  # --- MENÚ DE NAVEGACIÓN PROFESIONAL (REEMPLAZO DE ST.RADIO POR BOTONES ACTIVOS) ---
   if es_operador:
     opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
   else:
@@ -522,16 +523,27 @@ with st.sidebar:
   ):
     st.session_state.active_tab = opciones_menu[0]
 
-  seleccion_tab = st.radio(
-      "Menú de Navegación",
-      options=opciones_menu,
-      index=opciones_menu.index(st.session_state.active_tab),
-      label_visibility="collapsed",
+  st.markdown(
+      "<p style='color: #64748B; font-size: 0.75rem; font-weight: 700;"
+      " text-transform: uppercase; margin-bottom: 8px;'>Navegación</p>",
+      unsafe_allow_html=True,
   )
 
-  if seleccion_tab != st.session_state.active_tab:
-    st.session_state.active_tab = seleccion_tab
-    st.rerun()
+  # Renderizar botones limpios sin círculos de radio
+  for opcion in opciones_menu:
+    es_activa = st.session_state.active_tab == opcion
+    # Aplica clase o estilo activo si la pestaña seleccionada coincide
+    tipo_btn = "primary" if es_activa else "secondary"
+
+    if st.button(
+        opcion,
+        key=f"nav_{opcion}",
+        use_container_width=True,
+        type=tipo_btn,
+    ):
+      if st.session_state.active_tab != opcion:
+        st.session_state.active_tab = opcion
+        st.rerun()
 
   st.markdown(
       "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
