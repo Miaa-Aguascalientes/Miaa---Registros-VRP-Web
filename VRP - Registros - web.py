@@ -939,7 +939,7 @@ elif st.session_state.active_tab == "➕ Añadir":
   # FILA 5: Observaciones
   val_observ = st.text_area("Observaciones", key="add_obs")
 
-  st.markdown(
+    st.markdown(
         "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
         unsafe_allow_html=True,
     )
