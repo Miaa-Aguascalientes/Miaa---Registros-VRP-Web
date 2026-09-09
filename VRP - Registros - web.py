@@ -268,45 +268,56 @@ st.write(
         padding-right: 1rem !important;
     }
 
+    /* --- NAVEGACIÓN TIPO TARJETAS / TABS (SIN CÍRCULOS DE RADIO) --- */
     div.row-widget.stRadio > div {
         display: flex;
         flex-direction: column;
-        background: transparent;
-        padding: 0px;
-        gap: 10px;
+        gap: 8px !important;
     }
-    div.row-widget.stRadio > div > label {
-        background: #111A30;
-        border: 1px solid rgba(0, 229, 255, 0.1) !important;
-        border-radius: 10px !important;
-        padding: 12px 18px !important;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
+    /* Ocultar círculo nativo de radio button */
+    div.row-widget.stRadio input[type="radio"],
+    div.row-widget.stRadio div[role="radiogroup"] > label > div:first-child {
+        display: none !important;
     }
-    div.row-widget.stRadio > div > label:hover {
-        background: linear-gradient(135deg, #111A30 0%, #1A284A 100%);
-        border-color: rgba(0, 229, 255, 0.4) !important;
-        transform: translateX(4px);
-        box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+
+    /* Estilo base de los botones de navegación */
+    div.row-widget.stRadio div[role="radiogroup"] > label {
+        background: #0D1424 !important;
+        border: 1px solid rgba(0, 229, 255, 0.15) !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100% !important;
     }
-    div.row-widget.stRadio input[type="radio"] { display: none !important; }
-    div.row-widget.stRadio div[role="radiogroup"] > label > div:first-child { display: none !important; }
-    div.row-widget.stRadio div[role="radiogroup"] label span,
-    div.row-widget.stRadio div[role="radiogroup"] label p {
+
+    /* Texto e iconos */
+    div.row-widget.stRadio div[role="radiogroup"] label p,
+    div.row-widget.stRadio div[role="radiogroup"] label span {
         color: #94A3B8 !important;
         font-weight: 600 !important;
-        font-size: 0.95rem;
+        font-size: 0.9rem !important;
     }
-    div.row-widget.stRadio > div > label[data-checked="true"] {
-        background: linear-gradient(135deg, #0A2540 0%, #0077B6 100%) !important;
-        border-color: #00E5FF !important;
-        box-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
-        transform: translateX(6px);
+
+    /* Hover (Efecto al pasar el mouse) */
+    div.row-widget.stRadio div[role="radiogroup"] > label:hover {
+        background: #152035 !important;
+        border-color: rgba(0, 229, 255, 0.4) !important;
+        transform: translateX(4px) !important;
     }
-    div.row-widget.stRadio > div > label[data-checked="true"] span,
-    div.row-widget.stRadio > div > label[data-checked="true"] p {
+
+    /* Opción Seleccionada (Activa) */
+    div.row-widget.stRadio div[role="radiogroup"] > label[data-checked="true"] {
+        background: linear-gradient(90deg, #0A2540 0%, #0D1424 100%) !important;
+        border-left: 4px solid #00E5FF !important;
+        border-color: rgba(0, 229, 255, 0.5) !important;
+        box-shadow: 0 2px 10px rgba(0, 229, 255, 0.15) !important;
+    }
+
+    div.row-widget.stRadio div[role="radiogroup"] > label[data-checked="true"] p,
+    div.row-widget.stRadio div[role="radiogroup"] > label[data-checked="true"] span {
         color: #00E5FF !important;
         font-weight: 700 !important;
     }
@@ -389,27 +400,18 @@ st.write(
         font-size: 0.9rem !important;
     } 
     
-    /* REGLA COMPACTA PARA LOS EXPANDERS (CUADROS) */
+    /* REGLA BALANCEADA PARA LOS EXPANDERS (CUADROS DE ESTADO) */
     [data-testid="stExpander"] {
         background-color: #080C14 !important;
         border: 1px solid rgba(0, 229, 255, 0.15) !important;
         border-radius: 6px !important;
-        margin-top: -6px !important;
-        margin-bottom: -6px !important;
+        margin-top: 3px !important;
+        margin-bottom: 3px !important;
     }
 
-    /* REGLA BALANCEADA PARA LOS EXPANDERS (CUADROS) */
-    [data-testid="stExpander"] {
-        background-color: #080C14 !important;
-        border: 1px solid rgba(0, 229, 255, 0.15) !important;
-        border-radius: 6px !important;
-        margin-top: 2px !important;
-        margin-bottom: 2px !important;
-    }
-
-    /* REDUCCIÓN DE ESPACIO ENTRE BLOQUES DE LA BARRA LATERAL */
+    /* REDUCCIÓN CONTROLADA DE ESPACIO EN SIDEBAR */
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0.15rem !important;
+        gap: 0.2rem !important;
     }
 
     [data-testid="stExpander"] summary {
@@ -418,6 +420,14 @@ st.write(
         font-weight: 600 !important;
         padding-top: 6px !important;
         padding-bottom: 6px !important;
+    }
+
+    [data-testid="stCameraInput"] video, 
+    [data-testid="stCameraInput"] img {
+        width: 100% !important;
+        max-width: 640px !important;
+        height: auto !important;
+        border-radius: 8px !important;
     }
 </style>""",
     unsafe_allow_html=True,
