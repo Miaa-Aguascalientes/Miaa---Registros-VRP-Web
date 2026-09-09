@@ -818,7 +818,7 @@ if st.session_state.active_tab == "📍 Registros":
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
     # URL configurada para forzar la apertura en la pestaña gid=769091515
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/htmlembed?gid=769091515&widget=false&chrome=false"
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/edit?gid=769091515#gid=769091515"
 
     st.markdown(
         f"""
@@ -833,7 +833,7 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit#gid=769091515",
+        "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/edit?gid=769091515#gid=769091515",
     )
 
 
