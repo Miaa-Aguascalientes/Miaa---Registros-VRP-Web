@@ -770,7 +770,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales de VPRs: {err_mapa}")
   else:
-    # Configuración de formas, colores y símbolos por estado
     CONFIG_ESTADOS = {
         "calibrada": {"color": "#2ECC71", "emoji": "🟢", "forma": "circulo"},
         "abierta": {"color": "#3498DB", "emoji": "🔵", "forma": "circulo"},
@@ -790,7 +789,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS (POLÍGONOS MÁS OSCUROS Y OPACOS) ---
+    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS CON LA LÓGICA DE ESTILO SOLICITADA ---
     fg_sectores = folium.FeatureGroup(
         name="📐 Sectores Hidráulicos", show=True
     )
@@ -798,27 +797,64 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     if not err_sectores and not df_sectores.empty:
       import json
 
+      # Funciones de estilo basadas en tu snippet
+      def estilo_final_sector(feature):
+        props = feature.get("properties", {})
+        nombre_actual = props.get("sector")
+        sec_sel = st.session_state.get("sector_resaltado")
+
+        # Verificación de match por selección en session_state
+        es_match = (
+            sec_sel is not None and nombre_actual == sec_sel.get("sector")
+        )
+
+        # Cálculo dinámico si existe afectación en el diccionario global (o por defecto 0)
+        afectacion_val = props.get("afectacion", 0)
+        color_dinamico = props.get("color_dinamico", "#2980B9")
+
+        fill_color_final = "#F1C40F" if es_match else color_dinamico
+
+        if es_match:
+          border_color_final = "#F39C12"
+          weight_final = 3
+          opacity_final = 0.5
+        elif afectacion_val > 0:
+          border_color_final = color_dinamico
+          weight_final = 2.5
+          opacity_final = 0.25
+        else:
+          border_color_final = "#2980B9"
+          weight_final = 1
+          opacity_final = 0.08
+
+        return {
+            "fillColor": fill_color_final,
+            "color": border_color_final,
+            "weight": weight_final,
+            "fillOpacity": opacity_final,
+        }
+
+      def estilo_hover_sector(feature):
+        return {"fillOpacity": 0.8, "weight": 4, "color": "#FFFFFF"}
+
+      # Procesamiento de la geometría GeoJSON
       for _, sec_row in df_sectores.iterrows():
         try:
           geom_json = json.loads(sec_row["geojson"])
-          nombre_sector = sec_row.get("sector", "Sin Nombre")
+          geom_json["properties"] = {
+              "sector": sec_row.get("sector", "Sin Nombre"),
+              "fid": sec_row.get("fid"),
+          }
 
           folium.GeoJson(
               geom_json,
-              style_function=lambda feature: {
-                  "fillColor": "#051622",  # Fondo azul marino profundo
-                  "color": "#084B83",  # Borde azul oscuro bien definido
-                  "weight": 2.0,  # Grosor de la línea
-                  "fillOpacity": 0.85,  # Relleno opaco
-              },
-              highlight_function=lambda feature: {
-                  "fillColor": "#0D2E4A",
-                  "color": "#1167B1",
-                  "weight": 2.8,
-                  "fillOpacity": 0.95,
-              },
-              tooltip=folium.Tooltip(
-                  f"<b>Sector:</b> {nombre_sector}", sticky=True
+              style_function=estilo_final_sector,
+              highlight_function=estilo_hover_sector,
+              tooltip=folium.GeoJsonTooltip(
+                  fields=["sector"],
+                  aliases=["Sector:"],
+                  localize=True,
+                  sticky=True,
               ),
           ).add_to(fg_sectores)
         except Exception:
@@ -826,7 +862,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     fg_sectores.add_to(m)
 
-    # 9.4. --- DIBUJAR VÁLVULAS CON SU SÍMBOLO Y ETIQUETA CORRESPONDIENTE ---
+    # 9.4. --- DIBUJAR VÁLVULAS (VRPs) ---
     grupos_capas = {}
     success_count = 0
 
@@ -933,7 +969,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se"
         f" renderizaron {total_sectores} sectores hidráulicos y"
-        f" {success_count} VRPs georreferenciadas con simbología técnica.</p>",
+        f" {success_count} VRPs georreferenciadas.</p>",
         unsafe_allow_html=True,
     )
 # 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
