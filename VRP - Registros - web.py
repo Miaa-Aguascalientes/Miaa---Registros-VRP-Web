@@ -756,7 +756,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     """
   df_mapa, err_mapa = obtener_datos(query_mapa)
 
-  # 9.2. CONSULTA DE SECTORES HIDRÁULICOS (Convertidos a GeoJSON WGS84)
+  # 9.2. CONSULTA DE SECTORES HIDRÁULICOS
   query_sectores = """
         SELECT 
             fid,
@@ -770,15 +770,16 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales de VPRs: {err_mapa}")
   else:
-    ICONOS_ESTADO = {
-        "Calibrada": "🟢",
-        "Abierta": "🔵",
-        "Cerrada": "🔴",
-        "Dañada": "⛔",
-        "Descalibrada": "🟠",
-        "Habilitada": "🔷",
-        "No opera": "⚫",
-        "Pendiente": "⚠️",
+    # Mapeo de colores HEX y emojis dinámicos por estado
+    CONFIG_ESTADOS = {
+        "calibrada": {"color": "#2ECC71", "emoji": "🟢"},
+        "abierta": {"color": "#3498DB", "emoji": "🔵"},
+        "cerrada": {"color": "#E74C3C", "emoji": "🔴"},
+        "dañada": {"color": "#E84393", "emoji": "⛔"},
+        "descalibrada": {"color": "#E67E22", "emoji": "🟠"},
+        "habilitada": {"color": "#00E5FF", "emoji": "🔷"},
+        "no opera": {"color": "#A0A0A0", "emoji": "⚫"},
+        "pendiente": {"color": "#F1C40F", "emoji": "⚠️"},
     }
 
     m = folium.Map(
@@ -788,7 +789,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    # 9.3. --- DIBUJAR CAPA DE SECTORES HIDRÁULICOS ---
+    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS ---
     fg_sectores = folium.FeatureGroup(
         name="📐 Sectores Hidráulicos", show=True
     )
@@ -801,14 +802,13 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           geom_json = json.loads(sec_row["geojson"])
           nombre_sector = sec_row.get("sector", "Sin Nombre")
 
-          # Estilo exacto de la imagen: Azul marino translúcido con borde cyan brillante
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#0A2246",  # Relleno azul marino medio
-                  "color": "#38B6FF",  # Línea del límite en azul cian claro
-                  "weight": 1.8,  # Grosor del borde
-                  "fillOpacity": 0.55,  # Opacidad del relleno
+                  "fillColor": "#0A2246",
+                  "color": "#38B6FF",
+                  "weight": 1.8,
+                  "fillOpacity": 0.55,
               },
               highlight_function=lambda feature: {
                   "fillColor": "#13376B",
@@ -825,7 +825,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     fg_sectores.add_to(m)
 
-    # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS CON ETIQUETA AL LADO ---
+    # 9.4. --- DIBUJAR VÁLVULAS CON SU COLOR/EMOJI CORRESPONDIENTE + ID ---
     grupos_capas = {}
     success_count = 0
 
@@ -837,10 +837,12 @@ elif st.session_state.active_tab == "🗺️ Mapa":
                 == estado_opc.lower()
             ]
         )
-        icono_estado = ICONOS_ESTADO.get(estado_opc, "🟢")
+        conf = CONFIG_ESTADOS.get(
+            estado_opc.lower(), {"color": "#95A5A6", "emoji": "⚪"}
+        )
 
         fg = folium.FeatureGroup(
-            name=f"{icono_estado} {estado_opc} ({count_est})", show=True
+            name=f"{conf['emoji']} {estado_opc} ({count_est})", show=True
         )
         fg.add_to(m)
         grupos_capas[estado_opc.lower()] = fg
@@ -855,29 +857,36 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           estado_key = estado_raw.lower()
           id_vrp = str(row["id"])
 
+          # Obtener color y emoji específicos según el estado de este punto
+          conf_punto = CONFIG_ESTADOS.get(
+              estado_key, {"color": "#95A5A6", "emoji": "⚪"}
+          )
+          color_hex = conf_punto["color"]
+          emoji_punto = conf_punto["emoji"]
+
           grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
           popup_html = f"""
                     <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
                         <b>ID:</b> {id_vrp}<br>
-                        <b>Estado:</b> {estado_raw}<br>
+                        <b>Estado:</b> {emoji_punto} {estado_raw}<br>
                         <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
                     </div>
                     """
 
-          # Marcador exacto de la imagen: Punto verde neón + ID alineado a la derecha
+          # Renderizado del punto con el color de su estado y el ID al lado
           icon_html = f"""
                     <div style="display: flex; align-items: center; white-space: nowrap;">
                         <span style="
                             height: 10px; 
                             width: 10px; 
-                            background-color: #00FF00; 
+                            background-color: {color_hex}; 
                             border-radius: 50%; 
                             display: inline-block;
-                            box-shadow: 0 0 4px #00FF00;
+                            box-shadow: 0 0 5px {color_hex};
                         "></span>
                         <span style="
-                            color: #00FF00; 
+                            color: {color_hex}; 
                             font-size: 11px; 
                             font-weight: bold; 
                             font-family: monospace, sans-serif;
@@ -907,7 +916,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se"
         f" renderizaron {total_sectores} sectores hidráulicos y"
-        f" {success_count} VRPs georreferenciadas.</p>",
+        f" {success_count} VRPs georreferenciadas con simbología individual.</p>",
         unsafe_allow_html=True,
     )
 
