@@ -327,20 +327,27 @@ st.write(
         font-size: 0.85rem !important;
     }
 
+    /* BOTONES GLOBALES EN NEGRO */
     .stButton>button {
-        background: linear-gradient(135deg, #023e8a 0%, #0077b6 100%) !important;
+        background-color: #000000 !important;
+        background-image: none !important;
         color: #FFFFFF !important;
-        border: 1px solid rgba(0, 229, 255, 0.3) !important;
+        border: 1px solid #333333 !important;
         border-radius: 6px;
         font-weight: 700;
         padding: 0.6rem 1.2rem;
-        box-shadow: 0 4px 15px rgba(2, 62, 138, 0.4);
-        transition: all 0.2s ease-in-out;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        transition: all 0.25s ease-in-out;
     }
     .stButton>button:hover {
-        background: linear-gradient(135deg, #03045e 0%, #023e8a 100%) !important;
+        background-color: #121212 !important;
+        color: #00E5FF !important;
         border-color: #00E5FF !important;
-        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+    }
+    .stButton>button:active {
+        background-color: #1F1F1F !important;
+        color: #FFFFFF !important;
     }
 
     div[data-baseweb="input"] input, div[data-baseweb="base-input"] input, div[data-baseweb="textarea"] textarea {
