@@ -783,7 +783,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     }
 
     m = folium.Map(
-        location=[21.8853, -102.2916], zoom_start=14, control_scale=True
+        location=[21.8853, -102.2916], zoom_start=13, control_scale=True
     )
 
     agregar_capas_base_mapa(m)
