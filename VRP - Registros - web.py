@@ -1305,16 +1305,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
             )
 
 # ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER)
-            st.markdown(
-                "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
-                " Gestión de Fotografías</h4>",
-                unsafe_allow_html=True,
-            )
-
             col_edit_f1, col_edit_f2 = st.columns(2)
 
             # --- FOTO 1 ---
