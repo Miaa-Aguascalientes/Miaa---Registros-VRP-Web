@@ -781,7 +781,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     a_c1, a_c2, a_c3, a_c4 = st.columns(4)
     with a_c1:
         st.text_input(
-            "ID_0 (Bloqueado)",
+            "ID_0 (Registro)",
             value=str(siguiente_id_0),
             disabled=True,
             key="add_id_0_bloq",
