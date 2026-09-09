@@ -966,7 +966,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     folium.LayerControl(collapsed=False).add_to(m)
 
-    st_folium(m, width="100%", height=650, returned_objects=[])
+    st_folium(m, width="100%", height=750, returned_objects=[])
 
     total_sectores = len(df_sectores) if not df_sectores.empty else 0
     st.markdown(
