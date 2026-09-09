@@ -831,7 +831,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         }
 
       def estilo_hover_sector(feature):
-        return {"fillOpacity": 0.10, "weight": 3, "color": "#FFFFFF"}
+        return {"fillOpacity": 0.12, "weight": 2, "color": "#FFFFFF"}
 
       for _, sec_row in df_sectores.iterrows():
         try:
