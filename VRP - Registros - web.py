@@ -728,6 +728,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales: {err_mapa}")
   elif not df_mapa.empty:
+
     def get_valve_color(estado):
       estado_str = str(estado).strip().lower()
       if "cerrada" in estado_str:
@@ -753,9 +754,29 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
     fg_limites.add_to(m)
 
+    # Crear FeatureGroups dinámicos con el conteo de cada estado
     grupos_capas = {}
     for estado_opc in OPCIONES_ESTADO_VALVULA + ["Otros / Sin Estado"]:
-      fg = folium.FeatureGroup(name=f"Válvulas: {estado_opc}", show=True)
+      if estado_opc != "Otros / Sin Estado":
+        count_est = len(
+            df_mapa[
+                df_mapa["estat_valv"].str.strip().str.lower()
+                == estado_opc.lower()
+            ]
+        )
+      else:
+        count_est = len(
+            df_mapa[
+                ~df_mapa["estat_valv"]
+                .str.strip()
+                .isin(OPCIONES_ESTADO_VALVULA)
+            ]
+        )
+
+      # Nombre con conteo visible en las capas del mapa
+      fg = folium.FeatureGroup(
+          name=f"Válvulas {estado_opc} ({count_est})", show=True
+      )
       fg.add_to(m)
       grupos_capas[estado_opc] = fg
 
@@ -803,7 +824,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     )
   else:
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
-
 
 # 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
 
