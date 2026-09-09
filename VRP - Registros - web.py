@@ -327,29 +327,56 @@ st.write(
         font-size: 0.85rem !important;
     }
 
-    /* BOTONES GLOBALES EN NEGRO */
+    /* 1. ESTILO BASE PARA TODOS LOS BOTONES (Neutros / Secundarios) */
     .stButton>button {
-        background-color: #000000 !important;
-        background-image: none !important;
-        color: #FFFFFF !important;
-        border: 1px solid #333333 !important;
-        border-radius: 6px;
-        font-weight: 700;
-        padding: 0.6rem 1.2rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-        transition: all 0.25s ease-in-out;
+        background: #1E293B !important;
+        color: #F8FAFC !important;
+        border: 1px solid rgba(0, 229, 255, 0.25) !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 0.55rem 1.2rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     .stButton>button:hover {
-        background-color: #121212 !important;
-        color: #00E5FF !important;
+        background: #334155 !important;
         border-color: #00E5FF !important;
-        box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+        color: #00E5FF !important;
+        box-shadow: 0 0 12px rgba(0, 229, 255, 0.3) !important;
+        transform: translateY(-1px) !important;
     }
-    .stButton>button:active {
-        background-color: #1F1F1F !important;
+
+    /* 2. BOTÓN PRINCIPAL:💾 Actualizar Registro (Resalta en Azul Cyan Neón) */
+    .stButton>button:has(p:contains("Actualizar")), 
+    .stButton>button:has(span:contains("Actualizar")),
+    div[data-testid="stFormSubmitButton"]>button {
+        background: linear-gradient(135deg, #0284C7 0%, #00B4D8 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #00E5FF !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(0, 180, 216, 0.35) !important;
+    }
+    .stButton>button:has(p:contains("Actualizar")):hover,
+    .stButton>button:has(span:contains("Actualizar")):hover {
+        background: linear-gradient(135deg, #0369A1 0%, #0096C7 100%) !important;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.6) !important;
         color: #FFFFFF !important;
     }
 
+    /* 3. BOTÓN PELIGROSO: 🗑️ Eliminar Registro (Tono Rojo Advertencia) */
+    .stButton>button:has(p:contains("Eliminar")), 
+    .stButton>button:has(span:contains("Eliminar")) {
+        background: rgba(153, 27, 27, 0.25) !important;
+        color: #FCA5A5 !important;
+        border: 1px solid rgba(239, 68, 68, 0.5) !important;
+    }
+    .stButton>button:has(p:contains("Eliminar")):hover,
+    .stButton>button:has(span:contains("Eliminar")):hover {
+        background: #991B1B !important;
+        color: #FFFFFF !important;
+        border-color: #EF4444 !important;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important;
+    }
     div[data-baseweb="input"] input, div[data-baseweb="base-input"] input, div[data-baseweb="textarea"] textarea {
         background-color: #080C14 !important;
         color: #F8FAFC !important;
