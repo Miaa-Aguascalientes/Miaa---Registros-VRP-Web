@@ -1157,14 +1157,14 @@ elif st.session_state.active_tab == "⚙️ Editar":
             e_c1, e_c2, e_c3, e_c4 = st.columns(4)
             with e_c1:
                 st.text_input(
-                    "ID_0 (Bloqueado)",
+                    "ID_0 (Registro)",
                     value=str(row["id_0"] or 0),
                     disabled=True,
                     key=f"id0_bloq_{row['fid']}",
                 )
             with e_c2:
                 e_id = st.text_input(
-                    "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+                    "ID VRP", value=str(row["id"] or ""), key=f"id_{row['fid']}"
                 )
             with e_c3:
                 e_cota = st.number_input(
