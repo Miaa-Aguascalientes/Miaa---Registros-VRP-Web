@@ -789,7 +789,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS CON LA LÓGICA DE ESTILO SOLICITADA ---
+    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS ---
     fg_sectores = folium.FeatureGroup(
         name="📐 Sectores Hidráulicos", show=True
     )
@@ -797,18 +797,14 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     if not err_sectores and not df_sectores.empty:
       import json
 
-      # Funciones de estilo basadas en tu snippet
       def estilo_final_sector(feature):
         props = feature.get("properties", {})
         nombre_actual = props.get("sector")
         sec_sel = st.session_state.get("sector_resaltado")
 
-        # Verificación de match por selección en session_state
         es_match = (
             sec_sel is not None and nombre_actual == sec_sel.get("sector")
         )
-
-        # Cálculo dinámico si existe afectación en el diccionario global (o por defecto 0)
         afectacion_val = props.get("afectacion", 0)
         color_dinamico = props.get("color_dinamico", "#2980B9")
 
@@ -837,17 +833,24 @@ elif st.session_state.active_tab == "🗺️ Mapa":
       def estilo_hover_sector(feature):
         return {"fillOpacity": 0.8, "weight": 4, "color": "#FFFFFF"}
 
-      # Procesamiento de la geometría GeoJSON
       for _, sec_row in df_sectores.iterrows():
         try:
           geom_json = json.loads(sec_row["geojson"])
-          geom_json["properties"] = {
-              "sector": sec_row.get("sector", "Sin Nombre"),
-              "fid": sec_row.get("fid"),
+
+          # Estructurar como Feature oficial GeoJSON para corregir la compatibilidad con GeoJsonTooltip
+          feature_estructurado = {
+              "type": "Feature",
+              "geometry": geom_json,
+              "properties": {
+                  "sector": str(sec_row.get("sector", "Sin Nombre")),
+                  "fid": sec_row.get("fid"),
+                  "afectacion": 0,
+                  "color_dinamico": "#2980B9",
+              },
           }
 
           folium.GeoJson(
-              geom_json,
+              feature_estructurado,
               style_function=estilo_final_sector,
               highlight_function=estilo_hover_sector,
               tooltip=folium.GeoJsonTooltip(
