@@ -896,13 +896,13 @@ elif st.session_state.active_tab == "➕ Añadir":
         cx1, cx2 = st.columns(2)
         with cx1:
             val_coord_x = st.number_input(
-                "Coord X (geom)",
+                "Coordenada X",
                 format="%.2f",
                 key="add_coord_x_input",
             )
         with cx2:
             val_coord_y = st.number_input(
-                "Coord Y (geom)",
+                "Coordenada Y",
                 format="%.3f",
                 key="add_coord_y_input",
             )
