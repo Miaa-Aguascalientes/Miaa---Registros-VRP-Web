@@ -346,9 +346,11 @@ st.write(
         transform: translateY(-1px) !important;
     }
 
-    /* 2. BOTÓN PRINCIPAL:💾 Actualizar Registro (Resalta en Azul Cyan Neón) */
+    /* 2. BOTÓN PRINCIPAL:💾 Actualizar / Guardar Registro (Resalta en Azul Cyan Neón) */
     .stButton>button:has(p:contains("Actualizar")), 
     .stButton>button:has(span:contains("Actualizar")),
+    .stButton>button:has(p:contains("Guardar")), 
+    .stButton>button:has(span:contains("Guardar")),
     div[data-testid="stFormSubmitButton"]>button {
         background: linear-gradient(135deg, #0284C7 0%, #00B4D8 100%) !important;
         color: #FFFFFF !important;
@@ -357,7 +359,9 @@ st.write(
         box-shadow: 0 4px 15px rgba(0, 180, 216, 0.35) !important;
     }
     .stButton>button:has(p:contains("Actualizar")):hover,
-    .stButton>button:has(span:contains("Actualizar")):hover {
+    .stButton>button:has(span:contains("Actualizar")):hover,
+    .stButton>button:has(p:contains("Guardar")):hover,
+    .stButton>button:has(span:contains("Guardar")):hover {
         background: linear-gradient(135deg, #0369A1 0%, #0096C7 100%) !important;
         box-shadow: 0 0 20px rgba(0, 229, 255, 0.6) !important;
         color: #FFFFFF !important;
@@ -743,7 +747,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
 
 
-# 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (4 COLUMNAS) -----------------------------------------------------------------------------------------------
+# 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
 
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
@@ -767,147 +771,176 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  # 10.1 ------------------ Inicialización segura en session_state para widgets de coordenadas
+  # Inicialización segura de coordenadas en session_state
   if "add_coord_x_input" not in st.session_state:
     st.session_state["add_coord_x_input"] = 0.0
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
-  # 10.2 ------------------ PROCESAR CLIC DEL MAPA ANTES DE INSTANCIAR LOS INPUTS 
-  st.markdown(
-      "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
-      " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
-      " para capturar coordenadas automáticamente</p>",
-      unsafe_allow_html=True,
-  )
-  try:
-    if (
-        st.session_state["add_coord_x_input"] != 0.0
-        and st.session_state["add_coord_y_input"] != 0.0
-    ):
-      lon_add, lat_add = transformer_to_latlon.transform(
-          st.session_state["add_coord_x_input"], st.session_state["add_coord_y_input"]
-      )
-      m_add = folium.Map(
-          location=[lat_add, lon_add], zoom_start=16, control_scale=True
-      )
-    else:
-      m_add = folium.Map(
-          location=[21.8853, -102.2916], zoom_start=12, control_scale=True
-      )
-
-    agregar_capas_base_mapa(m_add)
-    Fullscreen().add_to(m_add)
-
-    if (
-        st.session_state["add_coord_x_input"] != 0.0
-        and st.session_state["add_coord_y_input"] != 0.0
-    ):
-      folium.Marker(
-          location=[lat_add, lon_add],
-          popup="Nueva VRP",
-          icon=folium.Icon(color="cyan", icon="info-sign"),
-      ).add_to(m_add)
-
-    folium.LayerControl(collapsed=False).add_to(m_add)
-    map_data_add = st_folium(
-        m_add,
-        width="100%",
-        height=280,
-        key="map_add_preview",
-        returned_objects=["last_clicked"],
-    )
-
-    if map_data_add and map_data_add.get("last_clicked"):
-      lat_c = map_data_add["last_clicked"]["lat"]
-      lon_c = map_data_add["last_clicked"]["lng"]
-      utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-      new_x = round(utm_x, 2)
-      new_y = round(utm_y, 3)
-      if (
-          st.session_state["add_coord_x_input"] != new_x
-          or st.session_state["add_coord_y_input"] != new_y
-      ):
-        st.session_state["add_coord_x_input"] = new_x
-        st.session_state["add_coord_y_input"] = new_y
-        st.rerun()
-
-  except Exception as e_map_add:
-    st.info(
-        "Haga clic en el mapa para establecer la posición geográfica."
-        f" ({e_map_add})"
-    )
-
-  st.markdown("<br>", unsafe_allow_html=True)
-
-  c1, c2, c3, c4 = st.columns(4)
-  with c1:
+  # FILA 1 (4 columnas)
+  a_c1, a_c2, a_c3, a_c4 = st.columns(4)
+  with a_c1:
     st.text_input(
-        "ID_0 (Automático)",
+        "ID_0 (Bloqueado)",
         value=str(siguiente_id_0),
         disabled=True,
         key="add_id_0_bloq",
     )
     val_id_0 = siguiente_id_0
+  with a_c2:
+    val_id = st.text_input("ID *Obligatorio", key="add_id")
+  with a_c3:
+    val_cota = st.number_input("Cota Terr", value=0.0, key="add_cota")
+  with a_c4:
+    val_marca = st.text_input("Marca Valv", key="add_marca")
+
+  # FILA 2 (4 columnas)
+  a_c5, a_c6, a_c7, a_c8 = st.columns(4)
+  with a_c5:
     val_serie = st.text_input("Serie", key="add_serie")
-    val_domicilio = st.text_input("Domicilio", key="add_dom")
-    val_coord_x = st.number_input(
-        "Coord X (geom)",
-        format="%.2f",
-        key="add_coord_x_input",
-    )
-
-  with c2:
-    val_id = st.text_input("ID (VRP) *Obligatorio", key="add_id")
+  with a_c6:
     val_diametro = st.number_input(
-        "Diámetro (pulgadas)", min_value=0, value=0, key="add_diam"
+        "Diámetro", min_value=0, value=0, key="add_diam"
     )
-    val_colonia = st.text_input("Colonia", key="add_col")
-    val_coord_y = st.number_input(
-        "Coord Y (geom)",
-        format="%.3f",
-        key="add_coord_y_input",
-    )
+  with a_c7:
+    val_modelo = st.text_input("Modelo Valv", key="add_modelo")
+  with a_c8:
+    val_trim = st.text_input("Marca Trim", key="add_trim")
 
-  with c3:
-    val_cota = st.number_input("Cota Territorio", value=0.0, key="add_cota")
-    val_modelo = st.text_input("Modelo Válvula", key="add_modelo")
+  # FILA 3 (4 columnas)
+  a_c9, a_c10, a_c11, a_c12 = st.columns(4)
+  with a_c9:
+    val_domicilio = st.text_input("Domicilio", key="add_dom")
+  with a_c10:
+    val_colonia = st.text_input("Colonia", key="add_col")
+  with a_c11:
     val_estat = st.selectbox(
         "Estado de la Válvula",
         options=OPCIONES_ESTADO_VALVULA,
         index=0,
         key="add_estat",
     )
+  with a_c12:
+    val_sector = st.text_input("Sector Hid", key="add_sector")
 
-  with c4:
-    val_marca = st.text_input("Marca Válvula", key="add_marca")
-    val_trim = st.text_input("Marca Trim", key="add_trim")
-    val_sector = st.text_input("Sector Hidráulico", key="add_sector")
+  # FILA 4 (Coordenadas y Calibraciones | Mapa)
+  col_coord_left, col_map_right = st.columns([1, 1])
 
-  st.markdown("<br>", unsafe_allow_html=True)
-  c5, c6, c7, c8 = st.columns(4)
-  with c5:
-    val_hora = st.text_input("Hora Calibración", key="add_hora")
-    val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
-  with c6:
-    val_cal_ant_n = st.text_input("Cal Anterior Noche (kg/cm)", key="add_cann")
-    val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
-  with c7:
-    val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
-    val_fecha_obj = st.date_input(
-        "Fecha última actualización",
-        value=datetime.date.today(),
-        format="DD/MM/YYYY",
-        key="add_fecha",
+  with col_map_right:
+    st.markdown(
+        "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
+        " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+        " mapa para establecer coordenadas automáticamente</p>",
+        unsafe_allow_html=True,
     )
-    val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
-  with c8:
-    pass
+    try:
+      if (
+          st.session_state["add_coord_x_input"] != 0.0
+          and st.session_state["add_coord_y_input"] != 0.0
+      ):
+        lon_add, lat_add = transformer_to_latlon.transform(
+            st.session_state["add_coord_x_input"],
+            st.session_state["add_coord_y_input"],
+        )
+        m_add = folium.Map(
+            location=[lat_add, lon_add], zoom_start=16, control_scale=True
+        )
+      else:
+        m_add = folium.Map(
+            location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+        )
 
-  val_observ = st.text_area("Observaciones Generales", key="add_obs")
+      agregar_capas_base_mapa(m_add)
+      Fullscreen().add_to(m_add)
+
+      if (
+          st.session_state["add_coord_x_input"] != 0.0
+          and st.session_state["add_coord_y_input"] != 0.0
+      ):
+        folium.Marker(
+            location=[lat_add, lon_add],
+            popup="Nueva VRP",
+            icon=folium.Icon(color="cyan", icon="info-sign"),
+        ).add_to(m_add)
+
+      folium.LayerControl(collapsed=False).add_to(m_add)
+      map_data_add = st_folium(
+          m_add,
+          width="100%",
+          height=325,
+          key="map_add_preview",
+          returned_objects=["last_clicked"],
+      )
+
+      if map_data_add and map_data_add.get("last_clicked"):
+        lat_c = map_data_add["last_clicked"]["lat"]
+        lon_c = map_data_add["last_clicked"]["lng"]
+        utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+        new_x = round(utm_x, 2)
+        new_y = round(utm_y, 3)
+        if (
+            st.session_state["add_coord_x_input"] != new_x
+            or st.session_state["add_coord_y_input"] != new_y
+        ):
+          st.session_state["add_coord_x_input"] = new_x
+          st.session_state["add_coord_y_input"] = new_y
+          st.rerun()
+
+    except Exception as e_map_add:
+      st.info(
+          "Haga clic en el mapa para establecer la posición geográfica."
+          f" ({e_map_add})"
+      )
+
+  with col_coord_left:
+    cx1, cx2 = st.columns(2)
+    with cx1:
+      val_coord_x = st.number_input(
+          "Coord X (geom)",
+          format="%.2f",
+          key="add_coord_x_input",
+      )
+    with cx2:
+      val_coord_y = st.number_input(
+          "Coord Y (geom)",
+          format="%.3f",
+          key="add_coord_y_input",
+      )
+
+    # Hora Cal, Cal Anterior Noche
+    cc1, cc2 = st.columns(2)
+    with cc1:
+      val_hora = st.text_input("Hora Cal", key="add_hora")
+    with cc2:
+      val_cal_ant_n = st.text_input(
+          "Cal Anterior Noche (kg/cm)", key="add_cann"
+      )
+
+    # Cal Anterior Día, Cal Actual Día
+    cc3, cc4 = st.columns(2)
+    with cc3:
+      val_cal_ant_d = st.text_input("Cal Anterior Día (kg/cm)", key="add_cand")
+    with cc4:
+      val_cal_act_d = st.text_input("Cal Actual Día (kg/cm)", key="add_cactd")
+
+    # Cal Actual Noche, Fecha última actualización
+    cc5, cc6 = st.columns(2)
+    with cc5:
+      val_cal_act_n = st.text_input("Cal Actual Noche (kg/cm)", key="add_cactn")
+    with cc6:
+      val_fecha_obj = st.date_input(
+          "Fecha última actualización",
+          value=datetime.date.today(),
+          format="DD/MM/YYYY",
+          key="add_fecha",
+      )
+      val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
+
+  # FILA 5: Observaciones
+  val_observ = st.text_area("Observaciones", key="add_obs")
 
   st.markdown(
-      "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 20px 0;'>",
+      "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
       unsafe_allow_html=True,
   )
   st.markdown(
@@ -967,7 +1000,11 @@ elif st.session_state.active_tab == "➕ Añadir":
       )
 
   st.markdown("<br>", unsafe_allow_html=True)
-  if st.button("💾 Guardar Nuevo Registro VPRS", key="btn_guardar_nuevo"):
+  if st.button(
+      "💾 Guardar Nuevo Registro VPRS",
+      key="btn_guardar_nuevo",
+      use_container_width=True,
+  ):
     if val_id:
       try:
         foto_bytes = (
