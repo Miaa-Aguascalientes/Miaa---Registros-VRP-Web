@@ -739,9 +739,10 @@ if st.session_state.active_tab == "📍 Registros":
     st.info("No se encontraron registros.")
 
 
-# 09 SECCION ------------------------------------------------------------ MAPA DE VRPs (POSTGIS) CON CAPAS SOLICITADAS -----------------------------------------------------------------------------------------
+# 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "🗺️ Mapa":
+  # 1. CONSULTA DE VÁLVULAS (VPRs)
   query_mapa = """
         SELECT 
             id,
@@ -755,11 +756,20 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     """
   df_mapa, err_mapa = obtener_datos(query_mapa)
 
-  if err_mapa:
-    st.error(f"❌ Error al cargar datos espaciales: {err_mapa}")
-  elif not df_mapa.empty:
+  # 2. CONSULTA DE SECTORES HIDRÁULICOS (Convertidos a GeoJSON WGS84)
+  query_sectores = """
+        SELECT 
+            fid,
+            sector,
+            ST_AsGeoJSON(ST_Transform(geom, 4326)) as geojson
+        FROM "Sectorizacion"."Sectores_hidr"
+        WHERE geom IS NOT NULL;
+    """
+  df_sectores, err_sectores = obtener_datos(query_sectores)
 
-    # Diccionario unificado de emojis por estado (idéntico a la sidebar)
+  if err_mapa:
+    st.error(f"❌ Error al cargar datos espaciales de VPRs: {err_mapa}")
+  else:
     ICONOS_ESTADO = {
         "Calibrada": "🟢",
         "Abierta": "🔵",
@@ -778,88 +788,117 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
-    fg_limites.add_to(m)
+    # --- DIBUJAR CAPA DE SECTORES HIDRÁULICOS ---
+    fg_sectores = folium.FeatureGroup(
+        name="📐 Sectores Hidráulicos", show=True
+    )
 
-    # Crear FeatureGroups dinámicos por estado
+    if not err_sectores and not df_sectores.empty:
+      import json
+
+      for _, sec_row in df_sectores.iterrows():
+        try:
+          geom_json = json.loads(sec_row["geojson"])
+          nombre_sector = sec_row.get("sector", "Sin Nombre")
+
+          # Agregar el polígono del sector
+          folium.GeoJson(
+              geom_json,
+              style_function=lambda feature: {
+                  "fillColor": "#00E5FF",
+                  "color": "#00B4D8",
+                  "weight": 1.5,
+                  "fillOpacity": 0.15,
+              },
+              highlight_function=lambda feature: {
+                  "fillColor": "#00E5FF",
+                  "color": "#FFFFFF",
+                  "weight": 2.5,
+                  "fillOpacity": 0.4,
+              },
+              tooltip=folium.Tooltip(
+                  f"<b>Sector:</b> {nombre_sector}", sticky=True
+              ),
+          ).add_to(fg_sectores)
+        except Exception:
+          continue
+
+    fg_sectores.add_to(m)
+
+    # --- DIBUJAR CAPAS DE VÁLVULAS ---
     grupos_capas = {}
-    for estado_opc in OPCIONES_ESTADO_VALVULA:
-      count_est = len(
-          df_mapa[
-              df_mapa["estat_valv"].str.strip().str.lower()
-              == estado_opc.lower()
-          ]
-      )
-      icono_estado = ICONOS_ESTADO.get(estado_opc, "⚪")
+    if not df_mapa.empty:
+      for estado_opc in OPCIONES_ESTADO_VALVULA:
+        count_est = len(
+            df_mapa[
+                df_mapa["estat_valv"].str.strip().str.lower()
+                == estado_opc.lower()
+            ]
+        )
+        icono_estado = ICONOS_ESTADO.get(estado_opc, "⚪")
 
-      fg = folium.FeatureGroup(
-          name=f"{icono_estado} {estado_opc} ({count_est})", show=True
-      )
-      fg.add_to(m)
-      grupos_capas[estado_opc.lower()] = fg
+        fg = folium.FeatureGroup(
+            name=f"{icono_estado} {estado_opc} ({count_est})", show=True
+        )
+        fg.add_to(m)
+        grupos_capas[estado_opc.lower()] = fg
 
-    fg_otros = folium.FeatureGroup(name="⚪ Otros / Sin Estado", show=True)
-    fg_otros.add_to(m)
+      fg_otros = folium.FeatureGroup(name="⚪ Otros / Sin Estado", show=True)
+      fg_otros.add_to(m)
 
-    success_count = 0
+      success_count = 0
 
-    for _, row in df_mapa.iterrows():
-      try:
-        lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
-        estado_raw = str(row["estat_valv"] or "Desconocido").strip()
-        estado_key = estado_raw.lower()
+      for _, row in df_mapa.iterrows():
+        try:
+          lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
+          estado_raw = str(row["estat_valv"] or "Desconocido").strip()
+          estado_key = estado_raw.lower()
 
-        # Buscar el emoji correspondiente
-        emoji_punto = "⚪"
-        for est_nombre, est_emoji in ICONOS_ESTADO.items():
-          if est_nombre.lower() == estado_key:
-            emoji_punto = est_emoji
-            break
+          emoji_punto = "⚪"
+          for est_nombre, est_emoji in ICONOS_ESTADO.items():
+            if est_nombre.lower() == estado_key:
+              emoji_punto = est_emoji
+              break
 
-        grupo_destino = grupos_capas.get(estado_key, fg_otros)
+          grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
-        popup_html = f"""
-                <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
-                    <b>ID:</b> {row['id']}<br>
-                    <b>Estado:</b> {emoji_punto} {estado_raw}<br>
-                    <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
-                </div>
-                """
+          popup_html = f"""
+                    <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
+                        <b>ID:</b> {row['id']}<br>
+                        <b>Estado:</b> {emoji_punto} {estado_raw}<br>
+                        <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
+                    </div>
+                    """
 
-        # Crear marcador usando el emoji dinámico
-        icon_html = f"""
-                <div style="
-                    font-size: 12px; 
-                    line-height: 12px; 
-                    text-align: center; 
-                    filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.7));
-                ">{emoji_punto}</div>
-                """
+          icon_html = f"""
+                    <div style="
+                        font-size: 12px; 
+                        line-height: 12px; 
+                        text-align: center; 
+                        filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.7));
+                    ">{emoji_punto}</div>
+                    """
 
-        folium.Marker(
-            location=[lat, lon],
-            icon=folium.DivIcon(
-                html=icon_html, icon_size=(14, 14), icon_anchor=(7, 7)
-            ),
-            popup=folium.Popup(popup_html, max_width=300),
-        ).add_to(grupo_destino)
+          folium.Marker(
+              location=[lat, lon],
+              icon=folium.DivIcon(
+                  html=icon_html, icon_size=(14, 14), icon_anchor=(7, 7)
+              ),
+              popup=folium.Popup(popup_html, max_width=300),
+          ).add_to(grupo_destino)
 
-        success_count += 1
-      except Exception:
-        continue
+          success_count += 1
+        except Exception:
+          continue
 
     folium.LayerControl(collapsed=False).add_to(m)
 
     st_folium(m, width="100%", height=650, returned_objects=[])
     st.markdown(
-        f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top:"
-        f" 10px;'>Se renderizaron {success_count} VRPs georreferenciadas con"
-        " simbología unificada.</p>",
+        f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 10px;'>Se"
+        f" renderizaron {len(df_sectores)} sectores hidráulicos y"
+        f" {success_count} VRPs georreferenciadas.</p>",
         unsafe_allow_html=True,
-    )
-  else:
-    st.info(
-        "No se encontraron geometrías de VRPs disponibles en la base de datos."
     )
 
 # 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
