@@ -387,19 +387,28 @@ st.write(
         border-color: rgba(0, 229, 255, 0.25) !important;
         border-radius: 6px !important;
         font-size: 0.9rem !important;
-    }
+    } 
     
+    /* REGLA COMPACTA PARA LOS EXPANDERS (CUADROS) */
     [data-testid="stExpander"] {
         background-color: #080C14 !important;
         border: 1px solid rgba(0, 229, 255, 0.15) !important;
         border-radius: 6px !important;
-        margin-top: 8px !important;
-        margin-bottom: 8px !important;
+        margin-top: -6px !important;
+        margin-bottom: -6px !important;
     }
+
+    /* REDUCCIÓN DE ESPACIOS DENTRO Y ENTRE CONTENEDORES DE LA SIDEBAR */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.3rem !important;
+    }
+
     [data-testid="stExpander"] summary {
         color: #00E5FF !important;
         font-size: 0.85rem !important;
         font-weight: 600 !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
     }
 
     [data-testid="stCameraInput"] video, 
