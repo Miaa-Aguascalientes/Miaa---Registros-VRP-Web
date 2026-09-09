@@ -783,7 +783,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     }
 
     m = folium.Map(
-        location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+        location=[21.8853, -102.2916], zoom_start=14, control_scale=True
     )
 
     agregar_capas_base_mapa(m)
@@ -831,7 +831,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         }
 
       def estilo_hover_sector(feature):
-        return {"fillOpacity": 0.8, "weight": 4, "color": "#FFFFFF"}
+        return {"fillOpacity": 0.10, "weight": 3, "color": "#FFFFFF"}
 
       for _, sec_row in df_sectores.iterrows():
         try:
