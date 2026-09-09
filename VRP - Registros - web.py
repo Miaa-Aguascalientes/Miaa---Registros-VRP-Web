@@ -1304,6 +1304,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 unsafe_allow_html=True,
             )
 
+# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS
             col_edit_f1, col_edit_f2 = st.columns(2)
 
             with col_edit_f1:
@@ -1326,13 +1327,17 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
                 if not st.session_state[cam_key_edit]:
                     if st.button(
-                        "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
+                        "📷 Reemplazar Foto 1",
+                        key=f"btn_open_cam_edit_{row['fid']}",
+                        use_container_width=True,  # <--- Ancho completo en col 1
                     ):
                         st.session_state[cam_key_edit] = True
                         st.rerun()
                 else:
                     if st.button(
-                        "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
+                        "❌ Cerrar Cámara 1",
+                        key=f"btn_close_cam_edit_{row['fid']}",
+                        use_container_width=True,  # <--- Ancho completo en col 1
                     ):
                         st.session_state[cam_key_edit] = False
                         st.rerun()
@@ -1365,13 +1370,17 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
                 if not st.session_state[cam_key_edit_2]:
                     if st.button(
-                        "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
+                        "📷 Reemplazar Foto 2",
+                        key=f"btn_open_cam_edit_2_{row['fid']}",
+                        use_container_width=True,  # <--- Ancho completo en col 2
                     ):
                         st.session_state[cam_key_edit_2] = True
                         st.rerun()
                 else:
                     if st.button(
-                        "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
+                        "❌ Cerrar Cámara 2",
+                        key=f"btn_close_cam_edit_2_{row['fid']}",
+                        use_container_width=True,  # <--- Ancho completo en col 2
                     ):
                         st.session_state[cam_key_edit_2] = False
                         st.rerun()
