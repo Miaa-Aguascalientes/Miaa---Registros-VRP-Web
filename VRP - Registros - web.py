@@ -398,25 +398,26 @@ st.write(
         margin-bottom: -6px !important;
     }
 
-    /* REDUCCIÓN DE ESPACIOS DENTRO Y ENTRE CONTENEDORES DE LA SIDEBAR */
+    /* REGLA BALANCEADA PARA LOS EXPANDERS (CUADROS) */
+    [data-testid="stExpander"] {
+        background-color: #080C14 !important;
+        border: 1px solid rgba(0, 229, 255, 0.15) !important;
+        border-radius: 6px !important;
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+    /* REDUCCIÓN DE ESPACIO ENTRE BLOQUES DE LA BARRA LATERAL */
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0.3rem !important;
+        gap: 0.15rem !important;
     }
 
     [data-testid="stExpander"] summary {
         color: #00E5FF !important;
         font-size: 0.85rem !important;
         font-weight: 600 !important;
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
-    }
-
-    [data-testid="stCameraInput"] video, 
-    [data-testid="stCameraInput"] img {
-        width: 100% !important;
-        max-width: 640px !important;
-        height: auto !important;
-        border-radius: 8px !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
     }
 </style>""",
     unsafe_allow_html=True,
