@@ -788,7 +788,7 @@ elif st.session_state.active_tab == "➕ Añadir":
         )
         val_id_0 = siguiente_id_0
     with a_c2:
-        val_id = st.text_input("ID *Obligatorio", key="add_id")
+        val_id = st.text_input("ID VRP *Obligatorio", key="add_id")
     with a_c3:
         val_cota = st.number_input("Cota Terr", value=0.0, key="add_cota")
     with a_c4:
