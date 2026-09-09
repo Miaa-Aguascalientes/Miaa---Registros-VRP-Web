@@ -821,7 +821,7 @@ elif st.session_state.active_tab == "➕ Añadir":
             key="add_estat",
         )
     with a_c12:
-        val_sector = st.text_input("Sector Hid", key="add_sector")
+        val_sector = st.text_input("Sector Hidráulico", key="add_sector")
 
     # FILA 4 (Coordenadas y Calibraciones | Mapa)
     col_coord_left, col_map_right = st.columns([1, 1])
@@ -1098,7 +1098,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
     with col_search:
         st.text_input(
-            "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Col.):",
+            "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Colonia.):",
             placeholder="Ej. VRP-01, Centro...",
             key="busqueda_edit_val",
         )
@@ -1168,13 +1168,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 )
             with e_c3:
                 e_cota = st.number_input(
-                    "Cota Terr",
+                    "Cota Terreno",
                     value=float(row["cota_terr"] or 0.0),
                     key=f"cota_{row['fid']}",
                 )
             with e_c4:
                 e_marca = st.text_input(
-                    "Marca Valv",
+                    "Marca Valvula",
                     value=str(row["marca_valv"] or ""),
                     key=f"mar_{row['fid']}",
                 )
@@ -1193,7 +1193,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 )
             with e_c7:
                 e_modelo = st.text_input(
-                    "Modelo Valv",
+                    "Modelo Valvula",
                     value=str(row["model_valv"] or ""),
                     key=f"mod_{row['fid']}",
                 )
@@ -1227,7 +1227,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 )
             with e_c12:
                 e_sector = st.text_input(
-                    "Sector Hid",
+                    "Sector Hidráulico",
                     value=str(row["sector_hid"] or ""),
                     key=f"sec_{row['fid']}",
                 )
@@ -1304,13 +1304,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 cx1, cx2 = st.columns(2)
                 with cx1:
                     e_coord_x = st.number_input(
-                        "Coord X (geom)",
+                        "Coordenada X",
                         format="%.2f",
                         key=x_key,
                     )
                 with cx2:
                     e_coord_y = st.number_input(
-                        "Coord Y (geom)",
+                        "Coordenada Y",
                         format="%.3f",
                         key=y_key,
                     )
@@ -1319,13 +1319,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 cc1, cc2 = st.columns(2)
                 with cc1:
                     e_hora = st.text_input(
-                        "Hora Cal",
+                        "Hora de Calibración",
                         value=str(row["hora_cal"] or ""),
                         key=f"hora_{row['fid']}",
                     )
                 with cc2:
                     e_cal_ant_n = st.text_input(
-                        "Cal Anterior Noche (kg/cm)",
+                        "Calibración Anterior Noche (kg/cm)",
                         value=str(row["cal_ant_n"] or ""),
                         key=f"cann_{row['fid']}",
                     )
@@ -1334,13 +1334,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 cc3, cc4 = st.columns(2)
                 with cc3:
                     e_cal_ant_d = st.text_input(
-                        "Cal Anterior Día (kg/cm)",
+                        "Calibración Anterior Día (kg/cm)",
                         value=str(row["cal_ant_d"] or ""),
                         key=f"cand_{row['fid']}",
                     )
                 with cc4:
                     e_cal_act_d = st.text_input(
-                        "Cal Actual Día (kg/cm)",
+                        "Calibración Actual Día (kg/cm)",
                         value=str(row["cal_act_d"] or ""),
                         key=f"cactd_{row['fid']}",
                     )
@@ -1349,7 +1349,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 cc5, cc6 = st.columns(2)
                 with cc5:
                     e_cal_act_n = st.text_input(
-                        "Cal Actual Noche (kg/cm)",
+                        "Calibración Actual Noche (kg/cm)",
                         value=str(row["cal_act_n"] or ""),
                         key=f"cactn_{row['fid']}",
                     )
