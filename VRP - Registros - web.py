@@ -940,81 +940,89 @@ elif st.session_state.active_tab == "➕ Añadir":
   val_observ = st.text_area("Observaciones", key="add_obs")
 
   st.markdown(
-      "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
-      " Registro de Fotografías</h4>",
-      unsafe_allow_html=True,
-  )
-
-  col_foto1, col_foto2 = st.columns(2)
-
-  with col_foto1:
-    st.markdown(
-        "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 1</p>",
+        "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
         unsafe_allow_html=True,
     )
-    cam_key_nuevo = "cam_open_nuevo"
-    if cam_key_nuevo not in st.session_state:
-      st.session_state[cam_key_nuevo] = False
-
-    if not st.session_state[cam_key_nuevo]:
-      if st.button("📷 Activar Cámara 1", key="btn_open_cam_nuevo"):
-        st.session_state[cam_key_nuevo] = True
-        st.rerun()
-    else:
-      if st.button("❌ Cerrar Cámara 1", key="btn_close_cam_nuevo"):
-        st.session_state[cam_key_nuevo] = False
-        st.rerun()
-
-    foto_camara = None
-    if st.session_state[cam_key_nuevo]:
-      foto_camara = st.camera_input(
-          "Capturar 1", key="camara_nuevo", label_visibility="collapsed"
-      )
-
-  with col_foto2:
     st.markdown(
-        "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 2</p>",
+        '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+        " Registro de Fotografías</h4>",
         unsafe_allow_html=True,
     )
-    cam_key_nuevo_2 = "cam_open_nuevo_2"
-    if cam_key_nuevo_2 not in st.session_state:
-      st.session_state[cam_key_nuevo_2] = False
 
-    if not st.session_state[cam_key_nuevo_2]:
-      if st.button("📷 Activar Cámara 2", key="btn_open_cam_nuevo_2"):
-        st.session_state[cam_key_nuevo_2] = True
-        st.rerun()
-    else:
-      if st.button("❌ Cerrar Cámara 2", key="btn_close_cam_nuevo_2"):
-        st.session_state[cam_key_nuevo_2] = False
-        st.rerun()
+    col_foto1, col_foto2 = st.columns(2)
 
-    foto_camara_2 = None
-    if st.session_state[cam_key_nuevo_2]:
-      foto_camara_2 = st.camera_input(
-          "Capturar 2", key="camara_nuevo_2", label_visibility="collapsed"
-      )
-
-  st.markdown("<br>", unsafe_allow_html=True)
-  if st.button(
-      "💾 Guardar Nuevo Registro VPRS",
-      key="btn_guardar_nuevo",
-      use_container_width=True,
-  ):
-    if val_id:
-      try:
-        foto_bytes = (
-            foto_camara.getvalue() if foto_camara is not None else None
+    with col_foto1:
+        st.markdown(
+            "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 1</p>",
+            unsafe_allow_html=True,
         )
-        foto_bytes_2 = (
-            foto_camara_2.getvalue() if foto_camara_2 is not None else None
+        origen_foto_1 = st.radio(
+            "Origen Foto 1",
+            ["📁 Seleccionar Archivo", "📷 Usar Cámara"],
+            key="origen_foto_1",
+            horizontal=True,
+            label_visibility="collapsed"
         )
+        
+        foto_input_1 = None
+        if origen_foto_1 == "📁 Seleccionar Archivo":
+            foto_input_1 = st.file_uploader(
+                "Subir Fotografía 1",
+                type=["png", "jpg", "jpeg"],
+                key="file_uploader_1"
+            )
+        else:
+            foto_input_1 = st.camera_input(
+                "Capturar Fotografía 1",
+                key="camara_nuevo_1",
+                label_visibility="collapsed"
+            )
 
-        sql_insert = """
+    with col_foto2:
+        st.markdown(
+            "<p style='font-weight: 600; font-size: 0.85rem;'>Fotografía 2</p>",
+            unsafe_allow_html=True,
+        )
+        origen_foto_2 = st.radio(
+            "Origen Foto 2",
+            ["📁 Seleccionar Archivo", "📷 Usar Cámara"],
+            key="origen_foto_2",
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+        
+        foto_input_2 = None
+        if origen_foto_2 == "📁 Seleccionar Archivo":
+            foto_input_2 = st.file_uploader(
+                "Subir Fotografía 2",
+                type=["png", "jpg", "jpeg"],
+                key="file_uploader_2"
+            )
+        else:
+            foto_input_2 = st.camera_input(
+                "Capturar Fotografía 2",
+                key="camara_nuevo_2",
+                label_visibility="collapsed"
+            )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button(
+        "💾 Guardar Nuevo Registro VPRS",
+        key="btn_guardar_nuevo",
+        use_container_width=True,
+    ):
+        if val_id:
+            try:
+                # Tanto st.file_uploader como st.camera_input devuelven un objeto BytesIO
+                # por lo que .getvalue() o .read() funciona de manera idéntica para ambos casos.
+                foto_bytes = (
+                    foto_input_1.getvalue() if foto_input_1 is not None else None
+                )
+                foto_bytes_2 = (
+                    foto_input_2.getvalue() if foto_input_2 is not None else None
+                )
+
+                sql_insert = """
                     INSERT INTO "Agua_potable"."VPRS" (
                         id_0, id, serie, diametro, marca_valv, model_valv, marca_trim, domicilio, colonia, 
                         cota_terr, sector_hid, cal_ant_d, cal_ant_n, fecha_ult_, cal_act_d, cal_act_n, 
@@ -1026,41 +1034,41 @@ elif st.session_state.active_tab == "➕ Añadir":
                         ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                     )
                 """
-        ejecutar_sql(
-            sql_insert,
-            {
-                "id_0": val_id_0,
-                "id": val_id,
-                "serie": val_serie if val_serie.strip() != "" else None,
-                "diametro": val_diametro,
-                "marca_valv": val_marca,
-                "model_valv": val_modelo,
-                "marca_trim": val_trim,
-                "domicilio": val_domicilio,
-                "colonia": val_colonia,
-                "cota_terr": val_cota,
-                "sector_hid": val_sector,
-                "cal_ant_d": val_cal_ant_d,
-                "cal_ant_n": val_cal_ant_n,
-                "fecha_ult_": val_fecha,
-                "cal_act_d": val_cal_act_d,
-                "cal_act_n": val_cal_act_n,
-                "hora_cal": val_hora,
-                "estat_valv": val_estat,
-                "observ": val_observ,
-                "fotos": foto_bytes,
-                "fotos_2": foto_bytes_2,
-                "coord_x": val_coord_x,
-                "coord_y": val_coord_y,
-            },
-        )
-        st.success("¡Válvula registrada con éxito!")
-        t.sleep(1)
-        st.rerun()
-      except Exception as ex:
-        st.error(f"Error al insertar: {ex}")
-    else:
-      st.warning("El campo ID es obligatorio.")
+                ejecutar_sql(
+                    sql_insert,
+                    {
+                        "id_0": val_id_0,
+                        "id": val_id,
+                        "serie": val_serie if val_serie.strip() != "" else None,
+                        "diametro": val_diametro,
+                        "marca_valv": val_marca,
+                        "model_valv": val_modelo,
+                        "marca_trim": val_trim,
+                        "domicilio": val_domicilio,
+                        "colonia": val_colonia,
+                        "cota_terr": val_cota,
+                        "sector_hid": val_sector,
+                        "cal_ant_d": val_cal_ant_d,
+                        "cal_ant_n": val_cal_ant_n,
+                        "fecha_ult_": val_fecha,
+                        "cal_act_d": val_cal_act_d,
+                        "cal_act_n": val_cal_act_n,
+                        "hora_cal": val_hora,
+                        "estat_valv": val_estat,
+                        "observ": val_observ,
+                        "fotos": foto_bytes,
+                        "fotos_2": foto_bytes_2,
+                        "coord_x": val_coord_x,
+                        "coord_y": val_coord_y,
+                    },
+                )
+                st.success("¡Válvula registrada con éxito!")
+                t.sleep(1)
+                st.rerun()
+            except Exception as ex:
+                st.error(f"Error al insertar: {ex}")
+        else:
+            st.warning("El campo ID es obligatorio.")
 
 
 # 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
