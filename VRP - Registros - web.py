@@ -995,34 +995,6 @@ elif st.session_state.active_tab == "➕ Añadir":
 # 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
-    # --- ESTILO PERSONALIZADO PARA BOTONES NEGROS ---
-    st.markdown(
-        """
-        <style>
-        /* Botones de Streamlit en fondo negro */
-        div.stButton > button {
-            background-color: #000000 !important; /* Fondo negro puro */
-            color: #FFFFFF !important;           /* Texto blanco */
-            border: 1px solid #333333 !important; /* Borde gris oscuro */
-            transition: all 0.3s ease;
-        }
-        
-        /* Efecto al pasar el mouse (Hover) */
-        div.stButton > button:hover {
-            background-color: #1A1A1A !important; /* Negro ligeramente más claro */
-            color: #00E5FF !important;           /* Texto cian para resaltar */
-            border-color: #00E5FF !important;
-        }
-
-        /* Efecto al hacer clic (Active) */
-        div.stButton > button:active {
-            background-color: #333333 !important;
-            color: #FFFFFF !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
     # 1. Definimos una columna para el buscador y procesamos la consulta antes de dibujar
     busqueda_edit = st.session_state.get("busqueda_edit_val", "")
 
