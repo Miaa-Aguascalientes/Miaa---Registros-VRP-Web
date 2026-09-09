@@ -781,7 +781,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     a_c1, a_c2, a_c3, a_c4 = st.columns(4)
     with a_c1:
         st.text_input(
-            "ID_Registro",
+            "ID_0 (Bloqueado)",
             value=str(siguiente_id_0),
             disabled=True,
             key="add_id_0_bloq",
@@ -1070,7 +1070,7 @@ elif st.session_state.active_tab == "➕ Añadir":
 
 # 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
 
-elif st.session_state.active_tab == "⚙️ Editar VRP":
+elif st.session_state.active_tab == "⚙️ Editar":
     # 1. Definimos una columna para el buscador y procesamos la consulta antes de dibujar
     busqueda_edit = st.session_state.get("busqueda_edit_val", "")
 
@@ -1157,14 +1157,14 @@ elif st.session_state.active_tab == "⚙️ Editar VRP":
             e_c1, e_c2, e_c3, e_c4 = st.columns(4)
             with e_c1:
                 st.text_input(
-                    "ID_Registro ",
+                    "ID_0 (Bloqueado)",
                     value=str(row["id_0"] or 0),
                     disabled=True,
                     key=f"id0_bloq_{row['fid']}",
                 )
             with e_c2:
                 e_id = st.text_input(
-                    "ID VRP", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+                    "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
                 )
             with e_c3:
                 e_cota = st.number_input(
