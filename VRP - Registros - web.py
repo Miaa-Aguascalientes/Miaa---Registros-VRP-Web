@@ -770,53 +770,17 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   if err_mapa:
     st.error(f"❌ Error al cargar datos espaciales de VPRs: {err_mapa}")
   else:
-    # Configuración de formas (HTML/SVG/Emoji), colores y símbolos por estado
+    # Configuración de formas, colores y símbolos por estado
     CONFIG_ESTADOS = {
-        "calibrada": {
-            "color": "#2ECC71",
-            "emoji": "🟢",
-            "forma": "circulo",
-        },  # Círculo verde
-        "abierta": {
-            "color": "#3498DB",
-            "emoji": "🔵",
-            "forma": "circulo",
-        },  # Círculo azul
-        "cerrada": {
-            "color": "#E74C3C",
-            "emoji": "🔴",
-            "forma": "circulo",
-        },  # Círculo rojo
-        "dañada": {
-            "color": "#E84393",
-            "emoji": "⛔",
-            "forma": "circulo",
-        },  # Círculo/Icono daño
-        "descalibrada": {
-            "color": "#F1C40F",
-            "emoji": "⚠️",
-            "forma": "triangulo",
-        },  # Triángulo advertencia amarillo
-        "habilitada": {
-            "color": "#38B6FF",
-            "emoji": "🔷",
-            "forma": "rombo",
-        },  # Rombo azul
-        "no opera": {
-            "color": "#A0A0A0",
-            "emoji": "⚫",
-            "forma": "circulo",
-        },  # Círculo gris/negro
-        "pendiente": {
-            "color": "#F1C40F",
-            "emoji": "⚠️",
-            "forma": "triangulo",
-        },  # Triángulo advertencia
-        "amarillo": {
-            "color": "#F1C40F",
-            "emoji": "🟡",
-            "forma": "circulo",
-        },  # Círculo amarillo con ID amarillo
+        "calibrada": {"color": "#2ECC71", "emoji": "🟢", "forma": "circulo"},
+        "abierta": {"color": "#3498DB", "emoji": "🔵", "forma": "circulo"},
+        "cerrada": {"color": "#E74C3C", "emoji": "🔴", "forma": "circulo"},
+        "dañada": {"color": "#E84393", "emoji": "⛔", "forma": "circulo"},
+        "descalibrada": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
+        "habilitada": {"color": "#38B6FF", "emoji": "🔷", "forma": "rombo"},
+        "no opera": {"color": "#A0A0A0", "emoji": "⚫", "forma": "circulo"},
+        "pendiente": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
+        "amarillo": {"color": "#F1C40F", "emoji": "🟡", "forma": "circulo"},
     }
 
     m = folium.Map(
@@ -826,7 +790,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS ---
+    # 9.3. --- DIBUJAR SECTORES HIDRÁULICOS (POLÍGONOS MÁS OSCUROS Y OPACOS) ---
     fg_sectores = folium.FeatureGroup(
         name="📐 Sectores Hidráulicos", show=True
     )
@@ -842,16 +806,16 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#0A2246",
-                  "color": "#38B6FF",
-                  "weight": 1.8,
-                  "fillOpacity": 0.55,
+                  "fillColor": "#051622",  # Fondo azul marino profundo
+                  "color": "#084B83",  # Borde azul oscuro bien definido
+                  "weight": 2.0,  # Grosor de la línea
+                  "fillOpacity": 0.85,  # Relleno opaco
               },
               highlight_function=lambda feature: {
-                  "fillColor": "#13376B",
-                  "color": "#00E5FF",
-                  "weight": 2.5,
-                  "fillOpacity": 0.75,
+                  "fillColor": "#0D2E4A",
+                  "color": "#1167B1",
+                  "weight": 2.8,
+                  "fillOpacity": 0.95,
               },
               tooltip=folium.Tooltip(
                   f"<b>Sector:</b> {nombre_sector}", sticky=True
@@ -904,7 +868,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
           grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
-          # Definición de la figura geométrica / icono
           if tipo_forma == "triangulo":
             simbolo_html = f'<span style="font-size: 13px; line-height: 1; filter: drop-shadow(0 0 3px {color_hex});">⚠️</span>'
           elif tipo_forma == "rombo":
@@ -917,7 +880,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
                             display: inline-block;
                             box-shadow: 0 0 5px {color_hex};
                         "></span>"""
-          else:  # circulo por defecto
+          else:
             simbolo_html = f"""
                         <span style="
                             height: 10px; 
@@ -973,7 +936,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         f" {success_count} VRPs georreferenciadas con simbología técnica.</p>",
         unsafe_allow_html=True,
     )
-
 # 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
 
 elif st.session_state.active_tab == "➕ Añadir":
