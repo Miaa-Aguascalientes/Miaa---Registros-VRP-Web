@@ -631,112 +631,170 @@ COLUMNAS_VPRS = """
 # 08 SECCION ---------------------------------------------------------------------------- VER REGISTROS (VPRS) ------------------------------------------------------------------------------------------------
 
 if st.session_state.active_tab == "📍 Registros":
-  busqueda = st.text_input(
-      "🔍 Buscar válvula (ID, Serie, Domicilio, Col.):",
-      placeholder="Ej. VF01, Centro...",
+
+  # Crear las 2 pestañas principales
+  tab_registros, tab_tablas_externas = st.tabs(
+      ["📍 Registros", "📊 Tabla Base de Datos & Google Sheets"]
   )
 
-  if busqueda and busqueda.strip() != "":
-    filtro = f"%{busqueda.strip()}%"
-    query = f"""
-            SELECT {COLUMNAS_VPRS} 
-            FROM "Agua_potable"."VPRS" 
-            WHERE id ILIKE :filtro 
-               OR serie ILIKE :filtro 
-               OR domicilio ILIKE :filtro 
-               OR colonia ILIKE :filtro 
-            ORDER BY fid
-        """
-    df_vprs, error_db = obtener_datos(query, {"filtro": filtro})
-  else:
-    query = (
-        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid LIMIT 15'
+  # =========================================================================
+  # PESTAÑA 1: VISTA DE REGISTROS (Búsqueda, Tarjetas y Fotografías)
+  # =========================================================================
+  with tab_registros:
+    busqueda = st.text_input(
+        "🔍 Buscar válvula (ID, Serie, Domicilio, Col.):",
+        placeholder="Ej. VF01, Centro...",
     )
-    df_vprs, error_db = obtener_datos(query)
 
-  if error_db:
-    st.error(f"❌ Error al consultar PostgreSQL: {error_db}")
-  elif not df_vprs.empty:
-    if not busqueda or busqueda.strip() == "":
-      st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
-          " 10px;'>Mostrando primeros 15 registros.</p>",
-          unsafe_allow_html=True,
-      )
-    else:
-      st.markdown(
-          f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
-          f" 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
-          unsafe_allow_html=True,
-      )
-
-    for idx, row in df_vprs.iterrows():
-      serie_val = row["serie"]
-      serie_texto = (
-          ""
-          if (
-              pd.isna(serie_val)
-              or str(serie_val).strip().lower() in ["nan", "none", ""]
-          )
-          else f" | Serie: {serie_val}"
-      )
-
-      card_html = f"""
-                <div class="user-card">
-                    <span style="font-size: 0.95rem; font-weight: bold; color: #F8FAFC;">ID: {row['id']}{serie_texto}</span><br>
-                    <span style="color: #00E5FF; font-size: 0.85rem;">📍 {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}</span>
-                </div>
+    if busqueda and busqueda.strip() != "":
+      filtro = f"%{busqueda.strip()}%"
+      query = f"""
+                SELECT {COLUMNAS_VPRS} 
+                FROM "Agua_potable"."VPRS" 
+                WHERE id ILIKE :filtro 
+                   OR serie ILIKE :filtro 
+                   OR domicilio ILIKE :filtro 
+                   OR colonia ILIKE :filtro 
+                ORDER BY fid
             """
-      st.markdown(card_html, unsafe_allow_html=True)
+      df_vprs, error_db = obtener_datos(query, {"filtro": filtro})
+    else:
+      query = (
+          f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid'
+          " LIMIT 15"
+      )
+      df_vprs, error_db = obtener_datos(query)
 
-      with st.expander("🔍 Ver detalles completos y fotografías"):
-        geom_str = (
-            f"POINT ({row['coord_x']} {row['coord_y']})"
-            if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
-            else "Sin geometría"
+    if error_db:
+      st.error(f"❌ Error al consultar PostgreSQL: {error_db}")
+    elif not df_vprs.empty:
+      if not busqueda or busqueda.strip() == "":
+        st.markdown(
+            "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+            " 10px;'>Mostrando primeros 15 registros.</p>",
+            unsafe_allow_html=True,
         )
-        detalle_html = f"""
-                    <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
-                        <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca_valv']} &nbsp;|&nbsp; <b>Modelo:</b> {row['model_valv']} &nbsp;|&nbsp; <b>Trim:</b> {row['marca_trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
-                        <b>Sector:</b> {row['sector_hid']} &nbsp;|&nbsp; <b>Estado:</b> {row['estat_valv']} &nbsp;|&nbsp; <b>Hora Cal:</b> {row['hora_cal']} &nbsp;|&nbsp; <b>Última Actualización:</b> {row['fecha_ult_']}<br>
-                        <b>Geom:</b> {geom_str}<br>
-                        <b>Cal Anterior Día:</b> {row['cal_ant_d']} kg/cm &nbsp;|&nbsp; <b>Cal Anterior Noche:</b> {row['cal_ant_n']} kg/cm<br>
-                        <b>Cal Actual Día:</b> {row['cal_act_d']} kg/cm &nbsp;|&nbsp; <b>Cal Actual Noche:</b> {row['cal_act_n']} kg/cm<br>
-                        <b>Observaciones:</b> {row['observ']}
-                    </span>
+      else:
+        st.markdown(
+            f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+            f" 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
+            unsafe_allow_html=True,
+        )
+
+      for idx, row in df_vprs.iterrows():
+        serie_val = row["serie"]
+        serie_texto = (
+            ""
+            if (
+                pd.isna(serie_val)
+                or str(serie_val).strip().lower() in ["nan", "none", ""]
+            )
+            else f" | Serie: {serie_val}"
+        )
+
+        card_html = f"""
+                    <div class="user-card">
+                        <span style="font-size: 0.95rem; font-weight: bold; color: #F8FAFC;">ID: {row['id']}{serie_texto}</span><br>
+                        <span style="color: #00E5FF; font-size: 0.85rem;">📍 {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}</span>
+                    </div>
                 """
-        st.markdown(detalle_html, unsafe_allow_html=True)
+        st.markdown(card_html, unsafe_allow_html=True)
 
-        col_img1, col_img2 = st.columns(2)
-        with col_img1:
-          img_bytes = procesar_bytes_foto(row["fotos"])
-          if img_bytes is not None and len(img_bytes) > 0:
-            st.markdown(
-                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
-                " 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
-                unsafe_allow_html=True,
-            )
-            st.image(
-                img_bytes,
-                caption=f"ID: {row['id']} (Foto 1)",
-                use_container_width=True,
-            )
+        with st.expander("🔍 Ver detalles completos y fotografías"):
+          geom_str = (
+              f"POINT ({row['coord_x']} {row['coord_y']})"
+              if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
+              else "Sin geometría"
+          )
+          detalle_html = f"""
+                        <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
+                            <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca_valv']} &nbsp;|&nbsp; <b>Modelo:</b> {row['model_valv']} &nbsp;|&nbsp; <b>Trim:</b> {row['marca_trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
+                            <b>Sector:</b> {row['sector_hid']} &nbsp;|&nbsp; <b>Estado:</b> {row['estat_valv']} &nbsp;|&nbsp; <b>Hora Cal:</b> {row['hora_cal']} &nbsp;|&nbsp; <b>Última Actualización:</b> {row['fecha_ult_']}<br>
+                            <b>Geom:</b> {geom_str}<br>
+                            <b>Cal Anterior Día:</b> {row['cal_ant_d']} kg/cm &nbsp;|&nbsp; <b>Cal Anterior Noche:</b> {row['cal_ant_n']} kg/cm<br>
+                            <b>Cal Actual Día:</b> {row['cal_act_d']} kg/cm &nbsp;|&nbsp; <b>Cal Actual Noche:</b> {row['cal_act_n']} kg/cm<br>
+                            <b>Observaciones:</b> {row['observ']}
+                        </span>
+                    """
+          st.markdown(detalle_html, unsafe_allow_html=True)
 
-        with col_img2:
-          img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-          if img_bytes_2 is not None and len(img_bytes_2) > 0:
-            st.markdown(
-                "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
-                " 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
-                unsafe_allow_html=True,
-            )
-            st.image(
-                img_bytes_2,
-                caption=f"ID: {row['id']} (Foto 2)",
-                use_container_width=True,
-            )
-  else:
-    st.info("No se encontraron registros.")
+          col_img1, col_img2 = st.columns(2)
+          with col_img1:
+            img_bytes = procesar_bytes_foto(row["fotos"])
+            if img_bytes is not None and len(img_bytes) > 0:
+              st.markdown(
+                  "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                  " 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
+                  unsafe_allow_html=True,
+              )
+              st.image(
+                  img_bytes,
+                  caption=f"ID: {row['id']} (Foto 1)",
+                  use_container_width=True,
+              )
+
+          with col_img2:
+            img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+            if img_bytes_2 is not None and len(img_bytes_2) > 0:
+              st.markdown(
+                  "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                  " 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
+                  unsafe_allow_html=True,
+              )
+              st.image(
+                  img_bytes_2,
+                  caption=f"ID: {row['id']} (Foto 2)",
+                  use_container_width=True,
+              )
+    else:
+      st.info("No se encontraron registros.")
+
+  # =========================================================================
+  # PESTAÑA 2: BASE DE DATOS COMPLETA Y GOOGLE SHEETS
+  # =========================================================================
+  with tab_tablas_externas:
+    subtab_bd, subtab_sheets = st.tabs(
+        ["🗄️ Base de Datos Completa", "🟢 Google Sheets"]
+    )
+
+    # --- Subpestaña 1: Tabla Completa de PostgreSQL ---
+    with subtab_bd:
+      st.markdown("### Tabla Completa de VPRS")
+
+      query_completa = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid ASC;'
+      df_completo, err_bd_comp = obtener_datos(query_completa)
+
+      if err_bd_comp:
+        st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
+      elif not df_completo.empty:
+        st.dataframe(
+            df_completo, use_container_width=True, hide_index=True, height=600
+        )
+        st.caption(f"Total de registros en base de datos: {len(df_completo)}")
+      else:
+        st.warning("⚠️ No se encontraron registros en la base de datos.")
+
+    # --- Subpestaña 2: Visualizador de Google Sheets ---
+    with subtab_sheets:
+      st.markdown("### Hoja de Cálculo (Google Sheets)")
+
+      sheet_url_embed = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/preview?gid=769091515"
+
+      st.markdown(
+          f"""
+            <iframe 
+                src="{sheet_url_embed}" 
+                style="width: 100%; height: 75vh; border: 1px solid #334155; border-radius: 8px;" 
+                allowfullscreen>
+            </iframe>
+            """,
+          unsafe_allow_html=True,
+      )
+
+      st.link_button(
+          "🔗 Abrir Hoja de Google Sheets en pestaña nueva",
+          "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit?gid=769091515#gid=769091515",
+      )
 
 
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
