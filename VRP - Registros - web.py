@@ -809,18 +809,18 @@ if st.session_state.active_tab == "📍 Registros":
       st.warning("⚠️ No se encontraron registros en la base de datos.")
 
   # =========================================================================
-  # PESTAÑA 3: GOOGLE SHEETS EN HOJA ESPECÍFICA (2.Informe visitas a VRP´s)
+  # PESTAÑA 3: GOOGLE SHEETS EN VIVO Y EDITABLE EN LA PESTAÑA ESPECÍFICA
   # =========================================================================
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    # Muestra la hoja "2.Informe visitas a VRP´s" mediante gid=769091515
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/htmlembed?gid=769091515&widget=false&chrome=false"
+    # Usamos /edit?rm=embedded&gid=769091515 para mantener la edición activa en vivo sobre esa pestaña exacta
+    sheet_url_editable = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?rm=embedded&gid=769091515#gid=769091515"
 
     st.markdown(
         f"""
         <iframe 
-            src="{sheet_url_especifica}" 
+            src="{sheet_url_editable}" 
             style="width: 100%; height: 80vh; border: 1px solid #334155; border-radius: 0px 0px 8px 8px;" 
             allowfullscreen>
         </iframe>
@@ -829,12 +829,12 @@ if st.session_state.active_tab == "📍 Registros":
     )
 
     st.link_button(
-        "🔗 Abrir hoja directamente en Google Sheets",
+        "🔗 Abrir hoja directamente en pestaña de Google Sheets",
         "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
     )
 
   # =========================================================================
-  # PESTAÑA 4: COMPARATIVA Y AUDITORÍA DE DATOS (BD vs Pestaña "2.Informe visitas a VRP´s")
+  # PESTAÑA 4: COMPARATIVA Y AUDITORÍA DE DATOS (BD vs CSV DE PESTAÑA 769091515)
   # =========================================================================
   with tab_comparativa:
     st.markdown(
@@ -846,22 +846,16 @@ if st.session_state.active_tab == "📍 Registros":
     )
 
     if st.button("🔄 Ejecutar Comparación de Datos"):
-      with st.spinner(
-          "Descargando pestaña '2.Informe visitas a VRP´s' y procesando"
-          " cruce..."
-      ):
+      with st.spinner("Procesando datos de la pestaña especificada..."):
         # 1. Obtener datos de la Base de Datos (PostgreSQL)
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        # 2. Descargar libro completo en Excel e inyectar pestaña '2.Informe visitas a VRP´s'
-        excel_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/export?format=xlsx"
+        # 2. Descargar en formato CSV forzando la GID exacta (769091515 = "2.Informe visitas a VRP´s")
+        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
 
         try:
-          # Carga específicamente la hoja deseada por nombre exacto
-          df_sheets = pd.read_excel(
-              excel_url, sheet_name="2.Informe visitas a VRP´s"
-          )
+          df_sheets = pd.read_csv(csv_sheets_url)
           err_sheets = None
         except Exception as e:
           err_sheets = str(e)
@@ -871,9 +865,8 @@ if st.session_state.active_tab == "📍 Registros":
           st.error(f"❌ Error al consultar la Base de Datos: {err_audit_bd}")
         elif err_sheets:
           st.error(
-              f"❌ Error al leer la pestaña de Google Sheets: {err_sheets}."
-              " Verifica que la hoja mantenga el nombre '2.Informe visitas a"
-              " VRP´s'."
+              f"❌ Error al descargar datos de la pestaña de Sheets:"
+              f" {err_sheets}."
           )
         else:
           # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
@@ -1031,7 +1024,6 @@ if st.session_state.active_tab == "📍 Registros":
                       "✅ Los valores en las columnas coincidentes son"
                       " idénticos para todos los IDs en común."
                   )
-
 
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
 
