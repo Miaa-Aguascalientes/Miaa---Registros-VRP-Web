@@ -839,7 +839,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         folium.Marker(
             location=[lat, lon],
             icon=folium.DivIcon(
-                html=icon_html, icon_size=(20, 20), icon_anchor=(10, 10)
+                html=icon_html, icon_size=(14, 14), icon_anchor=(7, 7)
             ),
             popup=folium.Popup(popup_html, max_width=300),
         ).add_to(grupo_destino)
