@@ -759,23 +759,17 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.error(f"❌ Error al cargar datos espaciales: {err_mapa}")
   elif not df_mapa.empty:
 
-    # Mapeo unificado de colores en código HEX exacto
-    MAPEO_COLORES = {
-        "calibrada": "#2ECC71",  # Verde
-        "abierta": "#3498DB",  # Azul
-        "cerrada": "#E74C3C",  # Rojo
-        "dañada": "#E84393",  # Rosa Neón
-        "descalibrada": "#E67E22",  # Naranja
-        "habilitada": "#00E5FF",  # Cyan Neón
-        "no opera": "#34495E",  # Gris Oscuro / Negro
-        "pendiente": "#F1C40F",  # Amarillo
+    # Diccionario unificado de emojis por estado (idéntico a la sidebar)
+    ICONOS_ESTADO = {
+        "Calibrada": "🟢",
+        "Abierta": "🔵",
+        "Cerrada": "🔴",
+        "Dañada": "⛔",
+        "Descalibrada": "🟠",
+        "Habilitada": "🔷",
+        "No opera": "⚫",
+        "Pendiente": "⚠️",
     }
-
-    def get_valve_color(estado):
-      estado_str = str(estado).strip().lower()
-      return MAPEO_COLORES.get(
-          estado_str, "#95A5A6"
-      )  # Gris claro solo para estados desconocidos
 
     m = folium.Map(
         location=[21.8853, -102.2916], zoom_start=12, control_scale=True
@@ -787,7 +781,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     fg_limites = folium.FeatureGroup(name="Límites del Sector", show=True)
     fg_limites.add_to(m)
 
-    # Crear FeatureGroups dinámicos con clave normalizada (minúsculas) para evitar fallos de coincidencia
+    # Crear FeatureGroups dinámicos por estado
     grupos_capas = {}
     for estado_opc in OPCIONES_ESTADO_VALVULA:
       count_est = len(
@@ -796,15 +790,15 @@ elif st.session_state.active_tab == "🗺️ Mapa":
               == estado_opc.lower()
           ]
       )
+      icono_estado = ICONOS_ESTADO.get(estado_opc, "⚪")
 
       fg = folium.FeatureGroup(
-          name=f"Válvulas {estado_opc} ({count_est})", show=True
+          name=f"{icono_estado} {estado_opc} ({count_est})", show=True
       )
       fg.add_to(m)
       grupos_capas[estado_opc.lower()] = fg
 
-    # Capa comodín para registros sin estado o fuera de catálogo
-    fg_otros = folium.FeatureGroup(name="Otros / Sin Estado", show=True)
+    fg_otros = folium.FeatureGroup(name="⚪ Otros / Sin Estado", show=True)
     fg_otros.add_to(m)
 
     success_count = 0
@@ -815,29 +809,41 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         estado_raw = str(row["estat_valv"] or "Desconocido").strip()
         estado_key = estado_raw.lower()
 
-        color = get_valve_color(estado_raw)
+        # Buscar el emoji correspondiente
+        emoji_punto = "⚪"
+        for est_nombre, est_emoji in ICONOS_ESTADO.items():
+          if est_nombre.lower() == estado_key:
+            emoji_punto = est_emoji
+            break
 
-        # Asignar al FeatureGroup correspondiente
         grupo_destino = grupos_capas.get(estado_key, fg_otros)
 
         popup_html = f"""
-                <div style="font-size: 0.85rem; color: #000;">
+                <div style="font-size: 0.85rem; color: #000; font-family: sans-serif;">
                     <b>ID:</b> {row['id']}<br>
-                    <b>Estado:</b> {estado_raw}<br>
+                    <b>Estado:</b> {emoji_punto} {estado_raw}<br>
                     <b>Ubicación:</b> {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}
                 </div>
                 """
 
-        folium.CircleMarker(
+        # Crear marcador usando el emoji dinámico
+        icon_html = f"""
+                <div style="
+                    font-size: 18px; 
+                    line-height: 18px; 
+                    text-align: center; 
+                    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6));
+                ">{emoji_punto}</div>
+                """
+
+        folium.Marker(
             location=[lat, lon],
-            radius=7,
-            color=color,
-            fill=True,
-            fill_color=color,
-            fill_opacity=0.9,
-            weight=1.5,
+            icon=folium.DivIcon(
+                html=icon_html, icon_size=(20, 20), icon_anchor=(10, 10)
+            ),
             popup=folium.Popup(popup_html, max_width=300),
         ).add_to(grupo_destino)
+
         success_count += 1
       except Exception:
         continue
@@ -848,7 +854,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     st.markdown(
         f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top:"
         f" 10px;'>Se renderizaron {success_count} VRPs georreferenciadas con"
-        " opciones de satélite, nocturna y capas de sector.</p>",
+        " simbología unificada.</p>",
         unsafe_allow_html=True,
     )
   else:
