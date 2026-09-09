@@ -1304,199 +1304,246 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 unsafe_allow_html=True,
             )
 
-# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER CON RESET)
-            
-            # Inicializamos contadores para controlar la versión de la key de los uploaders
-            key_ver_1 = f"uploader_ver_1_{row['fid']}"
-            key_ver_2 = f"uploader_ver_2_{row['fid']}"
-            
-            if key_ver_1 not in st.session_state:
-                st.session_state[key_ver_1] = 0
-            if key_ver_2 not in st.session_state:
-                st.session_state[key_ver_2] = 0
+import time as t
+import streamlit as st
 
-            col_edit_f1, col_edit_f2 = st.columns(2)
+# ==============================================================================
+# ESTILOS CSS PERSONALIZADOS (ESTILO DE BOTONES AZULES REDONDEADOS)
+# ==============================================================================
+st.markdown(
+    """
+    <style>
+    /* Estilización global de botones st.button */
+    div.stButton > button {
+        background: linear-gradient(135deg, #102a70 0%, #0082c8 50%, #00b4d8 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        border: 3px solid #5a5a5a !important;
+        border-radius: 20px !important;
+        padding: 8px 20px !important;
+        box-shadow: inset 0px 0px 0px 1px #0a1931, 0px 4px 8px rgba(0,0,0,0.4) !important;
+        transition: all 0.3s ease !important;
+        width: 100% !important;
+    }
 
-            # --- FOTO 1 ---
-            with col_edit_f1:
-                foto_actual_bytes = procesar_bytes_foto(row["fotos"])
-                eliminar_foto = False
+    /* Efecto Hover para botones */
+    div.stButton > button:hover {
+        background: linear-gradient(135deg, #1d3f9e 0%, #009be3 50%, #00d4ff 100%) !important;
+        border-color: #00e5ff !important;
+        color: #ffffff !important;
+        transform: translateY(-1px) scale(1.01);
+        box-shadow: 0px 6px 12px rgba(0, 229, 255, 0.3) !important;
+    }
+    
+    /* Variación táctil al hacer click */
+    div.stButton > button:active {
+        transform: translateY(1px);
+        box-shadow: inset 0px 2px 4px rgba(0,0,0,0.6) !important;
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
 
-                if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
-                    st.image(
-                        foto_actual_bytes,
-                        caption=f"ID: {row['id']} (Foto 1 Actual)",
-                        use_container_width=True,
-                    )
-                    eliminar_foto = st.checkbox(
-                        "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
-                    )
+# ==============================================================================
+# GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER CON RESET Y EDICIÓN)
+# ==============================================================================
 
-                # Generamos una key dinámica que cambia cuando guardamos
-                nueva_foto_archivo = st.file_uploader(
-                    "📁 Cargar/Reemplazar Foto 1 desde PC",
-                    type=["png", "jpg", "jpeg", "webp"],
-                    key=f"file_edit_1_{row['fid']}_{st.session_state[key_ver_1]}",
-                )
+# Control de versión de keys para resetear file_uploader tras actualizar
+key_ver_1 = f"uploader_ver_1_{row['fid']}"
+key_ver_2 = f"uploader_ver_2_{row['fid']}"
 
-            # --- FOTO 2 ---
-            with col_edit_f2:
-                foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-                eliminar_foto_2 = False
+if key_ver_1 not in st.session_state:
+    st.session_state[key_ver_1] = 0
+if key_ver_2 not in st.session_state:
+    st.session_state[key_ver_2] = 0
 
-                if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
-                    st.image(
-                        foto_actual_bytes_2,
-                        caption=f"ID: {row['id']} (Foto 2 Actual)",
-                        use_container_width=True,
-                    )
-                    eliminar_foto_2 = st.checkbox(
-                        "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
-                    )
+col_edit_f1, col_edit_f2 = st.columns(2)
 
-                # Generamos una key dinámica que cambia cuando guardamos
-                nueva_foto_archivo_2 = st.file_uploader(
-                    "📁 Cargar/Reemplazar Foto 2 desde PC",
-                    type=["png", "jpg", "jpeg", "webp"],
-                    key=f"file_edit_2_{row['fid']}_{st.session_state[key_ver_2]}",
-                )
+# --- FOTO 1 ---
+with col_edit_f1:
+    foto_actual_bytes = procesar_bytes_foto(row["fotos"])
+    eliminar_foto = False
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            actualizar_click = st.button(
-                "💾 Actualizar Registro en Base de Datos",
-                key=f"btn_act_{row['fid']}",
+    if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
+        st.image(
+            foto_actual_bytes,
+            caption=f"ID: {row['id']} (Foto 1 Actual)",
+            use_container_width=True,
+        )
+        eliminar_foto = st.checkbox(
+            "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
+        )
+
+    nueva_foto_archivo = st.file_uploader(
+        "📁 Cargar/Reemplazar Foto 1 desde PC",
+        type=["png", "jpg", "jpeg", "webp"],
+        key=f"file_edit_1_{row['fid']}_{st.session_state[key_ver_1]}",
+    )
+
+# --- FOTO 2 ---
+with col_edit_f2:
+    foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+    eliminar_foto_2 = False
+
+    if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
+        st.image(
+            foto_actual_bytes_2,
+            caption=f"ID: {row['id']} (Foto 2 Actual)",
+            use_container_width=True,
+        )
+        eliminar_foto_2 = st.checkbox(
+            "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
+        )
+
+    nueva_foto_archivo_2 = st.file_uploader(
+        "📁 Cargar/Reemplazar Foto 2 desde PC",
+        type=["png", "jpg", "jpeg", "webp"],
+        key=f"file_edit_2_{row['fid']}_{st.session_state[key_ver_2]}",
+    )
+
+st.markdown("<br>", unsafe_allow_html=True)
+actualizar_click = st.button(
+    "💾 Actualizar Registro en Base de Datos",
+    key=f"btn_act_{row['fid']}",
+    use_container_width=True,
+)
+
+if actualizar_click:
+    try:
+        # Lógica de procesamiento de bytes Foto 1
+        if eliminar_foto:
+            foto_bytes_final = None
+        else:
+            foto_bytes_final = foto_actual_bytes
+            if nueva_foto_archivo is not None:
+                foto_bytes_final = nueva_foto_archivo.getvalue()
+
+        # Lógica de procesamiento de bytes Foto 2
+        if eliminar_foto_2:
+            foto_bytes_final_2 = None
+        else:
+            foto_bytes_final_2 = foto_actual_bytes_2
+            if nueva_foto_archivo_2 is not None:
+                foto_bytes_final_2 = nueva_foto_archivo_2.getvalue()
+
+        sql_update = """
+                    UPDATE "Agua_potable"."VPRS" 
+                    SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
+                        model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
+                        colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
+                        cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
+                        cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
+                        estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
+                        geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
+                    WHERE fid = :fid
+                """
+        ejecutar_sql(
+            sql_update,
+            {
+                "id_0": e_id_0,
+                "id": e_id,
+                "serie": e_serie if e_serie.strip() != "" else None,
+                "diametro": e_diametro,
+                "marca_valv": e_marca,
+                "model_valv": e_modelo,
+                "marca_trim": e_trim,
+                "domicilio": e_domicilio,
+                "colonia": e_colonia,
+                "cota_terr": e_cota,
+                "sector_hid": e_sector,
+                "cal_ant_d": e_cal_ant_d,
+                "cal_ant_n": e_cal_ant_n,
+                "fecha_ult_": e_fecha,
+                "cal_act_d": e_cal_act_d,
+                "cal_act_n": e_cal_act_n,
+                "hora_cal": e_hora,
+                "estat_valv": e_estat,
+                "observ": e_observ,
+                "fotos": foto_bytes_final,
+                "fotos_2": foto_bytes_final_2,
+                "coord_x": st.session_state[x_key],
+                "coord_y": st.session_state[y_key],
+                "fid": row["fid"],
+            },
+        )
+
+        # Incremento de contadores para reiniciar el widget de carga a estado limpio
+        st.session_state[key_ver_1] += 1
+        st.session_state[key_ver_2] += 1
+
+        st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
+        t.sleep(1)
+        st.rerun()
+    except Exception as ex:
+        st.error(f"Error al actualizar: {ex}")
+
+# ==============================================================================
+# SECCIÓN DE ELIMINACIÓN DE REGISTRO
+# ==============================================================================
+if not es_operador:
+    st.markdown(
+        "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px 0;'>",
+        unsafe_allow_html=True,
+    )
+
+    if (
+        "registro_to_delete" in st.session_state
+        and st.session_state.registro_to_delete == row["fid"]
+    ):
+        st.markdown(
+            f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
+            f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
+            f" {row['id']}), escribe la palabra 'delete':</p>",
+            unsafe_allow_html=True,
+        )
+        confirm_text = st.text_input(
+            "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
+        )
+
+        col_y, col_n = st.columns(2)
+        with col_y:
+            if st.button(
+                "Sí, eliminar definitivamente",
+                key=f"confirm_del_{row['fid']}",
                 use_container_width=True,
-            )
-
-            if actualizar_click:
-                try:
-                    # Lógica de guardado Foto 1
-                    if eliminar_foto:
-                        foto_bytes_final = None
-                    else:
-                        foto_bytes_final = foto_actual_bytes
-                        if nueva_foto_archivo is not None:
-                            foto_bytes_final = nueva_foto_archivo.getvalue()
-
-                    # Lógica de guardado Foto 2
-                    if eliminar_foto_2:
-                        foto_bytes_final_2 = None
-                    else:
-                        foto_bytes_final_2 = foto_actual_bytes_2
-                        if nueva_foto_archivo_2 is not None:
-                            foto_bytes_final_2 = nueva_foto_archivo_2.getvalue()
-
-                    sql_update = """
-                                UPDATE "Agua_potable"."VPRS" 
-                                SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
-                                    model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
-                                    colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
-                                    cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
-                                    cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
-                                    estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
-                                    geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
-                                WHERE fid = :fid
-                            """
-                    ejecutar_sql(
-                        sql_update,
-                        {
-                            "id_0": e_id_0,
-                            "id": e_id,
-                            "serie": e_serie if e_serie.strip() != "" else None,
-                            "diametro": e_diametro,
-                            "marca_valv": e_marca,
-                            "model_valv": e_modelo,
-                            "marca_trim": e_trim,
-                            "domicilio": e_domicilio,
-                            "colonia": e_colonia,
-                            "cota_terr": e_cota,
-                            "sector_hid": e_sector,
-                            "cal_ant_d": e_cal_ant_d,
-                            "cal_ant_n": e_cal_ant_n,
-                            "fecha_ult_": e_fecha,
-                            "cal_act_d": e_cal_act_d,
-                            "cal_act_n": e_cal_act_n,
-                            "hora_cal": e_hora,
-                            "estat_valv": e_estat,
-                            "observ": e_observ,
-                            "fotos": foto_bytes_final,
-                            "fotos_2": foto_bytes_final_2,
-                            "coord_x": st.session_state[x_key],
-                            "coord_y": st.session_state[y_key],
-                            "fid": row["fid"],
-                        },
-                    )
-
-                    # Incrementamos la versión de la key para obligar a Streamlit a destruir y volver a crear el widget limpio
-                    st.session_state[key_ver_1] += 1
-                    st.session_state[key_ver_2] += 1
-
-                    st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
-                    t.sleep(1)
-                    st.rerun()
-                except Exception as ex:
-                    st.error(f"Error al actualizar: {ex}")
-
-            # --------------------------------------------------------------------------------------------------------------------------------------------------------
-
-            if not es_operador:
-                st.markdown(
-                    "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px 0;'>",
-                    unsafe_allow_html=True,
-                )
-
-                if st.session_state.registro_to_delete == row["fid"]:
-                    st.markdown(
-                        f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
-                        f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
-                        f" {row['id']}), escribe la palabra 'delete':</p>",
-                        unsafe_allow_html=True,
-                    )
-                    confirm_text = st.text_input(
-                        "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
-                    )
-
-                    col_y, col_n = st.columns(2)
-                    with col_y:
-                        if st.button(
-                            "Sí, eliminar definitivamente",
-                            key=f"confirm_del_{row['fid']}",
-                            use_container_width=True,
-                        ):
-                            if confirm_text.strip() == "delete":
-                                try:
-                                    ejecutar_sql(
-                                        'DELETE FROM "Agua_potable"."VPRS" WHERE fid = :fid',
-                                        {"fid": row["fid"]},
-                                    )
-                                    st.session_state.registro_to_delete = None
-                                    st.success("Registro eliminado correctamente.")
-                                    t.sleep(1)
-                                    st.rerun()
-                                except Exception as ex_del:
-                                    st.error(f"Error al eliminar: {ex_del}")
-                            else:
-                                st.error(
-                                    "Debes escribir exactamente la palabra 'delete' para"
-                                    " confirmar."
-                                )
-                    with col_n:
-                        if st.button(
-                            "Cancelar",
-                            key=f"cancel_del_{row['fid']}",
-                            use_container_width=True,
-                        ):
-                            st.session_state.registro_to_delete = None
-                            st.rerun()
-                else:
-                    # Botón de Eliminar al 100% del ancho
-                    if st.button(
-                        "🗑️ Eliminar este registro",
-                        key=f"btn_del_{row['fid']}",
-                        use_container_width=True,
-                    ):
-                        st.session_state.registro_to_delete = row["fid"]
+            ):
+                if confirm_text.strip() == "delete":
+                    try:
+                        ejecutar_sql(
+                            'DELETE FROM "Agua_potable"."VPRS" WHERE fid ='
+                            " :fid",
+                            {"fid": row["fid"]},
+                        )
+                        st.session_state.registro_to_delete = None
+                        st.success("Registro eliminado correctamente.")
+                        t.sleep(1)
                         st.rerun()
+                    except Exception as ex_del:
+                        st.error(f"Error al eliminar: {ex_del}")
+                else:
+                    st.error(
+                        "Debes escribir exactamente la palabra 'delete' para"
+                        " confirmar."
+                    )
+        with col_n:
+            if st.button(
+                "Cancelar",
+                key=f"cancel_del_{row['fid']}",
+                use_container_width=True,
+            ):
+                st.session_state.registro_to_delete = None
+                st.rerun()
+    else:
+        if st.button(
+            "🗑️ Eliminar este registro",
+            key=f"btn_del_{row['fid']}",
+            use_container_width=True,
+        ):
+            st.session_state.registro_to_delete = row["fid"]
+            st.rerun()
     else:
         st.info("No se encontró ningún registro para editar.")
 # 12 --------------------------------------------------------------------------------------  PIE DE PÁGINA --------------------------------------------------------------------------------------------------
