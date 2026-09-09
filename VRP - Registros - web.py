@@ -471,6 +471,24 @@ es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
 # 06 SECCION ------------------------------------------------------------ BARRA LATERAL IZQUIERDA (SIDEBAR) --------------------------------------------------------------------------------------------------------
 with st.sidebar:
+  # CSS inyectado para reducir la separación vertical entre los cuadros (expanders)
+  st.markdown(
+      """
+        <style>
+            /* Reduce el margen entre contenedores de st.expander */
+            [data-testid="stExpander"] {
+                margin-bottom: -12px !important;
+            }
+            /* Opcional: Ajusta el padding interno del botón desplegable para mayor compacidad */
+            [data-testid="stExpander"] > details > summary {
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+            }
+        </style>
+    """,
+      unsafe_allow_html=True,
+  )
+
   st.markdown(
       """
         <div style="text-align: center; margin-top: -35px; padding-top: 0px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); margin-bottom: 12px;">
@@ -517,19 +535,18 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
-  # --- DESPLEGABLES DE VÁLVULAS CON CONTEO EN LA BARRA LATERAL ---
+  # --- DESPLEGABLES DE VÁLVULAS ---
   df_sidebar_valvulas, _ = obtener_datos(
       'SELECT id, estat_valv, domicilio, colonia FROM "Agua_potable"."VPRS"'
   )
 
   if not df_sidebar_valvulas.empty:
     st.markdown(
-        "<p style='color: #00E5FF; font-size: 0.85rem; font-weight:"
-        " 700;'>📊 Estado de Válvulas</p>",
+        "<p style='color: #00E5FF; font-size: 0.85rem; font-weight: 700;"
+        " margin-bottom: 8px;'>📊 Estado de Válvulas</p>",
         unsafe_allow_html=True,
     )
 
-    # Mapeo de colores/emojis según estado
     ICONOS_ESTADO = {
         "Calibrada": "🟢",
         "Abierta": "🔵",
@@ -541,7 +558,6 @@ with st.sidebar:
         "Pendiente": "⚠️",
     }
 
-    # Agrupar por estado y generar expansores
     for estado in OPCIONES_ESTADO_VALVULA:
       df_filtro = df_sidebar_valvulas[
           df_sidebar_valvulas["estat_valv"].str.strip().str.lower()
@@ -550,7 +566,6 @@ with st.sidebar:
       conteo = len(df_filtro)
       icono = ICONOS_ESTADO.get(estado, "⚪")
 
-      # Formato del título como en la imagen: EMOJI ESTADO (CANTIDAD)
       with st.expander(f"{icono} {estado} ({conteo})"):
         if conteo > 0:
           for _, v_row in df_filtro.iterrows():
