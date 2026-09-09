@@ -995,14 +995,12 @@ elif st.session_state.active_tab == "➕ Añadir":
 # 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
-  busqueda_edit = st.text_input(
-      "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Col.):",
-      placeholder="Ej. VRP-01, Centro...",
-  )
+    # 1. Definimos una columna para el buscador y procesamos la consulta antes de dibujar
+    busqueda_edit = st.session_state.get("busqueda_edit_val", "")
 
-  if busqueda_edit and busqueda_edit.strip() != "":
-    filtro_ed = f"%{busqueda_edit.strip()}%"
-    query_edit = f"""
+    if busqueda_edit and busqueda_edit.strip() != "":
+        filtro_ed = f"%{busqueda_edit.strip()}%"
+        query_edit = f"""
             SELECT {COLUMNAS_VPRS} 
             FROM "Agua_potable"."VPRS" 
             WHERE id ILIKE :filtro 
@@ -1012,497 +1010,497 @@ elif st.session_state.active_tab == "⚙️ Editar":
             ORDER BY fid
             LIMIT 1
         """
-    df_vprs, error_db = obtener_datos(query_edit, {"filtro": filtro_ed})
-  else:
-    query = (
-        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid LIMIT 1'
-    )
-    df_vprs, error_db = obtener_datos(query)
-
-  if error_db:
-    st.error(f"Error: {error_db}")
-  elif not df_vprs.empty:
-    if not busqueda_edit or busqueda_edit.strip() == "":
-      st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
-          " 10px;'>Mostrando el primer registro de la base de datos.</p>",
-          unsafe_allow_html=True,
-      )
+        df_vprs, error_db = obtener_datos(query_edit, {"filtro": filtro_ed})
     else:
-      st.markdown(
-          "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
-          " 10px;'>Mostrando la primera coincidencia encontrada.</p>",
-          unsafe_allow_html=True,
-      )
-
-    for idx, row in df_vprs.iterrows():
-      st.markdown(
-          f"<div style='margin-bottom: 15px;'><span style='color: #00E5FF;"
-          f" font-weight: bold;'>FID Registro: {row['fid']}</span> | <span"
-          f" style='color: #F8FAFC;'>ID: {row['id']}</span></div>",
-          unsafe_allow_html=True,
-      )
-
-      e_id_0 = row["id_0"]
-      default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
-      default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
-
-      x_key = f"coord_x_input_{row['fid']}"
-      y_key = f"coord_y_input_{row['fid']}"
-      if x_key not in st.session_state:
-        st.session_state[x_key] = default_x
-      if y_key not in st.session_state:
-        st.session_state[y_key] = default_y
-
-      estado_actual = str(row["estat_valv"] or "").strip()
-      idx_estado = 0
-      if estado_actual in OPCIONES_ESTADO_VALVULA:
-        idx_estado = OPCIONES_ESTADO_VALVULA.index(estado_actual)
-
-      e_serie_val = (
-          ""
-          if (
-              pd.isna(row["serie"])
-              or str(row["serie"]).strip().lower() in ["nan", "none"]
-          )
-          else str(row["serie"])
-      )
-
-      # 11.1 --------------------------------------  ORDEN EXACTO DE CAMPOS SOLICITADO EN LA IMAGEN 
-      # FILA 1
-      e_c1, e_c2, e_c3, e_c4 = st.columns(4)
-      with e_c1:
-        if es_operador:
-          st.text_input(
-              "ID_0 (Bloqueado)",
-              value=str(row["id_0"] or 0),
-              disabled=True,
-              key=f"id0_bloq_{row['fid']}",
-          )
-        else:
-          st.text_input(
-              "ID_0 (Bloqueado)",
-              value=str(row["id_0"] or 0),
-              disabled=True,
-              key=f"id0_bloq_{row['fid']}",
-          )
-      with e_c2:
-        e_id = st.text_input(
-            "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+        query = (
+            f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid LIMIT 1'
         )
-      with e_c3:
-        e_cota = st.number_input(
-            "Cota Terr",
-            value=float(row["cota_terr"] or 0.0),
-            key=f"cota_{row['fid']}",
-        )
-      with e_c4:
-        e_marca = st.text_input(
-            "Marca Valv",
-            value=str(row["marca_valv"] or ""),
-            key=f"mar_{row['fid']}",
+        df_vprs, error_db = obtener_datos(query)
+
+    # 2. FILA CABECERA: Buscador, Info Registro y Mensaje alineados horizontalmente
+    col_search, col_info, col_msg = st.columns([2.5, 1.5, 2], vertical_alignment="center")
+
+    with col_search:
+        st.text_input(
+            "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Col.):",
+            placeholder="Ej. VRP-01, Centro...",
+            key="busqueda_edit_val",
         )
 
-      # FILA 2
-      e_c5, e_c6, e_c7, e_c8 = st.columns(4)
-      with e_c5:
-        e_serie = st.text_input(
-            "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
-        )
-      with e_c6:
-        e_diametro = st.number_input(
-            "Diámetro",
-            value=int(row["diametro"] or 0),
-            key=f"diam_{row['fid']}",
-        )
-      with e_c7:
-        e_modelo = st.text_input(
-            "Modelo Valv",
-            value=str(row["model_valv"] or ""),
-            key=f"mod_{row['fid']}",
-        )
-      with e_c8:
-        e_trim = st.text_input(
-            "Marca Trim",
-            value=str(row["marca_trim"] or ""),
-            key=f"trim_{row['fid']}",
-        )
+    if error_db:
+        st.error(f"Error: {error_db}")
+    elif not df_vprs.empty:
+        row_first = df_vprs.iloc[0]
 
-      # FILA 3
-      e_c9, e_c10, e_c11, e_c12 = st.columns(4)
-      with e_c9:
-        e_domicilio = st.text_input(
-            "Domicilio",
-            value=str(row["domicilio"] or ""),
-            key=f"dom_{row['fid']}",
-        )
-      with e_c10:
-        e_colonia = st.text_input(
-            "Colonia",
-            value=str(row["colonia"] or ""),
-            key=f"col_{row['fid']}",
-        )
-      with e_c11:
-        e_estat = st.selectbox(
-            "Estado de la Válvula",
-            options=OPCIONES_ESTADO_VALVULA,
-            index=idx_estado,
-            key=f"est_{row['fid']}",
-        )
-      with e_c12:
-        e_sector = st.text_input(
-            "Sector Hid",
-            value=str(row["sector_hid"] or ""),
-            key=f"sec_{row['fid']}",
-        )
-
-# ------------------------------------------------- FILA 4 (Mapa procesado PRIMERO antes de instanciar los number_input de coordenadas)
-        
-col_coord_left, col_map_right = st.columns([1, 1])
-
-with col_map_right:
-    st.markdown(
-        "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
-        " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-        " mapa para actualizar coordenadas automáticamente</p>",
-        unsafe_allow_html=True,
-    )
-    try:
-        if (
-            st.session_state[x_key] != 0.0
-            and st.session_state[y_key] != 0.0
-        ):
-            lon_ed, lat_ed = transformer_to_latlon.transform(
-                st.session_state[x_key], st.session_state[y_key]
-            )
-            m_ed = folium.Map(
-                location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
-            )
-        else:
-            m_ed = folium.Map(
-                location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+        with col_info:
+            st.markdown(
+                f"<div style='margin-top: 15px;'><span style='color: #00E5FF; font-weight: bold;'>FID Registro: {row_first['fid']}</span> | "
+                f"<span style='color: #F8FAFC; font-weight: bold;'>ID: {row_first['id']}</span></div>",
+                unsafe_allow_html=True,
             )
 
-        agregar_capas_base_mapa(m_ed)
-        Fullscreen().add_to(m_ed)
+        with col_msg:
+            msg_texto = (
+                "Mostrando la primera coincidencia encontrada."
+                if (busqueda_edit and busqueda_edit.strip() != "")
+                else "Mostrando el primer registro de la base de datos."
+            )
+            st.markdown(
+                f"<p style='color: #94A3B8; font-size: 0.85rem; margin-top: 20px; margin-bottom: 0px;'>{msg_texto}</p>",
+                unsafe_allow_html=True,
+            )
 
-        if (
-            st.session_state[x_key] != 0.0
-            and st.session_state[y_key] != 0.0
-        ):
-            folium.Marker(
-                location=[lat_ed, lon_ed],
-                popup=f"VRP: {row['id']}",
-                icon=folium.Icon(color="cyan", icon="info-sign"),
-            ).add_to(m_ed)
+        for idx, row in df_vprs.iterrows():
+            e_id_0 = row["id_0"]
+            default_x = float(row["coord_x"]) if pd.notna(row["coord_x"]) else 0.0
+            default_y = float(row["coord_y"]) if pd.notna(row["coord_y"]) else 0.0
 
-        folium.LayerControl(collapsed=False).add_to(m_ed)
-        map_data_ed = st_folium(
-            m_ed,
-            width="100%",
-            height=325,
-            key=f"map_edit_preview_{row['fid']}",
-            returned_objects=["last_clicked"],
-        )
+            x_key = f"coord_x_input_{row['fid']}"
+            y_key = f"coord_y_input_{row['fid']}"
+            if x_key not in st.session_state:
+                st.session_state[x_key] = default_x
+            if y_key not in st.session_state:
+                st.session_state[y_key] = default_y
 
-        if map_data_ed and map_data_ed.get("last_clicked"):
-            lat_c = map_data_ed["last_clicked"]["lat"]
-            lon_c = map_data_ed["last_clicked"]["lng"]
-            utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
-            new_x = round(utm_x, 2)
-            new_y = round(utm_y, 3)
-            if (
-                st.session_state[x_key] != new_x
-                or st.session_state[y_key] != new_y
-            ):
-                st.session_state[x_key] = new_x
-                st.session_state[y_key] = new_y
-                st.rerun()
+            estado_actual = str(row["estat_valv"] or "").strip()
+            idx_estado = 0
+            if estado_actual in OPCIONES_ESTADO_VALVULA:
+                idx_estado = OPCIONES_ESTADO_VALVULA.index(estado_actual)
 
-    except Exception as e_map_ed:
-        st.info(
-            "Haga clic en el mapa para actualizar la posición geográfica."
-            f" ({e_map_ed})"
-        )
+            e_serie_val = (
+                ""
+                if (
+                    pd.isna(row["serie"])
+                    or str(row["serie"]).strip().lower() in ["nan", "none"]
+                )
+                else str(row["serie"])
+            )
 
-with col_coord_left:
-    # Sub-columnas para colocar Coord X y Coord Y lado a lado
-    cx1, cx2 = st.columns(2)
-    with cx1:
-        e_coord_x = st.number_input(
-            "Coord X (geom)",
-            format="%.2f",
-            key=x_key,
-        )
-    with cx2:
-        e_coord_y = st.number_input(
-            "Coord Y (geom)",
-            format="%.3f",
-            key=y_key,
-        )
+            # 11.1 -------------------------------------- ORDEN EXACTO DE CAMPOS SOLICITADO EN LA IMAGEN 
+            # FILA 1
+            e_c1, e_c2, e_c3, e_c4 = st.columns(4)
+            with e_c1:
+                st.text_input(
+                    "ID_0 (Bloqueado)",
+                    value=str(row["id_0"] or 0),
+                    disabled=True,
+                    key=f"id0_bloq_{row['fid']}",
+                )
+            with e_c2:
+                e_id = st.text_input(
+                    "ID", value=str(row["id"] or ""), key=f"id_{row['fid']}"
+                )
+            with e_c3:
+                e_cota = st.number_input(
+                    "Cota Terr",
+                    value=float(row["cota_terr"] or 0.0),
+                    key=f"cota_{row['fid']}",
+                )
+            with e_c4:
+                e_marca = st.text_input(
+                    "Marca Valv",
+                    value=str(row["marca_valv"] or ""),
+                    key=f"mar_{row['fid']}",
+                )
 
-    # FILA 5 (Hora Cal, Cal Anterior Noche)
-    cc1, cc2 = st.columns(2)
-    with cc1:
-        e_hora = st.text_input(
-            "Hora Cal",
-            value=str(row["hora_cal"] or ""),
-            key=f"hora_{row['fid']}",
-        )
-    with cc2:
-        e_cal_ant_n = st.text_input(
-            "Cal Anterior Noche (kg/cm)",
-            value=str(row["cal_ant_n"] or ""),
-            key=f"cann_{row['fid']}",
-        )
+            # FILA 2
+            e_c5, e_c6, e_c7, e_c8 = st.columns(4)
+            with e_c5:
+                e_serie = st.text_input(
+                    "Serie", value=e_serie_val, key=f"serie_{row['fid']}"
+                )
+            with e_c6:
+                e_diametro = st.number_input(
+                    "Diámetro",
+                    value=int(row["diametro"] or 0),
+                    key=f"diam_{row['fid']}",
+                )
+            with e_c7:
+                e_modelo = st.text_input(
+                    "Modelo Valv",
+                    value=str(row["model_valv"] or ""),
+                    key=f"mod_{row['fid']}",
+                )
+            with e_c8:
+                e_trim = st.text_input(
+                    "Marca Trim",
+                    value=str(row["marca_trim"] or ""),
+                    key=f"trim_{row['fid']}",
+                )
 
-    # FILA 6 (Cal Anterior Día, Cal Actual Día)
-    cc3, cc4 = st.columns(2)
-    with cc3:
-        e_cal_ant_d = st.text_input(
-            "Cal Anterior Día (kg/cm)",
-            value=str(row["cal_ant_d"] or ""),
-            key=f"cand_{row['fid']}",
-        )
-    with cc4:
-        e_cal_act_d = st.text_input(
-            "Cal Actual Día (kg/cm)",
-            value=str(row["cal_act_d"] or ""),
-            key=f"cactd_{row['fid']}",
-        )
+            # FILA 3
+            e_c9, e_c10, e_c11, e_c12 = st.columns(4)
+            with e_c9:
+                e_domicilio = st.text_input(
+                    "Domicilio",
+                    value=str(row["domicilio"] or ""),
+                    key=f"dom_{row['fid']}",
+                )
+            with e_c10:
+                e_colonia = st.text_input(
+                    "Colonia",
+                    value=str(row["colonia"] or ""),
+                    key=f"col_{row['fid']}",
+                )
+            with e_c11:
+                e_estat = st.selectbox(
+                    "Estado de la Válvula",
+                    options=OPCIONES_ESTADO_VALVULA,
+                    index=idx_estado,
+                    key=f"est_{row['fid']}",
+                )
+            with e_c12:
+                e_sector = st.text_input(
+                    "Sector Hid",
+                    value=str(row["sector_hid"] or ""),
+                    key=f"sec_{row['fid']}",
+                )
 
-    # FILA 7 (Cal Actual Noche, Fecha última actualización)
-    cc5, cc6 = st.columns(2)
-    with cc5:
-        e_cal_act_n = st.text_input(
-            "Cal Actual Noche (kg/cm)",
-            value=str(row["cal_act_n"] or ""),
-            key=f"cactn_{row['fid']}",
-        )
-    with cc6:
-        fecha_def = parsear_fecha_segura(row["fecha_ult_"])
-        e_fecha_obj = st.date_input(
-            "Fecha última actualización",
-            value=fecha_def,
-            format="DD/MM/YYYY",
-            key=f"fec_{row['fid']}",
-        )
-        e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+            # ------------------------------------------------- FILA 4 (Mapa + Coordenadas y Calibraciones)
+            col_coord_left, col_map_right = st.columns([1, 1])
 
-# FILA 8: Observaciones
-e_observ = st.text_area(
-    "Observaciones",
-    value=str(row["observ"] or ""),
-    key=f"obs_{row['fid']}",
-)
-
-st.markdown(
-    "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
-    " Gestión de Fotografías</h4>",
-    unsafe_allow_html=True,
-)
-
-col_edit_f1, col_edit_f2 = st.columns(2)
-
-with col_edit_f1:
-    foto_actual_bytes = procesar_bytes_foto(row["fotos"])
-    eliminar_foto = False
-
-    if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
-        st.image(
-            foto_actual_bytes,
-            caption=f"ID: {row['id']} (Foto 1 Actual)",
-            use_container_width=True,
-        )
-        eliminar_foto = st.checkbox(
-            "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
-        )
-
-    cam_key_edit = f"cam_open_edit_{row['fid']}"
-    if cam_key_edit not in st.session_state:
-        st.session_state[cam_key_edit] = False
-
-    if not st.session_state[cam_key_edit]:
-        if st.button(
-            "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
-        ):
-            st.session_state[cam_key_edit] = True
-            st.rerun()
-    else:
-        if st.button(
-            "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
-        ):
-            st.session_state[cam_key_edit] = False
-            st.rerun()
-
-    nueva_foto_camara = None
-    if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
-        nueva_foto_camara = st.camera_input(
-            "Tomar foto 1",
-            key=f"cam_edit_{row['fid']}",
-            label_visibility="collapsed",
-        )
-
-with col_edit_f2:
-    foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-    eliminar_foto_2 = False
-
-    if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
-        st.image(
-            foto_actual_bytes_2,
-            caption=f"ID: {row['id']} (Foto 2 Actual)",
-            use_container_width=True,
-        )
-        eliminar_foto_2 = st.checkbox(
-            "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
-        )
-
-    cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
-    if cam_key_edit_2 not in st.session_state:
-        st.session_state[cam_key_edit_2] = False
-
-    if not st.session_state[cam_key_edit_2]:
-        if st.button(
-            "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
-        ):
-            st.session_state[cam_key_edit_2] = True
-            st.rerun()
-    else:
-        if st.button(
-            "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
-        ):
-            st.session_state[cam_key_edit_2] = False
-            st.rerun()
-
-    nueva_foto_camara_2 = None
-    if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
-        nueva_foto_camara_2 = st.camera_input(
-            "Tomar foto 2",
-            key=f"cam_edit_2_{row['fid']}",
-            label_visibility="collapsed",
-        )
-
-st.markdown("<br>", unsafe_allow_html=True)
-actualizar_click = st.button(
-    "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
-)
-
-if actualizar_click:
-    try:
-        if eliminar_foto:
-            foto_bytes_final = None
-        else:
-            foto_bytes_final = foto_actual_bytes
-            if nueva_foto_camara is not None:
-                foto_bytes_final = nueva_foto_camara.getvalue()
-
-        if eliminar_foto_2:
-            foto_bytes_final_2 = None
-        else:
-            foto_bytes_final_2 = foto_actual_bytes_2
-            if nueva_foto_camara_2 is not None:
-                foto_bytes_final_2 = nueva_foto_camara_2.getvalue()
-
-        sql_update = """
-                    UPDATE "Agua_potable"."VPRS" 
-                    SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
-                        model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
-                        colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
-                        cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
-                        cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
-                        estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
-                        geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
-                    WHERE fid = :fid
-                """
-        ejecutar_sql(
-            sql_update,
-            {
-                "id_0": e_id_0,
-                "id": e_id,
-                "serie": e_serie if e_serie.strip() != "" else None,
-                "diametro": e_diametro,
-                "marca_valv": e_marca,
-                "model_valv": e_modelo,
-                "marca_trim": e_trim,
-                "domicilio": e_domicilio,
-                "colonia": e_colonia,
-                "cota_terr": e_cota,
-                "sector_hid": e_sector,
-                "cal_ant_d": e_cal_ant_d,
-                "cal_ant_n": e_cal_ant_n,
-                "fecha_ult_": e_fecha,
-                "cal_act_d": e_cal_act_d,
-                "cal_act_n": e_cal_act_n,
-                "hora_cal": e_hora,
-                "estat_valv": e_estat,
-                "observ": e_observ,
-                "fotos": foto_bytes_final,
-                "fotos_2": foto_bytes_final_2,
-                "coord_x": st.session_state[x_key],
-                "coord_y": st.session_state[y_key],
-                "fid": row["fid"],
-            },
-        )
-        st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
-        t.sleep(1)
-        st.rerun()
-    except Exception as ex:
-        st.error(f"Error al actualizar: {ex}")
-
-if not es_operador:
-    st.markdown(
-        "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
-        " 0;'>",
-        unsafe_allow_html=True,
-    )
-
-    if st.session_state.registro_to_delete == row["fid"]:
-        st.markdown(
-            f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
-            f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
-            f" {row['id']}), escribe la palabra 'delete':</p>",
-            unsafe_allow_html=True,
-        )
-        confirm_text = st.text_input(
-            "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
-        )
-
-        col_y, col_n = st.columns(2)
-        with col_y:
-            if st.button(
-                "Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"
-            ):
-                if confirm_text.strip() == "delete":
-                    try:
-                        ejecutar_sql(
-                            'DELETE FROM "Agua_potable"."VPRS" WHERE fid = :fid',
-                            {"fid": row["fid"]},
+            with col_map_right:
+                st.markdown(
+                    "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
+                    " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+                    " mapa para actualizar coordenadas automáticamente</p>",
+                    unsafe_allow_html=True,
+                )
+                try:
+                    if (
+                        st.session_state[x_key] != 0.0
+                        and st.session_state[y_key] != 0.0
+                    ):
+                        lon_ed, lat_ed = transformer_to_latlon.transform(
+                            st.session_state[x_key], st.session_state[y_key]
                         )
-                        st.session_state.registro_to_delete = None
-                        st.success("Registro eliminado correctamente.")
-                        t.sleep(1)
-                        st.rerun()
-                    except Exception as ex_del:
-                        st.error(f"Error al eliminar: {ex_del}")
-                else:
-                    st.error(
-                        "Debes escribir exactamente la palabra 'delete' para"
-                        " confirmar."
+                        m_ed = folium.Map(
+                            location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
+                        )
+                    else:
+                        m_ed = folium.Map(
+                            location=[21.8853, -102.2916], zoom_start=12, control_scale=True
+                        )
+
+                    agregar_capas_base_mapa(m_ed)
+                    Fullscreen().add_to(m_ed)
+
+                    if (
+                        st.session_state[x_key] != 0.0
+                        and st.session_state[y_key] != 0.0
+                    ):
+                        folium.Marker(
+                            location=[lat_ed, lon_ed],
+                            popup=f"VRP: {row['id']}",
+                            icon=folium.Icon(color="cyan", icon="info-sign"),
+                        ).add_to(m_ed)
+
+                    folium.LayerControl(collapsed=False).add_to(m_ed)
+                    map_data_ed = st_folium(
+                        m_ed,
+                        width="100%",
+                        height=325,
+                        key=f"map_edit_preview_{row['fid']}",
+                        returned_objects=["last_clicked"],
                     )
-        with col_n:
-            if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
-                st.session_state.registro_to_delete = None
-                st.rerun()
+
+                    if map_data_ed and map_data_ed.get("last_clicked"):
+                        lat_c = map_data_ed["last_clicked"]["lat"]
+                        lon_c = map_data_ed["last_clicked"]["lng"]
+                        utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
+                        new_x = round(utm_x, 2)
+                        new_y = round(utm_y, 3)
+                        if (
+                            st.session_state[x_key] != new_x
+                            or st.session_state[y_key] != new_y
+                        ):
+                            st.session_state[x_key] = new_x
+                            st.session_state[y_key] = new_y
+                            st.rerun()
+
+                except Exception as e_map_ed:
+                    st.info(
+                        "Haga clic en el mapa para actualizar la posición geográfica."
+                        f" ({e_map_ed})"
+                    )
+
+            with col_coord_left:
+                cx1, cx2 = st.columns(2)
+                with cx1:
+                    e_coord_x = st.number_input(
+                        "Coord X (geom)",
+                        format="%.2f",
+                        key=x_key,
+                    )
+                with cx2:
+                    e_coord_y = st.number_input(
+                        "Coord Y (geom)",
+                        format="%.3f",
+                        key=y_key,
+                    )
+
+                # FILA 5 (Hora Cal, Cal Anterior Noche)
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    e_hora = st.text_input(
+                        "Hora Cal",
+                        value=str(row["hora_cal"] or ""),
+                        key=f"hora_{row['fid']}",
+                    )
+                with cc2:
+                    e_cal_ant_n = st.text_input(
+                        "Cal Anterior Noche (kg/cm)",
+                        value=str(row["cal_ant_n"] or ""),
+                        key=f"cann_{row['fid']}",
+                    )
+
+                # FILA 6 (Cal Anterior Día, Cal Actual Día)
+                cc3, cc4 = st.columns(2)
+                with cc3:
+                    e_cal_ant_d = st.text_input(
+                        "Cal Anterior Día (kg/cm)",
+                        value=str(row["cal_ant_d"] or ""),
+                        key=f"cand_{row['fid']}",
+                    )
+                with cc4:
+                    e_cal_act_d = st.text_input(
+                        "Cal Actual Día (kg/cm)",
+                        value=str(row["cal_act_d"] or ""),
+                        key=f"cactd_{row['fid']}",
+                    )
+
+                # FILA 7 (Cal Actual Noche, Fecha última actualización)
+                cc5, cc6 = st.columns(2)
+                with cc5:
+                    e_cal_act_n = st.text_input(
+                        "Cal Actual Noche (kg/cm)",
+                        value=str(row["cal_act_n"] or ""),
+                        key=f"cactn_{row['fid']}",
+                    )
+                with cc6:
+                    fecha_def = parsear_fecha_segura(row["fecha_ult_"])
+                    e_fecha_obj = st.date_input(
+                        "Fecha última actualización",
+                        value=fecha_def,
+                        format="DD/MM/YYYY",
+                        key=f"fec_{row['fid']}",
+                    )
+                    e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+
+            # FILA 8: Observaciones
+            e_observ = st.text_area(
+                "Observaciones",
+                value=str(row["observ"] or ""),
+                key=f"obs_{row['fid']}",
+            )
+
+            st.markdown(
+                "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+                " Gestión de Fotografías</h4>",
+                unsafe_allow_html=True,
+            )
+
+            col_edit_f1, col_edit_f2 = st.columns(2)
+
+            with col_edit_f1:
+                foto_actual_bytes = procesar_bytes_foto(row["fotos"])
+                eliminar_foto = False
+
+                if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
+                    st.image(
+                        foto_actual_bytes,
+                        caption=f"ID: {row['id']} (Foto 1 Actual)",
+                        use_container_width=True,
+                    )
+                    eliminar_foto = st.checkbox(
+                        "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
+                    )
+
+                cam_key_edit = f"cam_open_edit_{row['fid']}"
+                if cam_key_edit not in st.session_state:
+                    st.session_state[cam_key_edit] = False
+
+                if not st.session_state[cam_key_edit]:
+                    if st.button(
+                        "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
+                    ):
+                        st.session_state[cam_key_edit] = True
+                        st.rerun()
+                else:
+                    if st.button(
+                        "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
+                    ):
+                        st.session_state[cam_key_edit] = False
+                        st.rerun()
+
+                nueva_foto_camara = None
+                if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
+                    nueva_foto_camara = st.camera_input(
+                        "Tomar foto 1",
+                        key=f"cam_edit_{row['fid']}",
+                        label_visibility="collapsed",
+                    )
+
+            with col_edit_f2:
+                foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+                eliminar_foto_2 = False
+
+                if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
+                    st.image(
+                        foto_actual_bytes_2,
+                        caption=f"ID: {row['id']} (Foto 2 Actual)",
+                        use_container_width=True,
+                    )
+                    eliminar_foto_2 = st.checkbox(
+                        "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
+                    )
+
+                cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
+                if cam_key_edit_2 not in st.session_state:
+                    st.session_state[cam_key_edit_2] = False
+
+                if not st.session_state[cam_key_edit_2]:
+                    if st.button(
+                        "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
+                    ):
+                        st.session_state[cam_key_edit_2] = True
+                        st.rerun()
+                else:
+                    if st.button(
+                        "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
+                    ):
+                        st.session_state[cam_key_edit_2] = False
+                        st.rerun()
+
+                nueva_foto_camara_2 = None
+                if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
+                    nueva_foto_camara_2 = st.camera_input(
+                        "Tomar foto 2",
+                        key=f"cam_edit_2_{row['fid']}",
+                        label_visibility="collapsed",
+                    )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            actualizar_click = st.button(
+                "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
+            )
+
+            if actualizar_click:
+                try:
+                    if eliminar_foto:
+                        foto_bytes_final = None
+                    else:
+                        foto_bytes_final = foto_actual_bytes
+                        if nueva_foto_camara is not None:
+                            foto_bytes_final = nueva_foto_camara.getvalue()
+
+                    if eliminar_foto_2:
+                        foto_bytes_final_2 = None
+                    else:
+                        foto_bytes_final_2 = foto_actual_bytes_2
+                        if nueva_foto_camara_2 is not None:
+                            foto_bytes_final_2 = nueva_foto_camara_2.getvalue()
+
+                    sql_update = """
+                                UPDATE "Agua_potable"."VPRS" 
+                                SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
+                                    model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
+                                    colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
+                                    cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
+                                    cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
+                                    estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
+                                    geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
+                                WHERE fid = :fid
+                            """
+                    ejecutar_sql(
+                        sql_update,
+                        {
+                            "id_0": e_id_0,
+                            "id": e_id,
+                            "serie": e_serie if e_serie.strip() != "" else None,
+                            "diametro": e_diametro,
+                            "marca_valv": e_marca,
+                            "model_valv": e_modelo,
+                            "marca_trim": e_trim,
+                            "domicilio": e_domicilio,
+                            "colonia": e_colonia,
+                            "cota_terr": e_cota,
+                            "sector_hid": e_sector,
+                            "cal_ant_d": e_cal_ant_d,
+                            "cal_ant_n": e_cal_ant_n,
+                            "fecha_ult_": e_fecha,
+                            "cal_act_d": e_cal_act_d,
+                            "cal_act_n": e_cal_act_n,
+                            "hora_cal": e_hora,
+                            "estat_valv": e_estat,
+                            "observ": e_observ,
+                            "fotos": foto_bytes_final,
+                            "fotos_2": foto_bytes_final_2,
+                            "coord_x": st.session_state[x_key],
+                            "coord_y": st.session_state[y_key],
+                            "fid": row["fid"],
+                        },
+                    )
+                    st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
+                    t.sleep(1)
+                    st.rerun()
+                except Exception as ex:
+                    st.error(f"Error al actualizar: {ex}")
+
+            if not es_operador:
+                st.markdown(
+                    "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
+                    " 0;'>",
+                    unsafe_allow_html=True,
+                )
+
+                if st.session_state.registro_to_delete == row["fid"]:
+                    st.markdown(
+                        f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
+                        f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
+                        f" {row['id']}), escribe la palabra 'delete':</p>",
+                        unsafe_allow_html=True,
+                    )
+                    confirm_text = st.text_input(
+                        "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
+                    )
+
+                    col_y, col_n = st.columns(2)
+                    with col_y:
+                        if st.button(
+                            "Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"
+                        ):
+                            if confirm_text.strip() == "delete":
+                                try:
+                                    ejecutar_sql(
+                                        'DELETE FROM "Agua_potable"."VPRS" WHERE fid = :fid',
+                                        {"fid": row["fid"]},
+                                    )
+                                    st.session_state.registro_to_delete = None
+                                    st.success("Registro eliminado correctamente.")
+                                    t.sleep(1)
+                                    st.rerun()
+                                except Exception as ex_del:
+                                    st.error(f"Error al eliminar: {ex_del}")
+                            else:
+                                st.error(
+                                    "Debes escribir exactamente la palabra 'delete' para"
+                                    " confirmar."
+                                )
+                    with col_n:
+                        if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
+                            st.session_state.registro_to_delete = None
+                            st.rerun()
+                else:
+                    if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
+                        st.session_state.registro_to_delete = row["fid"]
+                        st.rerun()
     else:
-        if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
-            st.session_state.registro_to_delete = row["fid"]
-            st.rerun()
-else:
-    st.info("No se encontró ningún registro para editar.")
+        st.info("No se encontró ningún registro para editar.")
 # 12 --------------------------------------------------------------------------------------  PIE DE PÁGINA --------------------------------------------------------------------------------------------------
 st.markdown(
     """
