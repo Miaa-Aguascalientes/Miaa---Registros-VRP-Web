@@ -814,7 +814,6 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    # Usamos /edit?rm=embedded&gid=769091515 para mantener la edición activa en vivo sobre esa pestaña exacta
     sheet_url_editable = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?rm=embedded&gid=769091515#gid=769091515"
 
     st.markdown(
@@ -842,7 +841,8 @@ if st.session_state.active_tab == "📍 Registros":
     )
     st.info(
         "📌 **Prioridad:** Base de Datos. Esta herramienta evalúa la pestaña"
-        " especifica de Sheets frente a PostgreSQL."
+        " específica de Sheets frente a PostgreSQL independientemente de"
+        " mayúsculas o minúsculas en 'ID'."
     )
 
     if st.button("🔄 Ejecutar Comparación de Datos"):
@@ -851,7 +851,7 @@ if st.session_state.active_tab == "📍 Registros":
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        # 2. Descargar en formato CSV forzando la GID exacta (769091515 = "2.Informe visitas a VRP´s")
+        # 2. Descargar en formato CSV forzando la GID exacta (769091515)
         csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
 
         try:
@@ -869,30 +869,45 @@ if st.session_state.active_tab == "📍 Registros":
               f" {err_sheets}."
           )
         else:
-          # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
+          # --- A. BÚSQUEDA INSENSIBLE A MAYÚSCULAS DE LA COLUMNA DE IDENTIFICADORES ---
           col_id_sheets = [
               c for c in df_sheets.columns if str(c).strip().lower() == "id"
+          ]
+          col_id_bd = [
+              c for c in df_bd.columns if str(c).strip().lower() == "id"
           ]
 
           if not col_id_sheets:
             st.error(
-                "❌ No se encontró la columna 'id' en la pestaña '2.Informe"
-                " visitas a VRP´s'."
+                "❌ No se encontró la columna 'ID' o 'id' en la pestaña de"
+                " Sheets."
                 f" Columnas detectadas: {list(df_sheets.columns)}"
+            )
+          elif not col_id_bd:
+            st.error(
+                "❌ No se encontró la columna 'id' en la consulta de la Base de"
+                " Datos."
             )
           else:
             name_id_sheets = col_id_sheets[0]
+            name_id_bd = col_id_bd[0]
 
-            # Normalizar identificadores (quitar espacios sobrantes y estandarizar a mayúsculas)
-            df_bd["id_clean"] = df_bd["id"].astype(str).str.strip().str.upper()
+            # --- B. NORMALIZACIÓN DE REGISTROS (Limpieza de espacios y estandarización a Mayúsculas) ---
+            df_bd["id_clean"] = (
+                df_bd[name_id_bd].astype(str).str.strip().str.upper()
+            )
             df_sheets["id_clean"] = (
                 df_sheets[name_id_sheets].astype(str).str.strip().str.upper()
             )
 
+            # Eliminar posibles filas completamente vacías o IDs nulos ('NAN', 'NONE', '')
+            df_bd = df_bd[~df_bd["id_clean"].isin(["NAN", "NONE", ""])]
+            df_sheets = df_sheets[~df_sheets["id_clean"].isin(["NAN", "NONE", ""])]
+
             ids_bd = set(df_bd["id_clean"].unique())
             ids_sheets = set(df_sheets["id_clean"].unique())
 
-            # --- DETECCIÓN DE REGISTROS ---
+            # --- C. DETECCIÓN DE REGISTROS ---
             ids_solo_sheets = ids_sheets - ids_bd
             df_solo_sheets = df_sheets[
                 df_sheets["id_clean"].isin(ids_solo_sheets)
@@ -903,7 +918,7 @@ if st.session_state.active_tab == "📍 Registros":
 
             ids_comunes = ids_bd.intersection(ids_sheets)
 
-            # --- MÉTRICAS GENERALES ---
+            # --- D. MÉTRICAS GENERALES ---
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             col_m1.metric("Registros BD", len(ids_bd))
             col_m2.metric("Registros en Pestaña Sheets", len(ids_sheets))
@@ -961,14 +976,25 @@ if st.session_state.active_tab == "📍 Registros":
                     " presentes en la pestaña de Sheets."
                 )
 
-            # --- SECCIÓN C: COMPARACIÓN DE VALORES (CAMPOS COMUNES) ---
+            # --- SECCIÓN C: COMPARACIÓN DE VALORES EN COLUMNAS COINCIDENTES ---
             with st.expander("🔍 3. Diferencias de atributos en IDs comunes"):
-              columnas_comunes = list(
-                  set(df_bd.columns).intersection(set(df_sheets.columns))
-                  - {"id_clean", "id"}
+              # Mapeo de nombres de columnas en minúsculas para compararlos sin importar mayúsculas/minúsculas
+              cols_map_bd = {
+                  str(c).strip().lower(): c
+                  for c in df_bd.columns
+                  if c not in ["id_clean", name_id_bd]
+              }
+              cols_map_sh = {
+                  str(c).strip().lower(): c
+                  for c in df_sheets.columns
+                  if c not in ["id_clean", name_id_sheets]
+              }
+
+              columnas_comunes_keys = list(
+                  set(cols_map_bd.keys()).intersection(set(cols_map_sh.keys()))
               )
 
-              if not columnas_comunes:
+              if not columnas_comunes_keys:
                 st.caption(
                     "No se detectaron nombres de columnas adicionales coincidentes"
                     " entre ambas fuentes para comparar contenido campo a"
@@ -983,30 +1009,48 @@ if st.session_state.active_tab == "📍 Registros":
                 )
                 diferencias_list = []
 
-                for col_c in columnas_comunes:
-                  col_bd_name = f"{col_c}_BD"
-                  col_sh_name = f"{col_c}_Sheets"
+                for key_col in columnas_comunes_keys:
+                  col_bd_real = cols_map_bd[key_col]
+                  col_sh_real = cols_map_sh[key_col]
 
-                  mask_diff = (
-                      df_merged[col_bd_name]
-                      .astype(str)
-                      .str.strip()
-                      .str.lower()
-                      != df_merged[col_sh_name]
-                      .astype(str)
-                      .str.strip()
-                      .str.lower()
+                  # Ajuste de sufijos tras el merge
+                  col_bd_name = (
+                      f"{col_bd_real}_BD"
+                      if col_bd_real in df_sheets.columns
+                      else col_bd_real
                   )
-                  df_diff = df_merged[mask_diff]
+                  col_sh_name = (
+                      f"{col_sh_real}_Sheets"
+                      if col_sh_real in df_bd.columns
+                      else col_sh_real
+                  )
 
-                  if not df_diff.empty:
-                    for _, row_d in df_diff.iterrows():
-                      diferencias_list.append({
-                          "ID Válvula": row_d["id_clean"],
-                          "Campo": col_c,
-                          "Valor en BD (Prioritario)": row_d[col_bd_name],
-                          "Valor en Sheets": row_d[col_sh_name],
-                      })
+                  if (
+                      col_bd_name in df_merged.columns
+                      and col_sh_name in df_merged.columns
+                  ):
+                    mask_diff = (
+                        df_merged[col_bd_name]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                        != df_merged[col_sh_name]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                    )
+                    df_diff = df_merged[mask_diff]
+
+                    if not df_diff.empty:
+                      for _, row_d in df_diff.iterrows():
+                        diferencias_list.append({
+                            "ID Válvula": row_d["id_clean"],
+                            "Campo": col_bd_real,
+                            "Valor en BD (Prioritario)": row_d[col_bd_name],
+                            "Valor en Sheets": row_d[col_sh_name],
+                        })
 
                 if diferencias_list:
                   df_diff_final = pd.DataFrame(diferencias_list)
