@@ -814,8 +814,8 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    # Muestra el libro directo en pantalla
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/htmlembed?widget=false&chrome=false"
+    # Muestra la hoja "2.Informe visitas a VRP´s" mediante gid=769091515
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/htmlembed?gid=769091515&widget=false&chrome=false"
 
     st.markdown(
         f"""
@@ -830,30 +830,38 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?usp=sharing",
+        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
     )
 
   # =========================================================================
-  # PESTAÑA 4: COMPARATIVA Y AUDITORÍA DE DATOS (BD vs GOOGLE SHEETS)
+  # PESTAÑA 4: COMPARATIVA Y AUDITORÍA DE DATOS (BD vs Pestaña "2.Informe visitas a VRP´s")
   # =========================================================================
   with tab_comparativa:
-    st.markdown("### 🔍 Auditoría y Comparativa entre Base de Datos y Sheets")
+    st.markdown(
+        "### 🔍 Auditoría y Comparativa: BD vs Hoja '2.Informe visitas a VRP´s'"
+    )
     st.info(
-        "📌 **Prioridad:** Base de Datos. Esta herramienta evalúa las"
-        " inconsistencias y detecta elementos faltantes."
+        "📌 **Prioridad:** Base de Datos. Esta herramienta evalúa la pestaña"
+        " especifica de Sheets frente a PostgreSQL."
     )
 
     if st.button("🔄 Ejecutar Comparación de Datos"):
-      with st.spinner("Cargando y procesando datos de ambas fuentes..."):
+      with st.spinner(
+          "Descargando pestaña '2.Informe visitas a VRP´s' y procesando"
+          " cruce..."
+      ):
         # 1. Obtener datos de la Base de Datos (PostgreSQL)
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        # 2. Descargar CSV del documento público (toma la primera pestaña activa)
-        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv"
+        # 2. Descargar libro completo en Excel e inyectar pestaña '2.Informe visitas a VRP´s'
+        excel_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/export?format=xlsx"
 
         try:
-          df_sheets = pd.read_csv(csv_sheets_url)
+          # Carga específicamente la hoja deseada por nombre exacto
+          df_sheets = pd.read_excel(
+              excel_url, sheet_name="2.Informe visitas a VRP´s"
+          )
           err_sheets = None
         except Exception as e:
           err_sheets = str(e)
@@ -863,8 +871,9 @@ if st.session_state.active_tab == "📍 Registros":
           st.error(f"❌ Error al consultar la Base de Datos: {err_audit_bd}")
         elif err_sheets:
           st.error(
-              f"❌ Error al leer Google Sheets: {err_sheets}. Verifica que la"
-              " hoja tenga acceso público."
+              f"❌ Error al leer la pestaña de Google Sheets: {err_sheets}."
+              " Verifica que la hoja mantenga el nombre '2.Informe visitas a"
+              " VRP´s'."
           )
         else:
           # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
@@ -874,13 +883,14 @@ if st.session_state.active_tab == "📍 Registros":
 
           if not col_id_sheets:
             st.error(
-                "❌ No se encontró la columna 'id' en la hoja de Google Sheets."
+                "❌ No se encontró la columna 'id' en la pestaña '2.Informe"
+                " visitas a VRP´s'."
                 f" Columnas detectadas: {list(df_sheets.columns)}"
             )
           else:
             name_id_sheets = col_id_sheets[0]
 
-            # Normalizar valores de ID (sin espacios sobrantes y mayúsculas)
+            # Normalizar identificadores (quitar espacios sobrantes y estandarizar a mayúsculas)
             df_bd["id_clean"] = df_bd["id"].astype(str).str.strip().str.upper()
             df_sheets["id_clean"] = (
                 df_sheets[name_id_sheets].astype(str).str.strip().str.upper()
@@ -890,23 +900,20 @@ if st.session_state.active_tab == "📍 Registros":
             ids_sheets = set(df_sheets["id_clean"].unique())
 
             # --- DETECCIÓN DE REGISTROS ---
-            # 1. En Sheets pero NO en BD (Prioridad)
             ids_solo_sheets = ids_sheets - ids_bd
             df_solo_sheets = df_sheets[
                 df_sheets["id_clean"].isin(ids_solo_sheets)
             ]
 
-            # 2. En BD pero NO en Sheets
             ids_solo_bd = ids_bd - ids_sheets
             df_solo_bd = df_bd[df_bd["id_clean"].isin(ids_solo_bd)]
 
-            # 3. En ambos lados
             ids_comunes = ids_bd.intersection(ids_sheets)
 
             # --- MÉTRICAS GENERALES ---
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             col_m1.metric("Registros BD", len(ids_bd))
-            col_m2.metric("Registros Sheets", len(ids_sheets))
+            col_m2.metric("Registros en Pestaña Sheets", len(ids_sheets))
             col_m3.metric(
                 "⚠️ En Sheets y NO en BD",
                 len(ids_solo_sheets),
@@ -918,13 +925,13 @@ if st.session_state.active_tab == "📍 Registros":
 
             # --- SECCIÓN A: REGISTROS EN SHEETS QUE FALTAN EN LA BD ---
             st.markdown(
-                "#### 🚨 1. Registros presentes en Google Sheets que NO"
-                " existen en la Base de Datos"
+                "#### 🚨 1. Registros presentes en '2.Informe visitas a VRP´s'"
+                " que NO existen en la Base de Datos"
             )
             if not df_solo_sheets.empty:
               st.warning(
-                  f"Se encontraron **{len(df_solo_sheets)}** registros en"
-                  " Sheets que no están registrados en PostgreSQL:"
+                  f"Se encontraron **{len(df_solo_sheets)}** registros en la"
+                  " pestaña de Sheets que no están registrados en PostgreSQL:"
               )
               cols_mostrar_sheets = [
                   c for c in df_solo_sheets.columns if c != "id_clean"
@@ -936,7 +943,7 @@ if st.session_state.active_tab == "📍 Registros":
               )
             else:
               st.success(
-                  "✅ Todos los registros de la hoja de Sheets existen en la"
+                  "✅ Todos los registros de la pestaña de Sheets existen en la"
                   " Base de Datos."
               )
 
@@ -945,7 +952,7 @@ if st.session_state.active_tab == "📍 Registros":
               if not df_solo_bd.empty:
                 st.info(
                     f"Hay **{len(df_solo_bd)}** registros de PostgreSQL que no"
-                    " se encuentran en la hoja de Sheets:"
+                    " se encuentran en la pestaña de Sheets:"
                 )
                 cols_mostrar_bd = [
                     c for c in df_bd.columns if c != "id_clean"
@@ -958,7 +965,7 @@ if st.session_state.active_tab == "📍 Registros":
               else:
                 st.success(
                     "✅ Todos los registros de la Base de Datos están"
-                    " presentes en Sheets."
+                    " presentes en la pestaña de Sheets."
                 )
 
             # --- SECCIÓN C: COMPARACIÓN DE VALORES (CAMPOS COMUNES) ---
