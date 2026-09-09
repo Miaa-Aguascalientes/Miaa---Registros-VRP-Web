@@ -814,7 +814,8 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/htmlembed?gid=769091515&widget=false&chrome=false"
+    # Muestra el libro directo en pantalla
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/htmlembed?widget=false&chrome=false"
 
     st.markdown(
         f"""
@@ -829,7 +830,7 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
+        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?usp=sharing",
     )
 
   # =========================================================================
@@ -848,8 +849,8 @@ if st.session_state.active_tab == "📍 Registros":
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        # 2. Descargar e ingestar los datos de la hoja nativa de Google Sheets
-        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
+        # 2. Descargar CSV del documento público (toma la primera pestaña activa)
+        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv"
 
         try:
           df_sheets = pd.read_csv(csv_sheets_url)
@@ -862,8 +863,8 @@ if st.session_state.active_tab == "📍 Registros":
           st.error(f"❌ Error al consultar la Base de Datos: {err_audit_bd}")
         elif err_sheets:
           st.error(
-              f"❌ Error al leer Google Sheets (Asegúrate de que la hoja tenga"
-              f" permisos de 'Cualquier persona con el enlace'): {err_sheets}"
+              f"❌ Error al leer Google Sheets: {err_sheets}. Verifica que la"
+              " hoja tenga acceso público."
           )
         else:
           # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
@@ -879,7 +880,7 @@ if st.session_state.active_tab == "📍 Registros":
           else:
             name_id_sheets = col_id_sheets[0]
 
-            # Limpiar IDs de espacios en blanco y estandarizar a mayúsculas
+            # Normalizar valores de ID (sin espacios sobrantes y mayúsculas)
             df_bd["id_clean"] = df_bd["id"].astype(str).str.strip().str.upper()
             df_sheets["id_clean"] = (
                 df_sheets[name_id_sheets].astype(str).str.strip().str.upper()
@@ -889,7 +890,7 @@ if st.session_state.active_tab == "📍 Registros":
             ids_sheets = set(df_sheets["id_clean"].unique())
 
             # --- DETECCIÓN DE REGISTROS ---
-            # 1. En Sheets pero NO en BD (Prioridad solicitada)
+            # 1. En Sheets pero NO en BD (Prioridad)
             ids_solo_sheets = ids_sheets - ids_bd
             df_solo_sheets = df_sheets[
                 df_sheets["id_clean"].isin(ids_solo_sheets)
@@ -969,7 +970,7 @@ if st.session_state.active_tab == "📍 Registros":
 
               if not columnas_comunes:
                 st.caption(
-                    "No se detectaron nombres de columnas exactos adicionales"
+                    "No se detectaron nombres de columnas adicionales coincidentes"
                     " entre ambas fuentes para comparar contenido campo a"
                     " campo."
                 )
