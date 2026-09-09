@@ -1385,8 +1385,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
                     )
 
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Botón de Actualizar al 100% del ancho
             actualizar_click = st.button(
-                "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
+                "💾 Actualizar Registro en Base de Datos",
+                key=f"btn_act_{row['fid']}",
+                use_container_width=True,
             )
 
             if actualizar_click:
@@ -1453,8 +1457,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
             if not es_operador:
                 st.markdown(
-                    "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
-                    " 0;'>",
+                    "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px 0;'>",
                     unsafe_allow_html=True,
                 )
 
@@ -1472,7 +1475,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
                     col_y, col_n = st.columns(2)
                     with col_y:
                         if st.button(
-                            "Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"
+                            "Sí, eliminar definitivamente",
+                            key=f"confirm_del_{row['fid']}",
+                            use_container_width=True,
                         ):
                             if confirm_text.strip() == "delete":
                                 try:
@@ -1492,11 +1497,20 @@ elif st.session_state.active_tab == "⚙️ Editar":
                                     " confirmar."
                                 )
                     with col_n:
-                        if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
+                        if st.button(
+                            "Cancelar",
+                            key=f"cancel_del_{row['fid']}",
+                            use_container_width=True,
+                        ):
                             st.session_state.registro_to_delete = None
                             st.rerun()
                 else:
-                    if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
+                    # Botón de Eliminar al 100% del ancho
+                    if st.button(
+                        "🗑️ Eliminar este registro",
+                        key=f"btn_del_{row['fid']}",
+                        use_container_width=True,
+                    ):
                         st.session_state.registro_to_delete = row["fid"]
                         st.rerun()
     else:
