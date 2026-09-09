@@ -1544,8 +1544,8 @@ if not es_operador:
         ):
             st.session_state.registro_to_delete = row["fid"]
             st.rerun()
-    else:
-        st.info("No se encontró ningún registro para editar.")
+else:
+    st.info("No se encontró ningún registro para editar.")
 # 12 --------------------------------------------------------------------------------------  PIE DE PÁGINA --------------------------------------------------------------------------------------------------
 st.markdown(
     """
