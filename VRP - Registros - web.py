@@ -814,7 +814,8 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/htmlembed?gid=769091515&widget=false&chrome=false"
+    # URL configurada para forzar la apertura en la pestaña gid=769091515 con la nueva ID del libro
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/htmlembed?gid=769091515&widget=false&chrome=false"
 
     st.markdown(
         f"""
@@ -829,7 +830,7 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit#gid=769091515",
+        "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/edit#gid=769091515",
     )
 
   # =========================================================================
@@ -848,8 +849,8 @@ if st.session_state.active_tab == "📍 Registros":
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        # 2. Descargar e ingestar los datos de Google Sheets
-        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/gviz/tq?tqx=out:csv&gid=769091515"
+        # 2. Descargar e ingestar los datos de la nueva hoja de Google Sheets
+        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1m_tCZDanOYXMbwz_qlcvC01n4QCI1OTP/gviz/tq?tqx=out:csv&gid=769091515"
 
         try:
           df_sheets = pd.read_csv(csv_sheets_url)
@@ -863,7 +864,7 @@ if st.session_state.active_tab == "📍 Registros":
         elif err_sheets:
           st.error(
               f"❌ Error al leer Google Sheets (Asegúrate de que la hoja sea"
-              f" accesible publicamente): {err_sheets}"
+              f" accesible públicamente): {err_sheets}"
           )
         else:
           # --- NORMALIZACIÓN DE IDENTIFICADORES ('id') ---
@@ -962,7 +963,6 @@ if st.session_state.active_tab == "📍 Registros":
 
             # --- SECCIÓN C: COMPARACIÓN DE VALORES (CAMPOS COMUNES) ---
             with st.expander("🔍 3. Diferencias de atributos en IDs comunes"):
-              # Detectar nombres de columnas con el mismo nombre
               columnas_comunes = list(
                   set(df_bd.columns).intersection(set(df_sheets.columns))
                   - {"id_clean", "id"}
@@ -987,7 +987,6 @@ if st.session_state.active_tab == "📍 Registros":
                   col_bd_name = f"{col_c}_BD"
                   col_sh_name = f"{col_c}_Sheets"
 
-                  # Comparar convirtiendo a texto para evitar falsas alarmas por tipo de dato
                   mask_diff = (
                       df_merged[col_bd_name]
                       .astype(str)
