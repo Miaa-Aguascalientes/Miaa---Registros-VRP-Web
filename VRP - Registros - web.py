@@ -802,28 +802,25 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           nombre_sector = sec_row.get("sector", "Sin Nombre")
 
           # Agregar el polígono del sector con tono azul sólido / opaco
+          
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#1E3A8A",  # Azul marino opaco
-                  "color": "#2563EB",  # Borde azul cobalto definido
-                  "weight": 2.0,  # Grosor de la línea del límite
-                  "fillOpacity": 0.65,  # Opacidad incrementada al 65%
+                  "fillColor": "#080F1E",  # Fondo azul noche muy oscuro (casi transparente)
+                  "color": "#0091FF",  # Borde azul cian/eléctrico definido
+                  "weight": 1.5,  # Grosor fino para la frontera del sector
+                  "fillOpacity": 0.35,  # Relleno sutil que deja ver las calles
               },
               highlight_function=lambda feature: {
-                  "fillColor": "#1D4ED8",  # Azul brillante al pasar el cursor
-                  "color": "#FFFFFF",  # Borde blanco
-                  "weight": 2.5,
-                  "fillOpacity": 0.85,  # Opacidad alta en hover
+                  "fillColor": "#0A192F",  # Un tono ligeramente más claro en hover
+                  "color": "#00E5FF",  # Borde cian neón brillante
+                  "weight": 2.5,  # Resalta el contorno al pasar el cursor
+                  "fillOpacity": 0.60,
               },
               tooltip=folium.Tooltip(
                   f"<b>Sector:</b> {nombre_sector}", sticky=True
               ),
           ).add_to(fg_sectores)
-        except Exception:
-          continue
-
-    fg_sectores.add_to(m)
 
     # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS ---
     grupos_capas = {}
