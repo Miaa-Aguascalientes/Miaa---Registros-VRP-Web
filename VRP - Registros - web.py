@@ -103,7 +103,7 @@ def ejecutar_sql(query, params=None):
   return True
 
 
-# --- CONEXIÓN A MYSQL (USUARIOS / LOGIN) ---
+# 03 SECCION ------------------------------------------------------------------- CONEXIÓN A MYSQL (USUARIOS / LOGIN) --------------------------------------------------------------------------------------------------
 def crear_engine_mysql():
   mysql_sec = st.secrets["mysql_usuarios_vrp"]
   db_url = f"mysql+pymysql://{mysql_sec['user']}:{mysql_sec['password']}@{mysql_sec['host']}:{mysql_sec['port']}/{mysql_sec['database']}"
@@ -212,7 +212,7 @@ def agregar_capas_base_mapa(m):
   ).add_to(m)
 
 
-# --- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO MÁS ARRIBA ---
+# 04 SECCION ------------------------------------------------------------- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO MÁS ARRIBA --------------------------------------------------------------------------------
 st.write(
     """<style>
     #MainMenu, [data-testid="stHeader"] {visibility: hidden !important; display: none !important;} 
@@ -375,7 +375,7 @@ st.write(
     unsafe_allow_html=True,
 )
 
-# --- SISTEMA DE LOGIN CONECTADO A MYSQL ---
+# 05 SECCION ------------------------------------------------------------------- SISTEMA DE LOGIN CONECTADO A MYSQL -----------------------------------------------------------------------------------------------
 if not st.session_state.autenticado:
   st.markdown(
       """
@@ -428,10 +428,10 @@ if not st.session_state.autenticado:
           st.warning("Por favor, ingrese usuario y contraseña.")
   st.stop()
 
-# --- DETERMINAR ROL DEL USUARIO ---
+# 05.1. SECCION ------------------------------------------------------------- DETERMINAR ROL DEL USUARIO -----------------------------------------------------------------------------------------------------------
 es_operador = st.session_state.get("tipo_usuario", "") == "operador"
 
-# --- BARRA LATERAL IZQUIERDA (SIDEBAR) ---
+# 06 SECCION ------------------------------------------------------------ BARRA LATERAL IZQUIERDA (SIDEBAR) --------------------------------------------------------------------------------------------------------
 with st.sidebar:
   st.markdown(
       """
@@ -480,7 +480,7 @@ with st.sidebar:
     st.session_state.autenticado = False
     st.rerun()
 
-# --- CABECERA PRINCIPAL ---
+# 07 SECCION ------------------------------------------------------------------------ CABECERA PRINCIPAL ---------------------------------------------------------------------------------------------------------
 st.markdown(
     """
     <div style="text-align: center; margin-bottom: 10px; margin-top: 0px;">
@@ -502,9 +502,8 @@ COLUMNAS_VPRS = """
     ST_X(geom) as coord_x, ST_Y(geom) as coord_y
 """
 
-# ==========================================
-# SECCIÓN 1: VER REGISTROS (VPRS)
-# ==========================================
+# 08 SECCION ---------------------------------------------------------------------------- VER REGISTROS (VPRS) ------------------------------------------------------------------------------------------------
+
 if st.session_state.active_tab == "📍 Registros":
   busqueda = st.text_input(
       "🔍 Buscar válvula (ID, Serie, Domicilio, Col.):",
@@ -613,9 +612,9 @@ if st.session_state.active_tab == "📍 Registros":
   else:
     st.info("No se encontraron registros.")
 
-# ==========================================
-# SECCIÓN: MAPA DE VRPs (POSTGIS) CON CAPAS SOLICITADAS
-# ==========================================
+
+# 09 SECCION ------------------------------------------------------------ MAPA DE VRPs (POSTGIS) CON CAPAS SOLICITADAS -----------------------------------------------------------------------------------------
+
 elif st.session_state.active_tab == "🗺️ Mapa":
   query_mapa = """
         SELECT 
@@ -709,9 +708,9 @@ elif st.session_state.active_tab == "🗺️ Mapa":
   else:
     st.info("No se encontraron geometrías de VRPs disponibles en la base de datos.")
 
-# ==========================================
-# SECCIÓN 2: AÑADIR NUEVA VÁLVULA (4 COLUMNAS)
-# ==========================================
+
+# 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (4 COLUMNAS) -----------------------------------------------------------------------------------------------
+
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
     st.error(
@@ -734,13 +733,13 @@ elif st.session_state.active_tab == "➕ Añadir":
     except:
       siguiente_id_0 = 1
 
-  # Inicialización segura en session_state para widgets de coordenadas
+  # 10.1 ------------------ Inicialización segura en session_state para widgets de coordenadas
   if "add_coord_x_input" not in st.session_state:
     st.session_state["add_coord_x_input"] = 0.0
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
-  # --- PROCESAR CLIC DEL MAPA ANTES DE INSTANCIAR LOS INPUTS ---
+  # 10.2 ------------------ PROCESAR CLIC DEL MAPA ANTES DE INSTANCIAR LOS INPUTS 
   st.markdown(
       "<p style='color: #00E5FF; font-size: 0.9rem; font-weight: 700;"
       " margin-top: 5px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el mapa"
@@ -992,9 +991,9 @@ elif st.session_state.active_tab == "➕ Añadir":
     else:
       st.warning("El campo ID es obligatorio.")
 
-# ==========================================
-# SECCIÓN 3: EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO)
-# ==========================================
+
+# 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR (LAYOUT EXACTO SOLICITADO) ----------------------------------------------------------------------------------------------
+
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.text_input(
       "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Col.):",
@@ -1069,7 +1068,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
           else str(row["serie"])
       )
 
-      # --- ORDEN EXACTO DE CAMPOS SOLICITADO EN LA IMAGEN ---
+      # 11.1 --------------------------------------  ORDEN EXACTO DE CAMPOS SOLICITADO EN LA IMAGEN 
       # FILA 1
       e_c1, e_c2, e_c3, e_c4 = st.columns(4)
       with e_c1:
@@ -1157,55 +1156,56 @@ elif st.session_state.active_tab == "⚙️ Editar":
             key=f"sec_{row['fid']}",
         )
 
-      # FILA 4 (Mapa procesado PRIMERO antes de instanciar los number_input de coordenadas)
-      col_coord_left, col_map_right = st.columns([1, 1])
+# ------------------------------------------------- FILA 4 (Mapa procesado PRIMERO antes de instanciar los number_input de coordenadas)
+        
+col_coord_left, col_map_right = st.columns([1, 1])
 
-      with col_map_right:
-        st.markdown(
-            "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
-            " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
-            " mapa para actualizar coordenadas automáticamente</p>",
-            unsafe_allow_html=True,
-        )
-        try:
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
+with col_map_right:
+    st.markdown(
+        "<p style='color: #00E5FF; font-size: 0.8rem; font-weight: 700;"
+        " margin-top: 0px;'>🗺️ Ubicación Geográfica (geom) - Haga clic en el"
+        " mapa para actualizar coordenadas automáticamente</p>",
+        unsafe_allow_html=True,
+    )
+    try:
+        if (
+            st.session_state[x_key] != 0.0
+            and st.session_state[y_key] != 0.0
+        ):
             lon_ed, lat_ed = transformer_to_latlon.transform(
                 st.session_state[x_key], st.session_state[y_key]
             )
             m_ed = folium.Map(
                 location=[lat_ed, lon_ed], zoom_start=16, control_scale=True
             )
-          else:
+        else:
             m_ed = folium.Map(
                 location=[21.8853, -102.2916], zoom_start=12, control_scale=True
             )
 
-          agregar_capas_base_mapa(m_ed)
-          Fullscreen().add_to(m_ed)
+        agregar_capas_base_mapa(m_ed)
+        Fullscreen().add_to(m_ed)
 
-          if (
-              st.session_state[x_key] != 0.0
-              and st.session_state[y_key] != 0.0
-          ):
+        if (
+            st.session_state[x_key] != 0.0
+            and st.session_state[y_key] != 0.0
+        ):
             folium.Marker(
                 location=[lat_ed, lon_ed],
                 popup=f"VRP: {row['id']}",
                 icon=folium.Icon(color="cyan", icon="info-sign"),
             ).add_to(m_ed)
 
-          folium.LayerControl(collapsed=False).add_to(m_ed)
-          map_data_ed = st_folium(
-              m_ed,
-              width="100%",
-              height=325,
-              key=f"map_edit_preview_{row['fid']}",
-              returned_objects=["last_clicked"],
-          )
+        folium.LayerControl(collapsed=False).add_to(m_ed)
+        map_data_ed = st_folium(
+            m_ed,
+            width="100%",
+            height=325,
+            key=f"map_edit_preview_{row['fid']}",
+            returned_objects=["last_clicked"],
+        )
 
-          if map_data_ed and map_data_ed.get("last_clicked"):
+        if map_data_ed and map_data_ed.get("last_clicked"):
             lat_c = map_data_ed["last_clicked"]["lat"]
             lon_c = map_data_ed["last_clicked"]["lng"]
             utm_x, utm_y = transformer_to_utm.transform(lon_c, lat_c)
@@ -1215,296 +1215,299 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 st.session_state[x_key] != new_x
                 or st.session_state[y_key] != new_y
             ):
-              st.session_state[x_key] = new_x
-              st.session_state[y_key] = new_y
-              st.rerun()
+                st.session_state[x_key] = new_x
+                st.session_state[y_key] = new_y
+                st.rerun()
 
-        except Exception as e_map_ed:
-          st.info(
-              "Haga clic en el mapa para actualizar la posición geográfica."
-              f" ({e_map_ed})"
-          )
+    except Exception as e_map_ed:
+        st.info(
+            "Haga clic en el mapa para actualizar la posición geográfica."
+            f" ({e_map_ed})"
+        )
 
-      with col_coord_left:
+with col_coord_left:
+    # Sub-columnas para colocar Coord X y Coord Y lado a lado
+    cx1, cx2 = st.columns(2)
+    with cx1:
         e_coord_x = st.number_input(
             "Coord X (geom)",
             format="%.2f",
             key=x_key,
         )
+    with cx2:
         e_coord_y = st.number_input(
             "Coord Y (geom)",
             format="%.3f",
             key=y_key,
         )
 
-        # FILA 5 (Hora Cal, Cal Anterior Noche)
-        cc1, cc2 = st.columns(2)
-        with cc1:
-          e_hora = st.text_input(
-              "Hora Cal",
-              value=str(row["hora_cal"] or ""),
-              key=f"hora_{row['fid']}",
-          )
-        with cc2:
-          e_cal_ant_n = st.text_input(
-              "Cal Anterior Noche (kg/cm)",
-              value=str(row["cal_ant_n"] or ""),
-              key=f"cann_{row['fid']}",
-          )
+    # FILA 5 (Hora Cal, Cal Anterior Noche)
+    cc1, cc2 = st.columns(2)
+    with cc1:
+        e_hora = st.text_input(
+            "Hora Cal",
+            value=str(row["hora_cal"] or ""),
+            key=f"hora_{row['fid']}",
+        )
+    with cc2:
+        e_cal_ant_n = st.text_input(
+            "Cal Anterior Noche (kg/cm)",
+            value=str(row["cal_ant_n"] or ""),
+            key=f"cann_{row['fid']}",
+        )
 
-        # FILA 6 (Cal Anterior Día, Cal Actual Día)
-        cc3, cc4 = st.columns(2)
-        with cc3:
-          e_cal_ant_d = st.text_input(
-              "Cal Anterior Día (kg/cm)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['fid']}",
-          )
-        with cc4:
-          e_cal_act_d = st.text_input(
-              "Cal Actual Día (kg/cm)",
-              value=str(row["cal_act_d"] or ""),
-              key=f"cactd_{row['fid']}",
-          )
+    # FILA 6 (Cal Anterior Día, Cal Actual Día)
+    cc3, cc4 = st.columns(2)
+    with cc3:
+        e_cal_ant_d = st.text_input(
+            "Cal Anterior Día (kg/cm)",
+            value=str(row["cal_ant_d"] or ""),
+            key=f"cand_{row['fid']}",
+        )
+    with cc4:
+        e_cal_act_d = st.text_input(
+            "Cal Actual Día (kg/cm)",
+            value=str(row["cal_act_d"] or ""),
+            key=f"cactd_{row['fid']}",
+        )
 
-        # FILA 7 (Cal Actual Noche, Fecha última actualización)
-        cc5, cc6 = st.columns(2)
-        with cc5:
-          e_cal_act_n = st.text_input(
-              "Cal Actual Noche (kg/cm)",
-              value=str(row["cal_act_n"] or ""),
-              key=f"cactn_{row['fid']}",
-          )
-        with cc6:
-          fecha_def = parsear_fecha_segura(row["fecha_ult_"])
-          e_fecha_obj = st.date_input(
-              "Fecha última actualización",
-              value=fecha_def,
-              format="DD/MM/YYYY",
-              key=f"fec_{row['fid']}",
-          )
-          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+    # FILA 7 (Cal Actual Noche, Fecha última actualización)
+    cc5, cc6 = st.columns(2)
+    with cc5:
+        e_cal_act_n = st.text_input(
+            "Cal Actual Noche (kg/cm)",
+            value=str(row["cal_act_n"] or ""),
+            key=f"cactn_{row['fid']}",
+        )
+    with cc6:
+        fecha_def = parsear_fecha_segura(row["fecha_ult_"])
+        e_fecha_obj = st.date_input(
+            "Fecha última actualización",
+            value=fecha_def,
+            format="DD/MM/YYYY",
+            key=f"fec_{row['fid']}",
+        )
+        e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
 
-      # FILA 8: Observaciones
-      e_observ = st.text_area(
-          "Observaciones",
-          value=str(row["observ"] or ""),
-          key=f"obs_{row['fid']}",
-      )
+# FILA 8: Observaciones
+e_observ = st.text_area(
+    "Observaciones",
+    value=str(row["observ"] or ""),
+    key=f"obs_{row['fid']}",
+)
 
-      st.markdown(
-          "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
-          " Gestión de Fotografías</h4>",
-          unsafe_allow_html=True,
-      )
+st.markdown(
+    "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<h4 style="color: #00E5FF; font-size: 1rem; font-weight: 700;">📸'
+    " Gestión de Fotografías</h4>",
+    unsafe_allow_html=True,
+)
 
-      col_edit_f1, col_edit_f2 = st.columns(2)
+col_edit_f1, col_edit_f2 = st.columns(2)
 
-      with col_edit_f1:
-        foto_actual_bytes = procesar_bytes_foto(row["fotos"])
-        eliminar_foto = False
+with col_edit_f1:
+    foto_actual_bytes = procesar_bytes_foto(row["fotos"])
+    eliminar_foto = False
 
-        if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
-          st.image(
-              foto_actual_bytes,
-              caption=f"ID: {row['id']} (Foto 1 Actual)",
-              use_container_width=True,
-          )
-          eliminar_foto = st.checkbox(
-              "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
-          )
+    if foto_actual_bytes is not None and len(foto_actual_bytes) > 0:
+        st.image(
+            foto_actual_bytes,
+            caption=f"ID: {row['id']} (Foto 1 Actual)",
+            use_container_width=True,
+        )
+        eliminar_foto = st.checkbox(
+            "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
+        )
 
-        cam_key_edit = f"cam_open_edit_{row['fid']}"
-        if cam_key_edit not in st.session_state:
-          st.session_state[cam_key_edit] = False
+    cam_key_edit = f"cam_open_edit_{row['fid']}"
+    if cam_key_edit not in st.session_state:
+        st.session_state[cam_key_edit] = False
 
-        if not st.session_state[cam_key_edit]:
-          if st.button(
-              "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
-          ):
+    if not st.session_state[cam_key_edit]:
+        if st.button(
+            "📷 Reemplazar Foto 1", key=f"btn_open_cam_edit_{row['fid']}"
+        ):
             st.session_state[cam_key_edit] = True
             st.rerun()
-        else:
-          if st.button(
-              "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
-          ):
+    else:
+        if st.button(
+            "❌ Cerrar Cámara 1", key=f"btn_close_cam_edit_{row['fid']}"
+        ):
             st.session_state[cam_key_edit] = False
             st.rerun()
 
-        nueva_foto_camara = None
-        if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
-          nueva_foto_camara = st.camera_input(
-              "Tomar foto 1",
-              key=f"cam_edit_{row['fid']}",
-              label_visibility="collapsed",
-          )
+    nueva_foto_camara = None
+    if st.session_state.get(f"cam_open_edit_{row['fid']}", False):
+        nueva_foto_camara = st.camera_input(
+            "Tomar foto 1",
+            key=f"cam_edit_{row['fid']}",
+            label_visibility="collapsed",
+        )
 
-      with col_edit_f2:
-        foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
-        eliminar_foto_2 = False
+with col_edit_f2:
+    foto_actual_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+    eliminar_foto_2 = False
 
-        if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
-          st.image(
-              foto_actual_bytes_2,
-              caption=f"ID: {row['id']} (Foto 2 Actual)",
-              use_container_width=True,
-          )
-          eliminar_foto_2 = st.checkbox(
-              "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
-          )
+    if foto_actual_bytes_2 is not None and len(foto_actual_bytes_2) > 0:
+        st.image(
+            foto_actual_bytes_2,
+            caption=f"ID: {row['id']} (Foto 2 Actual)",
+            use_container_width=True,
+        )
+        eliminar_foto_2 = st.checkbox(
+            "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
+        )
 
-        cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
-        if cam_key_edit_2 not in st.session_state:
-          st.session_state[cam_key_edit_2] = False
+    cam_key_edit_2 = f"cam_open_edit_2_{row['fid']}"
+    if cam_key_edit_2 not in st.session_state:
+        st.session_state[cam_key_edit_2] = False
 
-        if not st.session_state[cam_key_edit_2]:
-          if st.button(
-              "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
-          ):
+    if not st.session_state[cam_key_edit_2]:
+        if st.button(
+            "📷 Reemplazar Foto 2", key=f"btn_open_cam_edit_2_{row['fid']}"
+        ):
             st.session_state[cam_key_edit_2] = True
             st.rerun()
-        else:
-          if st.button(
-              "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
-          ):
+    else:
+        if st.button(
+            "❌ Cerrar Cámara 2", key=f"btn_close_cam_edit_2_{row['fid']}"
+        ):
             st.session_state[cam_key_edit_2] = False
             st.rerun()
 
-        nueva_foto_camara_2 = None
-        if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
-          nueva_foto_camara_2 = st.camera_input(
-              "Tomar foto 2",
-              key=f"cam_edit_2_{row['fid']}",
-              label_visibility="collapsed",
-          )
-
-      st.markdown("<br>", unsafe_allow_html=True)
-      actualizar_click = st.button(
-          "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
-      )
-
-      if actualizar_click:
-        try:
-          if eliminar_foto:
-            foto_bytes_final = None
-          else:
-            foto_bytes_final = foto_actual_bytes
-            if nueva_foto_camara is not None:
-              foto_bytes_final = nueva_foto_camara.getvalue()
-
-          if eliminar_foto_2:
-            foto_bytes_final_2 = None
-          else:
-            foto_bytes_final_2 = foto_actual_bytes_2
-            if nueva_foto_camara_2 is not None:
-              foto_bytes_final_2 = nueva_foto_camara_2.getvalue()
-
-          sql_update = """
-                        UPDATE "Agua_potable"."VPRS" 
-                        SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
-                            model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
-                            colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
-                            cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
-                            cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
-                            estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
-                            geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
-                        WHERE fid = :fid
-                    """
-          ejecutar_sql(
-              sql_update,
-              {
-                  "id_0": e_id_0,
-                  "id": e_id,
-                  "serie": e_serie if e_serie.strip() != "" else None,
-                  "diametro": e_diametro,
-                  "marca_valv": e_marca,
-                  "model_valv": e_modelo,
-                  "marca_trim": e_trim,
-                  "domicilio": e_domicilio,
-                  "colonia": e_colonia,
-                  "cota_terr": e_cota,
-                  "sector_hid": e_sector,
-                  "cal_ant_d": e_cal_ant_d,
-                  "cal_ant_n": e_cal_ant_n,
-                  "fecha_ult_": e_fecha,
-                  "cal_act_d": e_cal_act_d,
-                  "cal_act_n": e_cal_act_n,
-                  "hora_cal": e_hora,
-                  "estat_valv": e_estat,
-                  "observ": e_observ,
-                  "fotos": foto_bytes_final,
-                  "fotos_2": foto_bytes_final_2,
-                  "coord_x": st.session_state[x_key],
-                  "coord_y": st.session_state[y_key],
-                  "fid": row["fid"],
-              },
-          )
-          st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
-          t.sleep(1)
-          st.rerun()
-        except Exception as ex:
-          st.error(f"Error al actualizar: {ex}")
-
-      if not es_operador:
-        st.markdown(
-            "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
-            " 0;'>",
-            unsafe_allow_html=True,
+    nueva_foto_camara_2 = None
+    if st.session_state.get(f"cam_open_edit_2_{row['fid']}", False):
+        nueva_foto_camara_2 = st.camera_input(
+            "Tomar foto 2",
+            key=f"cam_edit_2_{row['fid']}",
+            label_visibility="collapsed",
         )
 
-        if st.session_state.registro_to_delete == row["fid"]:
-          st.markdown(
-              f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
-              f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
-              f" {row['id']}), escribe la palabra 'delete':</p>",
-              unsafe_allow_html=True,
-          )
-          confirm_text = st.text_input(
-              "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
-          )
+st.markdown("<br>", unsafe_allow_html=True)
+actualizar_click = st.button(
+    "💾 Actualizar Registro en Base de Datos", key=f"btn_act_{row['fid']}"
+)
 
-          col_y, col_n = st.columns(2)
-          with col_y:
+if actualizar_click:
+    try:
+        if eliminar_foto:
+            foto_bytes_final = None
+        else:
+            foto_bytes_final = foto_actual_bytes
+            if nueva_foto_camara is not None:
+                foto_bytes_final = nueva_foto_camara.getvalue()
+
+        if eliminar_foto_2:
+            foto_bytes_final_2 = None
+        else:
+            foto_bytes_final_2 = foto_actual_bytes_2
+            if nueva_foto_camara_2 is not None:
+                foto_bytes_final_2 = nueva_foto_camara_2.getvalue()
+
+        sql_update = """
+                    UPDATE "Agua_potable"."VPRS" 
+                    SET id_0 = :id_0, id = :id, serie = :serie, diametro = :diametro, marca_valv = :marca_valv, 
+                        model_valv = :model_valv, marca_trim = :marca_trim, domicilio = :domicilio, 
+                        colonia = :colonia, cota_terr = :cota_terr, sector_hid = :sector_hid, 
+                        cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, fecha_ult_ = :fecha_ult_, 
+                        cal_act_d = :cal_act_d, cal_act_n = :cal_act_n, hora_cal = :hora_cal, 
+                        estat_valv = :estat_valv, observ = :observ, fotos = :fotos, fotos_2 = :fotos_2,
+                        geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
+                    WHERE fid = :fid
+                """
+        ejecutar_sql(
+            sql_update,
+            {
+                "id_0": e_id_0,
+                "id": e_id,
+                "serie": e_serie if e_serie.strip() != "" else None,
+                "diametro": e_diametro,
+                "marca_valv": e_marca,
+                "model_valv": e_modelo,
+                "marca_trim": e_trim,
+                "domicilio": e_domicilio,
+                "colonia": e_colonia,
+                "cota_terr": e_cota,
+                "sector_hid": e_sector,
+                "cal_ant_d": e_cal_ant_d,
+                "cal_ant_n": e_cal_ant_n,
+                "fecha_ult_": e_fecha,
+                "cal_act_d": e_cal_act_d,
+                "cal_act_n": e_cal_act_n,
+                "hora_cal": e_hora,
+                "estat_valv": e_estat,
+                "observ": e_observ,
+                "fotos": foto_bytes_final,
+                "fotos_2": foto_bytes_final_2,
+                "coord_x": st.session_state[x_key],
+                "coord_y": st.session_state[y_key],
+                "fid": row["fid"],
+            },
+        )
+        st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
+        t.sleep(1)
+        st.rerun()
+    except Exception as ex:
+        st.error(f"Error al actualizar: {ex}")
+
+if not es_operador:
+    st.markdown(
+        "<hr style='border: 0.5px solid rgba(255,0,0,0.2); margin: 20px"
+        " 0;'>",
+        unsafe_allow_html=True,
+    )
+
+    if st.session_state.registro_to_delete == row["fid"]:
+        st.markdown(
+            f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
+            f" bold;'>Para eliminar el registro FID {row['fid']} (ID:"
+            f" {row['id']}), escribe la palabra 'delete':</p>",
+            unsafe_allow_html=True,
+        )
+        confirm_text = st.text_input(
+            "Confirmación de eliminación", key=f"input_del_text_{row['fid']}"
+        )
+
+        col_y, col_n = st.columns(2)
+        with col_y:
             if st.button(
                 "Sí, eliminar definitivamente", key=f"confirm_del_{row['fid']}"
             ):
-              if confirm_text.strip() == "delete":
-                try:
-                  ejecutar_sql(
-                      'DELETE FROM "Agua_potable"."VPRS" WHERE fid = :fid',
-                      {"fid": row["fid"]},
-                  )
-                  st.session_state.registro_to_delete = None
-                  st.success("Registro eliminado correctamente.")
-                  t.sleep(1)
-                  st.rerun()
-                except Exception as ex_del:
-                  st.error(f"Error al eliminar: {ex_del}")
-              else:
-                st.error(
-                    "Debes escribir exactamente la palabra 'delete' para"
-                    " confirmar."
-                )
-          with col_n:
+                if confirm_text.strip() == "delete":
+                    try:
+                        ejecutar_sql(
+                            'DELETE FROM "Agua_potable"."VPRS" WHERE fid = :fid',
+                            {"fid": row["fid"]},
+                        )
+                        st.session_state.registro_to_delete = None
+                        st.success("Registro eliminado correctamente.")
+                        t.sleep(1)
+                        st.rerun()
+                    except Exception as ex_del:
+                        st.error(f"Error al eliminar: {ex_del}")
+                else:
+                    st.error(
+                        "Debes escribir exactamente la palabra 'delete' para"
+                        " confirmar."
+                    )
+        with col_n:
             if st.button("Cancelar", key=f"cancel_del_{row['fid']}"):
-              st.session_state.registro_to_delete = None
-              st.rerun()
-        else:
-          if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
+                st.session_state.registro_to_delete = None
+                st.rerun()
+    else:
+        if st.button("🗑️ Eliminar este registro", key=f"btn_del_{row['fid']}"):
             st.session_state.registro_to_delete = row["fid"]
             st.rerun()
-  else:
+else:
     st.info("No se encontró ningún registro para editar.")
-
-# --- PIE DE PÁGINA ---
+# 12 --------------------------------------------------------------------------------------  PIE DE PÁGINA --------------------------------------------------------------------------------------------------
 st.markdown(
     """
     <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(0, 229, 255, 0.15); padding-top: 1rem;">
-        © 2026 MIAA &bull; Sistema de Gestión PostGIS y MySQL (Escritorio)
+        © 2026 MIAA &bull; Sistema de Gestión Valvulas reductoras de presión  (Escritorio)
     </div>
 """,
     unsafe_allow_html=True,
