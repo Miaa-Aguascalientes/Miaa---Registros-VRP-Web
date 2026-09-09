@@ -1304,7 +1304,17 @@ elif st.session_state.active_tab == "⚙️ Editar":
                 unsafe_allow_html=True,
             )
 
-# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER)
+# ------------------------------------------------- GESTIÓN DE FOTOGRAFÍAS (FILE UPLOADER CON RESET)
+            
+            # Inicializamos contadores para controlar la versión de la key de los uploaders
+            key_ver_1 = f"uploader_ver_1_{row['fid']}"
+            key_ver_2 = f"uploader_ver_2_{row['fid']}"
+            
+            if key_ver_1 not in st.session_state:
+                st.session_state[key_ver_1] = 0
+            if key_ver_2 not in st.session_state:
+                st.session_state[key_ver_2] = 0
+
             col_edit_f1, col_edit_f2 = st.columns(2)
 
             # --- FOTO 1 ---
@@ -1322,10 +1332,11 @@ elif st.session_state.active_tab == "⚙️ Editar":
                         "🗑️ Eliminar fotografía 1", key=f"del_foto_{row['fid']}"
                     )
 
+                # Generamos una key dinámica que cambia cuando guardamos
                 nueva_foto_archivo = st.file_uploader(
                     "📁 Cargar/Reemplazar Foto 1 desde PC",
                     type=["png", "jpg", "jpeg", "webp"],
-                    key=f"file_edit_1_{row['fid']}",
+                    key=f"file_edit_1_{row['fid']}_{st.session_state[key_ver_1]}",
                 )
 
             # --- FOTO 2 ---
@@ -1343,10 +1354,11 @@ elif st.session_state.active_tab == "⚙️ Editar":
                         "🗑️ Eliminar fotografía 2", key=f"del_foto_2_{row['fid']}"
                     )
 
+                # Generamos una key dinámica que cambia cuando guardamos
                 nueva_foto_archivo_2 = st.file_uploader(
                     "📁 Cargar/Reemplazar Foto 2 desde PC",
                     type=["png", "jpg", "jpeg", "webp"],
-                    key=f"file_edit_2_{row['fid']}",
+                    key=f"file_edit_2_{row['fid']}_{st.session_state[key_ver_2]}",
                 )
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1415,14 +1427,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
                         },
                     )
 
-                    # --- RESETEAR WIDGETS DE ARCHIVO CARGADO ---
-                    key_file_1 = f"file_edit_1_{row['fid']}"
-                    key_file_2 = f"file_edit_2_{row['fid']}"
-
-                    if key_file_1 in st.session_state:
-                        del st.session_state[key_file_1]
-                    if key_file_2 in st.session_state:
-                        del st.session_state[key_file_2]
+                    # Incrementamos la versión de la key para obligar a Streamlit a destruir y volver a crear el widget limpio
+                    st.session_state[key_ver_1] += 1
+                    st.session_state[key_ver_2] += 1
 
                     st.success(f"¡Registro FID {row['fid']} actualizado con éxito!")
                     t.sleep(1)
