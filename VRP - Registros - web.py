@@ -742,7 +742,7 @@ if st.session_state.active_tab == "📍 Registros":
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "🗺️ Mapa":
-  # 1. CONSULTA DE VÁLVULAS (VPRs)
+  # 9.1. CONSULTA DE VÁLVULAS (VPRs)
   query_mapa = """
         SELECT 
             id,
@@ -756,7 +756,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     """
   df_mapa, err_mapa = obtener_datos(query_mapa)
 
-  # 2. CONSULTA DE SECTORES HIDRÁULICOS (Convertidos a GeoJSON WGS84)
+  # 9.2. CONSULTA DE SECTORES HIDRÁULICOS (Convertidos a GeoJSON WGS84)
   query_sectores = """
         SELECT 
             fid,
@@ -788,7 +788,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     agregar_capas_base_mapa(m)
     Fullscreen().add_to(m)
 
-    # --- DIBUJAR CAPA DE SECTORES HIDRÁULICOS ---
+    # 9.3. --- DIBUJAR CAPA DE SECTORES HIDRÁULICOS ---
     fg_sectores = folium.FeatureGroup(
         name="📐 Sectores Hidráulicos", show=True
     )
@@ -801,20 +801,20 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           geom_json = json.loads(sec_row["geojson"])
           nombre_sector = sec_row.get("sector", "Sin Nombre")
 
-          # Agregar el polígono del sector
+          # Agregar el polígono del sector con tono azul sólido / opaco
           folium.GeoJson(
               geom_json,
               style_function=lambda feature: {
-                  "fillColor": "#00E5FF",
-                  "color": "#00B4D8",
-                  "weight": 1.5,
-                  "fillOpacity": 0.15,
+                  "fillColor": "#1E3A8A",  # Azul marino opaco
+                  "color": "#2563EB",  # Borde azul cobalto definido
+                  "weight": 2.0,  # Grosor de la línea del límite
+                  "fillOpacity": 0.65,  # Opacidad incrementada al 65%
               },
               highlight_function=lambda feature: {
-                  "fillColor": "#00E5FF",
-                  "color": "#FFFFFF",
+                  "fillColor": "#1D4ED8",  # Azul brillante al pasar el cursor
+                  "color": "#FFFFFF",  # Borde blanco
                   "weight": 2.5,
-                  "fillOpacity": 0.4,
+                  "fillOpacity": 0.85,  # Opacidad alta en hover
               },
               tooltip=folium.Tooltip(
                   f"<b>Sector:</b> {nombre_sector}", sticky=True
@@ -825,7 +825,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
     fg_sectores.add_to(m)
 
-    # --- DIBUJAR CAPAS DE VÁLVULAS ---
+    # 9.4. --- DIBUJAR CAPAS DE VÁLVULAS ---
     grupos_capas = {}
     if not df_mapa.empty:
       for estado_opc in OPCIONES_ESTADO_VALVULA:
