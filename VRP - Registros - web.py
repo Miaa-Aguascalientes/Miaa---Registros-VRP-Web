@@ -632,13 +632,54 @@ COLUMNAS_VPRS = """
 
 if st.session_state.active_tab == "📍 Registros":
 
-  # Crear las 2 pestañas principales
-  tab_registros, tab_tablas_externas = st.tabs(
-      ["📍 Registros", "📊 Tabla Base de Datos & Google Sheets"]
+  # 1. INYECCIÓN CSS PARA DISEÑO DE PESTAÑAS TIPO FOLDER/FICHA (Estilo de la imagen)
+  st.markdown(
+      """
+        <style>
+        /* Contenedor principal de pestañas */
+        div[data-baseweb="tab-list"] {
+            gap: 2px;
+            background-color: #5B63B7; /* Fondo general de la barra */
+            padding: 4px 4px 0px 4px;
+            border-radius: 6px 6px 0px 0px;
+        }
+
+        /* Estilo base de cada pestaña (Inactivas) */
+        div[data-baseweb="tab-list"] button {
+            background-color: #8C93D3 !important;
+            color: #FFFFFF !important;
+            font-weight: bold !important;
+            border-radius: 6px 6px 0px 0px !important;
+            padding: 10px 20px !important;
+            border: none !important;
+            margin-right: 2px !important;
+        }
+
+        /* Estilo de la pestaña seleccionada (Activa) */
+        div[data-baseweb="tab-list"] button[aria-selected="true"] {
+            background-color: #FFFFFF !important;
+            color: #4A52A0 !important;
+            border-top: 3px solid #3F468F !important;
+        }
+
+        /* Ocultar la barra inferior por defecto de Streamlit */
+        div[data-baseweb="tab-highlight"] {
+            background-color: transparent !important;
+        }
+        </style>
+        """,
+      unsafe_allow_html=True,
   )
 
+  # 2. DEFINICIÓN DE PESTAÑAS
+  tab_registros, tab_bd_completa, tab_sheets = st.tabs([
+      "📍 Registros",
+      "🗄️ Tabla Base de Datos Completa",
+      "📊 2.Informe visitas a VRP´s (Sheets)",
+  ])
+
   # =========================================================================
-  # PESTAÑA 1: VISTA DE REGISTROS (Búsqueda, Tarjetas y Fotografías)
+  # PESTAÑA 1: VISTA DE REGISTROS (Búsqueda y Tarjetas con fotos)
   # =========================================================================
   with tab_registros:
     busqueda = st.text_input(
@@ -750,51 +791,50 @@ if st.session_state.active_tab == "📍 Registros":
       st.info("No se encontraron registros.")
 
   # =========================================================================
-  # PESTAÑA 2: BASE DE DATOS COMPLETA Y GOOGLE SHEETS
+  # PESTAÑA 2: TABLA BASE DE DATOS COMPLETA (PostgreSQL)
   # =========================================================================
-  with tab_tablas_externas:
-    subtab_bd, subtab_sheets = st.tabs(
-        ["🗄️ Base de Datos Completa", "🟢 Google Sheets"]
+  with tab_bd_completa:
+    st.markdown("### Tabla Completa de VPRS (Base de Datos)")
+
+    query_completa = (
+        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid ASC;'
+    )
+    df_completo, err_bd_comp = obtener_datos(query_completa)
+
+    if err_bd_comp:
+      st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
+    elif not df_completo.empty:
+      st.dataframe(
+          df_completo, use_container_width=True, hide_index=True, height=650
+      )
+      st.caption(f"Total de registros en base de datos: {len(df_completo)}")
+    else:
+      st.warning("⚠️ No se encontraron registros en la base de datos.")
+
+  # =========================================================================
+  # PESTAÑA 3: GOOGLE SHEETS EN HOJA ESPECÍFICA (2.Informe visitas a VRP´s)
+  # =========================================================================
+  with tab_sheets:
+    st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
+
+    # URL configurada para forzar la apertura en la pestaña gid=769091515
+    sheet_url_especifica = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/htmlembed?gid=769091515&widget=false&chrome=false"
+
+    st.markdown(
+        f"""
+        <iframe 
+            src="{sheet_url_especifica}" 
+            style="width: 100%; height: 80vh; border: 1px solid #334155; border-radius: 0px 0px 8px 8px;" 
+            allowfullscreen>
+        </iframe>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # --- Subpestaña 1: Tabla Completa de PostgreSQL ---
-    with subtab_bd:
-      st.markdown("### Tabla Completa de VPRS")
-
-      query_completa = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VPRS" ORDER BY fid ASC;'
-      df_completo, err_bd_comp = obtener_datos(query_completa)
-
-      if err_bd_comp:
-        st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
-      elif not df_completo.empty:
-        st.dataframe(
-            df_completo, use_container_width=True, hide_index=True, height=600
-        )
-        st.caption(f"Total de registros en base de datos: {len(df_completo)}")
-      else:
-        st.warning("⚠️ No se encontraron registros en la base de datos.")
-
-    # --- Subpestaña 2: Visualizador de Google Sheets ---
-    with subtab_sheets:
-      st.markdown("### Hoja de Cálculo (Google Sheets)")
-
-      sheet_url_embed = "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/preview?gid=769091515"
-
-      st.markdown(
-          f"""
-            <iframe 
-                src="{sheet_url_embed}" 
-                style="width: 100%; height: 75vh; border: 1px solid #334155; border-radius: 8px;" 
-                allowfullscreen>
-            </iframe>
-            """,
-          unsafe_allow_html=True,
-      )
-
-      st.link_button(
-          "🔗 Abrir Hoja de Google Sheets en pestaña nueva",
-          "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit?gid=769091515#gid=769091515",
-      )
+    st.link_button(
+        "🔗 Abrir hoja directamente en Google Sheets",
+        "https://docs.google.com/spreadsheets/d/1Y6p768QQzPWoo5aK9kJEYbUHMDToen1T1nJHyo4Ohnk/edit#gid=769091515",
+    )
 
 
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
