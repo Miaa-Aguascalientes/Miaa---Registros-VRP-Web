@@ -512,7 +512,65 @@ with st.sidebar:
     st.session_state.active_tab = seleccion_tab
     st.rerun()
 
-  st.markdown("<br><br>", unsafe_allow_html=True)
+  st.markdown(
+      "<hr style='border: 0.5px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
+      unsafe_allow_html=True,
+  )
+
+  # --- DESPLEGABLES DE VÁLVULAS CON CONTEO EN LA BARRA LATERAL ---
+  df_sidebar_valvulas, _ = obtener_datos(
+      'SELECT id, estat_valv, domicilio, colonia FROM "Agua_potable"."VPRS"'
+  )
+
+  if not df_sidebar_valvulas.empty:
+    st.markdown(
+        "<p style='color: #00E5FF; font-size: 0.85rem; font-weight:"
+        " 700;'>📊 Estado de Válvulas</p>",
+        unsafe_allow_html=True,
+    )
+
+    # Mapeo de colores/emojis según estado
+    ICONOS_ESTADO = {
+        "Calibrada": "🟢",
+        "Abierta": "🔵",
+        "Cerrada": "🔴",
+        "Dañada": "⛔",
+        "Descalibrada": "🟠",
+        "Habilitada": "🔷",
+        "No opera": "⚫",
+        "Pendiente": "⚠️",
+    }
+
+    # Agrupar por estado y generar expansores
+    for estado in OPCIONES_ESTADO_VALVULA:
+      df_filtro = df_sidebar_valvulas[
+          df_sidebar_valvulas["estat_valv"].str.strip().str.lower()
+          == estado.lower()
+      ]
+      conteo = len(df_filtro)
+      icono = ICONOS_ESTADO.get(estado, "⚪")
+
+      # Formato del título como en la imagen: EMOJI ESTADO (CANTIDAD)
+      with st.expander(f"{icono} {estado} ({conteo})"):
+        if conteo > 0:
+          for _, v_row in df_filtro.iterrows():
+            st.markdown(
+                f"""
+                            <div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.78rem;">
+                                <strong style="color: #00E5FF;">{v_row['id']}</strong><br>
+                                <span style="color: #94A3B8;">📍 {v_row['domicilio'] or 'Sin dom.'}</span>
+                            </div>
+                            """,
+                unsafe_allow_html=True,
+            )
+        else:
+          st.markdown(
+              "<span style='color: #64748B; font-size: 0.75rem;'>Sin"
+              " registros</span>",
+              unsafe_allow_html=True,
+          )
+
+  st.markdown("<br>", unsafe_allow_html=True)
 
   if st.button("Cerrar Sesión", key="btn_logout", use_container_width=True):
     st.session_state.autenticado = False
