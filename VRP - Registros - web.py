@@ -48,7 +48,7 @@ OPCIONES_ESTADO_VALVULA = [
     "Pendiente",
 ]
 
-# 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VPRS) --------------------------------------------------------------------------------------
+# 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VRP_Oficial) --------------------------------------------------------------------------------------
 
 
 def crear_nuevo_engine():
@@ -268,6 +268,7 @@ st.write(
         padding-right: 1rem !important;
     }
 
+    /* --- NAVEGACIÓN TIPO TARJETAS / TABS (SIN CÍRCULOS DE RADIO) --- */
     div.row-widget.stRadio > div {
         display: flex;
         flex-direction: column;
@@ -537,7 +538,7 @@ with st.sidebar:
   )
 
   df_sidebar_valvulas, _ = obtener_datos(
-      'SELECT id, estatus, domicilio, colonia FROM "Agua_potable"."VRP_Oficial"'
+      'SELECT objectid, estatus, domicilio, colonia FROM "Agua_potable"."VRP_Oficial"'
   )
 
   if not df_sidebar_valvulas.empty:
@@ -572,7 +573,7 @@ with st.sidebar:
             st.markdown(
                 f"""
                             <div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.78rem;">
-                                <strong style="color: #00E5FF;">{v_row['id']}</strong><br>
+                                <strong style="color: #00E5FF;">{v_row['objectid']}</strong><br>
                                 <span style="color: #94A3B8;">📍 {v_row['domicilio'] or 'Sin dom.'}</span>
                             </div>
                             """,
@@ -595,7 +596,7 @@ with st.sidebar:
 st.markdown(
     """
     <div style="text-align: center; margin-bottom: 10px; margin-top: 0px;">
-        <h1 style="color: #00E5FF; font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">Gestion valvular reductoras de presión</h1>
+        <h1 style="color: #00E5FF; font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">Gestión Válvulas Reductoras de Presión</h1>
     </div>
 """,
     unsafe_allow_html=True,
@@ -607,14 +608,14 @@ st.markdown(
 )
 
 COLUMNAS_VPRS = """
-    objectid, id_0, id, num_serie, fecha_inst, tipo_valv, diametro, marca, modelo, trim, control_au, 
-    domicilio, colonia, sect_hid, distrito, cota_terr, estatus, condicion, 
-    cal_ant_d, cal_ant_n, fecha_vis, p_ab, p_arr, cal_postd, cal_postn, 
-    prog_hor, fecha_mtto, tim_cambio, fecha_tim, obs, _ult_visit, _p_ab, _p_arr, fotos, fotos_2,
+    objectid, id_0, id, num_serie, fecha_inst, tipo_valv, diametro, marca, modelo, trim, 
+    control_au, domicilio, colonia, sect_hidr, distrito, cota_terr, estatus, condicion, 
+    cal_antd, cal_antn, fecha_vis, p_ab, p_arr, cal_postd, cal_postn, prog_hor, 
+    fecha_mtto, tim_cambio, fecha_tim, obs, _ult_visit, _p_ab, _p_arr, fotos, fotos_2,
     ST_X(geom) as coord_x, ST_Y(geom) as coord_y
 """
 
-# 08 SECCION ---------------------------------------------------------------------------- VER REGISTROS (VPRS) ------------------------------------------------------------------------------------------------
+# 08 SECCION ---------------------------------------------------------------------------- VER REGISTROS (VRP_Oficial) ------------------------------------------------------------------------------------------------
 
 if st.session_state.active_tab == "📍 Registros":
 
@@ -661,7 +662,7 @@ if st.session_state.active_tab == "📍 Registros":
 
   with tab_registros:
     busqueda = st.text_input(
-        "🔍 Buscar válvula (ID, Serie, Domicilio, Col.):",
+        "🔍 Buscar válvula (ID, Num. Serie, Domicilio, Col.):",
         placeholder="Ej. VF01, Centro...",
     )
 
@@ -708,7 +709,7 @@ if st.session_state.active_tab == "📍 Registros":
                 pd.isna(serie_val)
                 or str(serie_val).strip().lower() in ["nan", "none", ""]
             )
-            else f" | Serie: {serie_val}"
+            else f" | Num. Serie: {serie_val}"
         )
 
         card_html = f"""
@@ -728,9 +729,9 @@ if st.session_state.active_tab == "📍 Registros":
           detalle_html = f"""
                         <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
                             <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca']} &nbsp;|&nbsp; <b>Modelo:</b> {row['modelo']} &nbsp;|&nbsp; <b>Trim:</b> {row['trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
-                            <b>Sector:</b> {row['sect_hid']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Hora Cal (Prog):</b> {row['prog_hor']} &nbsp;|&nbsp; <b>Última Visita:</b> {row['_ult_visit']}<br>
+                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {row['fecha_vis']}<br>
                             <b>Geom:</b> {geom_str}<br>
-                            <b>Cal Anterior Día:</b> {row['cal_ant_d']} &nbsp;|&nbsp; <b>Cal Anterior Noche:</b> {row['cal_ant_n']}<br>
+                            <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
                             <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
                             <b>Observaciones:</b> {row['obs']}
                         </span>
@@ -1034,7 +1035,7 @@ if st.session_state.active_tab == "📍 Registros":
 elif st.session_state.active_tab == "🗺️ Mapa":
   query_mapa = """
         SELECT 
-            id,
+            objectid,
             estatus,
             domicilio,
             colonia,
@@ -1047,7 +1048,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
   query_sectores = """
         SELECT 
-            fid,
+            objectid as fid,
             sector,
             ST_AsGeoJSON(ST_Transform(geom, 4326)) as geojson
         FROM "Sectorizacion"."Sectores_hidr"
@@ -1181,7 +1182,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
           lon, lat = transformer_to_latlon.transform(row["x"], row["y"])
           estado_raw = str(row["estatus"] or "Desconocido").strip()
           estado_key = estado_raw.lower()
-          id_vrp = str(row["id"])
+          id_vrp = str(row["objectid"])
 
           conf_punto = CONFIG_ESTADOS.get(
               estado_key, {"color": "#95A5A6", "emoji": "⚪", "forma": "circulo"}
@@ -1272,7 +1273,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         unsafe_allow_html=True,
     )
 
-# 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA (ACOMODO IDÉNTICO A EDITAR) -----------------------------------------------------------------------
+# 10 SECCION --------------------------------------------------------------------- AÑADIR NUEVA VÁLVULA ---------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "➕ Añadir":
   if es_operador:
@@ -1301,6 +1302,7 @@ elif st.session_state.active_tab == "➕ Añadir":
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
+  # FILA 1
   a_c1, a_c2, a_c3, a_c4 = st.columns(4)
   with a_c1:
     st.text_input(
@@ -1311,24 +1313,26 @@ elif st.session_state.active_tab == "➕ Añadir":
     )
     val_id_0 = siguiente_id_0
   with a_c2:
-    val_id = st.text_input("ID VRP *Obligatorio", key="add_id")
+    val_id = st.text_input("ID *Obligatorio", key="add_id")
   with a_c3:
     val_cota = st.number_input("Cota Terreno", value=0.0, key="add_cota")
   with a_c4:
-    val_marca = st.text_input("Marca Valvula", key="add_marca")
+    val_marca = st.text_input("Marca", key="add_marca")
 
+  # FILA 2
   a_c5, a_c6, a_c7, a_c8 = st.columns(4)
   with a_c5:
-    val_serie = st.text_input("Serie de la Valvula (num_serie)", key="add_serie")
+    val_num_serie = st.text_input("Num. Serie", key="add_num_serie")
   with a_c6:
     val_diametro = st.number_input(
         "Diámetro", min_value=0, value=0, key="add_diam"
     )
   with a_c7:
-    val_modelo = st.text_input("Modelo Valvula", key="add_modelo")
+    val_modelo = st.text_input("Modelo", key="add_modelo")
   with a_c8:
-    val_trim = st.text_input("Marca Trim (trim)", key="add_trim")
+    val_trim = st.text_input("Trim", key="add_trim")
 
+  # FILA 3
   a_c9, a_c10, a_c11, a_c12 = st.columns(4)
   with a_c9:
     val_domicilio = st.text_input("Domicilio", key="add_dom")
@@ -1336,14 +1340,15 @@ elif st.session_state.active_tab == "➕ Añadir":
     val_colonia = st.text_input("Colonia", key="add_col")
   with a_c11:
     val_estat = st.selectbox(
-        "Estado de la Válvula (estatus)",
+        "Estatus",
         options=OPCIONES_ESTADO_VALVULA,
         index=0,
         key="add_estat",
     )
   with a_c12:
-    val_sector = st.text_input("Sector Hidráulico (sect_hid)", key="add_sector")
+    val_sect_hidr = st.text_input("Sector Hidráulico (sect_hidr)", key="add_sect_hidr")
 
+  # FILA 4 (Mapa + Coordenadas y Calibraciones)
   col_coord_left, col_map_right = st.columns([1, 1])
 
   with col_map_right:
@@ -1429,31 +1434,29 @@ elif st.session_state.active_tab == "➕ Añadir":
 
     cc1, cc2 = st.columns(2)
     with cc1:
-      val_hora = st.text_input("Hora de Calibración Programada (prog_hor)", key="add_hora")
+      val_cal_antd = st.number_input("Calibración Ant. Día (cal_antd)", value=0.0, key="add_cand")
     with cc2:
-      val_cal_ant_n = st.text_input(
-          "Calibración Anterior Noche (cal_ant_n)", key="add_cann"
-      )
+      val_cal_antn = st.number_input("Calibración Ant. Noche (cal_antn)", value=0.0, key="add_cann")
 
     cc3, cc4 = st.columns(2)
     with cc3:
-      val_cal_ant_d = st.text_input("Calibración Anterior Día (cal_ant_d)", key="add_cand")
+      val_cal_postd = st.number_input("Calibración Post. Día (cal_postd)", value=0.0, key="add_cpostd")
     with cc4:
-      val_cal_act_d = st.text_input("Calibración Posterior Día (cal_postd)", key="add_cactd")
+      val_cal_postn = st.number_input("Calibración Post. Noche (cal_postn)", value=0.0, key="add_cpostn")
 
     cc5, cc6 = st.columns(2)
     with cc5:
-      val_cal_act_n = st.text_input("Calibración Posterior Noche (cal_postn)", key="add_cactn")
+      val_tipo_valv = st.text_input("Tipo Válvula (tipo_valv)", key="add_tipovalv")
     with cc6:
       val_fecha_obj = st.date_input(
-          "Fecha última visita (_ult_visit)",
+          "Fecha Visita (fecha_vis)",
           value=datetime.date.today(),
           format="DD/MM/YYYY",
           key="add_fecha",
       )
-      val_fecha = val_fecha_obj.strftime("%d/%m/%Y")
+      val_fecha_vis = val_fecha_obj.strftime("%d/%m/%Y")
 
-  val_observ = st.text_area("Observaciones (obs)", key="add_obs")
+  val_obs = st.text_area("Observaciones (obs)", key="add_obs")
 
   st.markdown(
       "<hr style='border: 0.3px solid rgba(0,229,255,0.2); margin: 15px 0;'>",
@@ -1479,7 +1482,6 @@ elif st.session_state.active_tab == "➕ Añadir":
         horizontal=True,
         label_visibility="collapsed",
     )
-
     foto_input_1 = None
     if origen_foto_1 == "📁 Seleccionar Archivo":
       foto_input_1 = st.file_uploader(
@@ -1506,7 +1508,6 @@ elif st.session_state.active_tab == "➕ Añadir":
         horizontal=True,
         label_visibility="collapsed",
     )
-
     foto_input_2 = None
     if origen_foto_2 == "📁 Seleccionar Archivo":
       foto_input_2 = st.file_uploader(
@@ -1523,7 +1524,7 @@ elif st.session_state.active_tab == "➕ Añadir":
 
   st.markdown("<br>", unsafe_allow_html=True)
   if st.button(
-      "💾 Guardar Nuevo Registro VRP_Oficial",
+      "💾 Guardar Nuevo Registro VRP",
       key="btn_guardar_nuevo",
       use_container_width=True,
   ):
@@ -1538,14 +1539,17 @@ elif st.session_state.active_tab == "➕ Añadir":
 
         sql_insert = """
                     INSERT INTO "Agua_potable"."VRP_Oficial" (
-                        id_0, id, num_serie, diametro, marca, modelo, trim, domicilio, colonia, 
-                        cota_terr, sect_hid, cal_ant_d, cal_ant_n, _ult_visit, cal_postd, cal_postn, 
-                        prog_hor, estatus, obs, fotos, fotos_2, geom
+                        id_0, id, num_serie, fecha_inst, tipo_valv, diametro, marca, modelo, trim, 
+                        control_au, domicilio, colonia, sect_hidr, distrito, cota_terr, estatus, 
+                        condicion, cal_antd, cal_antn, fecha_vis, p_ab, p_arr, cal_postd, cal_postn, 
+                        prog_hor, fecha_mtto, tim_cambio, fecha_tim, obs, _ult_visit, _p_ab, _p_arr, 
+                        fotos, fotos_2, geom
                     ) VALUES (
-                        :id_0, :id, :num_serie, :diametro, :marca, :modelo, :trim, :domicilio, :colonia, 
-                        :cota_terr, :sect_hid, :cal_ant_d, :cal_ant_n, :_ult_visit, :cal_postd, :cal_postn, 
-                        :prog_hor, :estatus, :obs, :fotos, :fotos_2, 
-                        ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
+                        :id_0, :id, :num_serie, NULL, :tipo_valv, :diametro, :marca, :modelo, :trim, 
+                        NULL, :domicilio, :colonia, :sect_hidr, NULL, :cota_terr, :estatus, 
+                        NULL, :cal_antd, :cal_antn, :fecha_vis, NULL, NULL, :cal_postd, :cal_postn, 
+                        NULL, NULL, NULL, NULL, :obs, NULL, NULL, NULL, 
+                        :fotos, :fotos_2, ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                     )
                 """
         ejecutar_sql(
@@ -1553,23 +1557,23 @@ elif st.session_state.active_tab == "➕ Añadir":
             {
                 "id_0": val_id_0,
                 "id": val_id,
-                "num_serie": val_serie if val_serie.strip() != "" else None,
+                "num_serie": val_num_serie if val_num_serie.strip() != "" else None,
+                "tipo_valv": val_tipo_valv if val_tipo_valv.strip() != "" else None,
                 "diametro": val_diametro,
                 "marca": val_marca,
                 "modelo": val_modelo,
                 "trim": val_trim,
                 "domicilio": val_domicilio,
                 "colonia": val_colonia,
+                "sect_hidr": val_sect_hidr,
                 "cota_terr": val_cota,
-                "sect_hid": val_sector,
-                "cal_ant_d": val_cal_ant_d,
-                "cal_ant_n": val_cal_ant_n,
-                "_ult_visit": val_fecha,
-                "cal_postd": val_cal_act_d,
-                "cal_postn": val_cal_act_n,
-                "prog_hor": val_hora,
                 "estatus": val_estat,
-                "obs": val_observ,
+                "cal_antd": val_cal_antd,
+                "cal_antn": val_cal_antn,
+                "cal_postd": val_cal_postd,
+                "cal_postn": val_cal_postn,
+                "fecha_vis": val_fecha_vis,
+                "obs": val_obs,
                 "fotos": foto_bytes,
                 "fotos_2": foto_bytes_2,
                 "coord_x": val_coord_x,
@@ -1584,7 +1588,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     else:
       st.warning("El campo ID es obligatorio.")
 
-# 11 -----------------------------------------------------------------  EDITAR Y ELIMINAR --------------------------------------------------------------------------------------------------------------
+# 11 ----------------------------------------------------------------- EDITAR Y ELIMINAR ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.session_state.get("busqueda_edit_val", "")
@@ -1612,7 +1616,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
   with col_search:
     st.text_input(
-        "🔍 Buscar válvula a editar (ID, Serie, Domicilio, Colonia.):",
+        "🔍 Buscar válvula a editar (ID, Num. Serie, Domicilio, Colonia):",
         placeholder="Ej. VRP-01, Centro...",
         key="busqueda_edit_val",
     )
@@ -1624,7 +1628,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
     with col_info:
       st.markdown(
-          f"<div style='margin-top: 15px;'><span style='color: #00E5FF; font-weight: bold;'>Object ID: {row_first['objectid']}</span> | "
+          f"<div style='margin-top: 15px;'><span style='color: #00E5FF; font-weight: bold;'>Objectid: {row_first['objectid']}</span> | "
           f"<span style='color: #F8FAFC; font-weight: bold;'>ID: {row_first['id']}</span></div>",
           unsafe_allow_html=True,
       )
@@ -1657,7 +1661,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
       if estado_actual in OPCIONES_ESTADO_VALVULA:
         idx_estado = OPCIONES_ESTADO_VALVULA.index(estado_actual)
 
-      e_serie_val = (
+      e_num_serie_val = (
           ""
           if (
               pd.isna(row["num_serie"])
@@ -1670,14 +1674,14 @@ elif st.session_state.active_tab == "⚙️ Editar":
       e_c1, e_c2, e_c3, e_c4 = st.columns(4)
       with e_c1:
         st.text_input(
-            "ID_0 (Registro)",
+            "ID_0",
             value=str(row["id_0"] or 0),
             disabled=True,
             key=f"id0_bloq_{row['objectid']}",
         )
       with e_c2:
         e_id = st.text_input(
-            "ID VRP", value=str(row["id"] or ""), key=f"id_{row['objectid']}"
+            "ID", value=str(row["id"] or ""), key=f"id_{row['objectid']}"
         )
       with e_c3:
         e_cota = st.number_input(
@@ -1687,7 +1691,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
         )
       with e_c4:
         e_marca = st.text_input(
-            "Marca Valvula",
+            "Marca",
             value=str(row["marca"] or ""),
             key=f"mar_{row['objectid']}",
         )
@@ -1695,8 +1699,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
       # FILA 2
       e_c5, e_c6, e_c7, e_c8 = st.columns(4)
       with e_c5:
-        e_serie = st.text_input(
-            "Serie (num_serie)", value=e_serie_val, key=f"serie_{row['objectid']}"
+        e_num_serie = st.text_input(
+            "Num. Serie", value=e_num_serie_val, key=f"num_serie_{row['objectid']}"
         )
       with e_c6:
         e_diametro = st.number_input(
@@ -1706,13 +1710,13 @@ elif st.session_state.active_tab == "⚙️ Editar":
         )
       with e_c7:
         e_modelo = st.text_input(
-            "Modelo Valvula",
+            "Modelo",
             value=str(row["modelo"] or ""),
             key=f"mod_{row['objectid']}",
         )
       with e_c8:
         e_trim = st.text_input(
-            "Marca Trim (trim)",
+            "Trim",
             value=str(row["trim"] or ""),
             key=f"trim_{row['objectid']}",
         )
@@ -1733,18 +1737,19 @@ elif st.session_state.active_tab == "⚙️ Editar":
         )
       with e_c11:
         e_estat = st.selectbox(
-            "Estado de la Válvula (estatus)",
+            "Estatus",
             options=OPCIONES_ESTADO_VALVULA,
             index=idx_estado,
             key=f"est_{row['objectid']}",
         )
       with e_c12:
-        e_sector = st.text_input(
-            "Sector Hidráulico (sect_hid)",
-            value=str(row["sect_hid"] or ""),
+        e_sect_hidr = st.text_input(
+            "Sector Hidráulico (sect_hidr)",
+            value=str(row["sect_hidr"] or ""),
             key=f"sec_{row['objectid']}",
         )
 
+      # FILA 4 (Mapa + Coordenadas)
       col_coord_left, col_map_right = st.columns([1, 1])
 
       with col_map_right:
@@ -1829,50 +1834,66 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         cc1, cc2 = st.columns(2)
         with cc1:
-          e_hora = st.text_input(
-              "Hora de Calibración Programada (prog_hor)",
-              value=str(row["prog_hor"] or ""),
-              key=f"hora_{row['objectid']}",
+          try:
+            val_cantd_f = float(row["cal_antd"] or 0.0)
+          except:
+            val_cantd_f = 0.0
+          e_cal_antd = st.number_input(
+              "Calibración Ant. Día (cal_antd)",
+              value=val_cantd_f,
+              key=f"cand_{row['objectid']}",
           )
         with cc2:
-          e_cal_ant_n = st.text_input(
-              "Calibración Anterior Noche (cal_ant_n)",
-              value=str(row["cal_ant_n"] or ""),
+          try:
+            val_cantn_f = float(row["cal_antn"] or 0.0)
+          except:
+            val_cantn_f = 0.0
+          e_cal_antn = st.number_input(
+              "Calibración Ant. Noche (cal_antn)",
+              value=val_cantn_f,
               key=f"cann_{row['objectid']}",
           )
 
         cc3, cc4 = st.columns(2)
         with cc3:
-          e_cal_ant_d = st.text_input(
-              "Calibración Anterior Día (cal_ant_d)",
-              value=str(row["cal_ant_d"] or ""),
-              key=f"cand_{row['objectid']}",
+          try:
+            val_cpostd_f = float(row["cal_postd"] or 0.0)
+          except:
+            val_cpostd_f = 0.0
+          e_cal_postd = st.number_input(
+              "Calibración Post. Día (cal_postd)",
+              value=val_cpostd_f,
+              key=f"cpostd_{row['objectid']}",
           )
         with cc4:
-          e_cal_act_d = st.text_input(
-              "Calibración Posterior Día (cal_postd)",
-              value=str(row["cal_postd"] or ""),
-              key=f"cactd_{row['objectid']}",
+          try:
+            val_cpostn_f = float(row["cal_postn"] or 0.0)
+          except:
+            val_cpostn_f = 0.0
+          e_cal_postn = st.number_input(
+              "Calibración Post. Noche (cal_postn)",
+              value=val_cpostn_f,
+              key=f"cpostn_{row['objectid']}",
           )
 
         cc5, cc6 = st.columns(2)
         with cc5:
-          e_cal_act_n = st.text_input(
-              "Calibración Posterior Noche (cal_postn)",
-              value=str(row["cal_postn"] or ""),
-              key=f"cactn_{row['objectid']}",
+          e_tipo_valv = st.text_input(
+              "Tipo Válvula (tipo_valv)",
+              value=str(row["tipo_valv"] or ""),
+              key=f"tipval_{row['objectid']}",
           )
         with cc6:
-          fecha_def = parsear_fecha_segura(row["_ult_visit"])
+          fecha_def = parsear_fecha_segura(row["fecha_vis"])
           e_fecha_obj = st.date_input(
-              "Fecha última visita (_ult_visit)",
+              "Fecha Visita (fecha_vis)",
               value=fecha_def,
               format="DD/MM/YYYY",
               key=f"fec_{row['objectid']}",
           )
-          e_fecha = e_fecha_obj.strftime("%d/%m/%Y")
+          e_fecha_vis = e_fecha_obj.strftime("%d/%m/%Y")
 
-      e_observ = st.text_area(
+      e_obs = st.text_area(
           "Observaciones (obs)",
           value=str(row["obs"] or ""),
           key=f"obs_{row['objectid']}",
@@ -1963,12 +1984,12 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
           sql_update = """
                         UPDATE "Agua_potable"."VRP_Oficial" 
-                        SET id_0 = :id_0, id = :id, num_serie = :num_serie, diametro = :diametro, marca = :marca, 
-                            modelo = :modelo, trim = :trim, domicilio = :domicilio, 
-                            colonia = :colonia, cota_terr = :cota_terr, sect_hid = :sect_hid, 
-                            cal_ant_d = :cal_ant_d, cal_ant_n = :cal_ant_n, _ult_visit = :_ult_visit, 
-                            cal_postd = :cal_postd, cal_postn = :cal_postn, prog_hor = :prog_hor, 
-                            estatus = :estatus, obs = :obs, fotos = :fotos, fotos_2 = :fotos_2,
+                        SET id_0 = :id_0, id = :id, num_serie = :num_serie, tipo_valv = :tipo_valv, 
+                            diametro = :diametro, marca = :marca, modelo = :modelo, trim = :trim, 
+                            domicilio = :domicilio, colonia = :colonia, sect_hidr = :sect_hidr, 
+                            cota_terr = :cota_terr, estatus = :estatus, cal_antd = :cal_antd, 
+                            cal_antn = :cal_antn, fecha_vis = :fecha_vis, cal_postd = :cal_postd, 
+                            cal_postn = :cal_postn, obs = :obs, fotos = :fotos, fotos_2 = :fotos_2,
                             geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                         WHERE objectid = :objectid
                     """
@@ -1977,23 +1998,23 @@ elif st.session_state.active_tab == "⚙️ Editar":
               {
                   "id_0": e_id_0,
                   "id": e_id,
-                  "num_serie": e_serie if e_serie.strip() != "" else None,
+                  "num_serie": e_num_serie if e_num_serie.strip() != "" else None,
+                  "tipo_valv": e_tipo_valv if e_tipo_valv.strip() != "" else None,
                   "diametro": e_diametro,
                   "marca": e_marca,
                   "modelo": e_modelo,
                   "trim": e_trim,
                   "domicilio": e_domicilio,
                   "colonia": e_colonia,
+                  "sect_hidr": e_sect_hidr,
                   "cota_terr": e_cota,
-                  "sect_hid": e_sector,
-                  "cal_ant_d": e_cal_ant_d,
-                  "cal_ant_n": e_cal_ant_n,
-                  "_ult_visit": e_fecha,
-                  "cal_postd": e_cal_act_d,
-                  "cal_postn": e_cal_act_n,
-                  "prog_hor": e_hora,
                   "estatus": e_estat,
-                  "obs": e_observ,
+                  "cal_antd": e_cal_antd,
+                  "cal_antn": e_cal_antn,
+                  "cal_postd": e_cal_postd,
+                  "cal_postn": e_cal_postn,
+                  "fecha_vis": e_fecha_vis,
+                  "obs": e_obs,
                   "fotos": foto_bytes_final,
                   "fotos_2": foto_bytes_final_2,
                   "coord_x": st.session_state[x_key],
@@ -2005,7 +2026,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
           st.session_state[key_ver_1] += 1
           st.session_state[key_ver_2] += 1
 
-          st.success(f"¡Registro Object ID {row['objectid']} actualizado con éxito!")
+          st.success(f"¡Registro Objectid {row['objectid']} actualizado con éxito!")
           t.sleep(1)
           st.rerun()
         except Exception as ex:
@@ -2020,7 +2041,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
         if st.session_state.registro_to_delete == row["objectid"]:
           st.markdown(
               f"<p style='color: #ff4d4d; font-size: 0.9rem; font-weight:"
-              f" bold;'>Para eliminar el registro Object ID {row['objectid']} (ID:"
+              f" bold;'>Para eliminar el registro Objectid {row['objectid']} (ID:"
               f" {row['id']}), escribe la palabra 'delete':</p>",
               unsafe_allow_html=True,
           )
@@ -2071,11 +2092,11 @@ elif st.session_state.active_tab == "⚙️ Editar":
   else:
     st.info("No se encontró ningún registro para editar.")
 
-# 12 --------------------------------------------------------------------------------------  PIE DE PÁGINA --------------------------------------------------------------------------------------------------
+# 12 -------------------------------------------------------------------------------------- PIE DE PÁGINA --------------------------------------------------------------------------------------------------
 st.markdown(
     """
     <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(0, 229, 255, 0.15); padding-top: 1rem;">
-        © 2026 MIAA &bull; Sistema de Gestión Valvulas reductoras de presión  (Escritorio)
+        © 2026 MIAA &bull; Sistema de Gestión Válvulas Reductoras de Presión (Escritorio)
     </div>
 """,
     unsafe_allow_html=True,
