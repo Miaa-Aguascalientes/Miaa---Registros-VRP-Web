@@ -48,6 +48,37 @@ OPCIONES_ESTADO_VALVULA = [
     "Pendiente",
 ]
 
+# --- FUNCIÓN AUXILIAR PARA FORMATEAR FECHAS A DD/MM/YYYY ---
+def formatear_fecha_str(val_fecha):
+  if (
+      pd.isna(val_fecha)
+      or val_fecha is None
+      or str(val_fecha).strip() in ["", "nan", "None", "NaT"]
+  ):
+    return ""
+  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
+    dt = val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
+    return dt.strftime("%d/%m/%Y")
+  try:
+    dt = pd.to_datetime(val_fecha)
+    if pd.notna(dt):
+      return dt.strftime("%d/%m/%Y")
+  except Exception:
+    pass
+  return str(val_fecha)
+
+
+def formatear_dataframe_fechas(df):
+  if df is None or df.empty:
+    return df
+  df_c = df.copy()
+  for col in df_c.columns:
+    c_lower = str(col).lower()
+    if any(k in c_lower for k in ["fecha", "vis", "visit", "tim"]):
+      df_c[col] = df_c[col].apply(formatear_fecha_str)
+  return df_c
+
+
 # 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VRP_Oficial) --------------------------------------------------------------------------------------
 
 
@@ -722,14 +753,20 @@ if st.session_state.active_tab == "📍 Registros":
 
         with st.expander("🔍 Ver detalles completos y fotografías"):
           geom_str = (
-              f"POINT ({row['coord_x']} {row['coord_y']})"
+              f"POINT ({row['coord_x']} {row['coord_y'])})"
               if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
               else "Sin geometría"
           )
+          fecha_vis_fmt = formatear_fecha_str(row['fecha_vis'])
+          fecha_inst_fmt = formatear_fecha_str(row['fecha_inst'])
+          fecha_mtto_fmt = formatear_fecha_str(row['fecha_mtto'])
+          fecha_tim_fmt = formatear_fecha_str(row['fecha_tim'])
+          ult_visit_fmt = formatear_fecha_str(row['_ult_visit'])
+
           detalle_html = f"""
                         <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
                             <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca']} &nbsp;|&nbsp; <b>Modelo:</b> {row['modelo']} &nbsp;|&nbsp; <b>Trim:</b> {row['trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
-                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {row['fecha_vis']}<br>
+                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {fecha_vis_fmt}<br>
                             <b>Geom:</b> {geom_str}<br>
                             <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
                             <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
@@ -780,8 +817,10 @@ if st.session_state.active_tab == "📍 Registros":
     if err_bd_comp:
       st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
     elif not df_completo.empty:
+      # Aplicar formato de fecha en tabla completa
+      df_completo_fmt = formatear_dataframe_fechas(df_completo)
       st.dataframe(
-          df_completo, use_container_width=True, hide_index=True, height=650
+          df_completo_fmt, use_container_width=True, hide_index=True, height=650
       )
       st.caption(f"Total de registros en base de datos: {len(df_completo)}")
     else:
@@ -909,8 +948,9 @@ if st.session_state.active_tab == "📍 Registros":
               cols_mostrar_sheets = [
                   c for c in df_solo_sheets.columns if c != "id_clean"
               ]
+              df_solo_sheets_fmt = formatear_dataframe_fechas(df_solo_sheets[cols_mostrar_sheets])
               st.dataframe(
-                  df_solo_sheets[cols_mostrar_sheets],
+                  df_solo_sheets_fmt,
                   use_container_width=True,
                   hide_index=True,
               )
@@ -929,8 +969,9 @@ if st.session_state.active_tab == "📍 Registros":
                 cols_mostrar_bd = [
                     c for c in df_bd.columns if c != "id_clean"
                 ]
+                df_solo_bd_fmt = formatear_dataframe_fechas(df_solo_bd[cols_mostrar_bd])
                 st.dataframe(
-                    df_solo_bd[cols_mostrar_bd],
+                    df_solo_bd_fmt,
                     use_container_width=True,
                     hide_index=True,
                 )
@@ -1026,11 +1067,16 @@ if st.session_state.active_tab == "📍 Registros":
                       v_sh = row_d[col_sh_name]
 
                       if not son_valores_equivalentes(v_bd, v_sh):
+                        # Formatear valores si la columna es de fecha
+                        es_col_fecha = any(k in key_col for k in ["fecha", "vis", "visit", "tim"])
+                        v_bd_disp = formatear_fecha_str(v_bd) if es_col_fecha else v_bd
+                        v_sh_disp = formatear_fecha_str(v_sh) if es_col_fecha else v_sh
+
                         diferencias_list.append({
                             "ID Válvula": row_d["id_clean"],
                             "Campo": col_bd_real,
-                            "Valor en BD (Prioritario)": v_bd,
-                            "Valor en Sheets": v_sh,
+                            "Valor en BD (Prioritario)": v_bd_disp,
+                            "Valor en Sheets": v_sh_disp,
                         })
 
                 if diferencias_list:
