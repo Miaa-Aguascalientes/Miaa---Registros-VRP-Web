@@ -990,27 +990,47 @@ if st.session_state.active_tab == "📍 Registros":
                       col_bd_name in df_merged.columns
                       and col_sh_name in df_merged.columns
                   ):
-                    mask_diff = (
-                        df_merged[col_bd_name]
-                        .fillna("")
-                        .astype(str)
-                        .str.strip()
-                        .str.lower()
-                        != df_merged[col_sh_name]
-                        .fillna("")
-                        .astype(str)
-                        .str.strip()
-                        .str.lower()
-                    )
-                    df_diff = df_merged[mask_diff]
+                    # Función auxiliar para comparar considerando equivalencia numérica (ej. 700 == 700.0)
+                    def son_valores_equivalentes(val1, val2):
+                      s1 = (
+                          str(val1).strip().lower()
+                          if pd.notna(val1)
+                          else ""
+                      )
+                      s2 = (
+                          str(val2).strip().lower()
+                          if pd.notna(val2)
+                          else ""
+                      )
 
-                    if not df_diff.empty:
-                      for _, row_d in df_diff.iterrows():
+                      # Limpiar cadenas vacías comunes
+                      s1 = "" if s1 in ["nan", "none", "nat", ""] else s1
+                      s2 = "" if s2 in ["nan", "none", "nat", ""] else s2
+
+                      if s1 == s2:
+                        return True
+
+                      # Intentar conversión numérica para evitar falsos positivos por decimales (.0)
+                      try:
+                        f1 = float(s1)
+                        f2 = float(s2)
+                        return f1 == f2
+                      except ValueError:
+                        pass
+
+                      return False
+
+                    # Evaluar fila por fila para aplicar la regla de equivalencia
+                    for _, row_d in df_merged.iterrows():
+                      v_bd = row_d[col_bd_name]
+                      v_sh = row_d[col_sh_name]
+
+                      if not son_valores_equivalentes(v_bd, v_sh):
                         diferencias_list.append({
                             "ID Válvula": row_d["id_clean"],
                             "Campo": col_bd_real,
-                            "Valor en BD (Prioritario)": row_d[col_bd_name],
-                            "Valor en Sheets": row_d[col_sh_name],
+                            "Valor en BD (Prioritario)": v_bd,
+                            "Valor en Sheets": v_sh,
                         })
 
                 if diferencias_list:
