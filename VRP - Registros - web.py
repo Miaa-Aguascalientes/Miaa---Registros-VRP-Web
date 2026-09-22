@@ -1398,11 +1398,12 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     """
   df_mapa, err_mapa = obtener_datos(query_mapa)
 
+  # [SOLUCIÓN AQUÍ] Agregado ST_MakeValid y conversión segura para evitar fallos de polígonos
   query_sectores = """
         SELECT 
             objectid as fid,
             sector,
-            ST_AsGeoJSON(ST_Force2D(ST_Transform(geom, 4326))) as geojson
+            ST_AsGeoJSON(ST_MakeValid(ST_Force2D(ST_Transform(geom, 4326)))) as geojson
         FROM "Sectorizacion"."Sectores_hidr"
         WHERE geom IS NOT NULL;
     """
@@ -1475,7 +1476,11 @@ elif st.session_state.active_tab == "🗺️ Mapa":
 
       for _, sec_row in df_sectores.iterrows():
         try:
-          geom_json = json.loads(sec_row["geojson"])
+          raw_json = sec_row["geojson"]
+          if pd.isna(raw_json) or not raw_json:
+            continue
+          
+          geom_json = json.loads(raw_json)
 
           feature_estructurado = {
               "type": "Feature",
@@ -1500,7 +1505,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
               ),
           ).add_to(fg_sectores)
         except Exception as e:
-          print(f"Error procesando sector: {e}")  # Esto te dirá si hay un registro corrupto
           continue
 
     fg_sectores.add_to(m)
@@ -2439,7 +2443,9 @@ elif st.session_state.active_tab == "⚙️ Editar":
 # 12 -------------------------------------------------------------------------------------- PIE DE PÁGINA --------------------------------------------------------------------------------------------------
 st.markdown(
     """
-    <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(0, 229, 255, 0.15); padding-top: 15px;">Sistema de Gestión de Válvulas Reductoras de Presión &bull; MIAA Aguascalientes © 2026</div>
-""",
+    <div style="text-align: center; color: #94A3B8; font-size: 0.8rem; margin-top: 30px;">
+        MIAA - Sistema de Gestión de Válvulas Reductoras de Presión © 2026
+    </div>
+    """,
     unsafe_allow_html=True,
 )
