@@ -1052,7 +1052,7 @@ if st.session_state.active_tab == "📍 Registros":
                   )
 
   with tab_gestor_bd:
-    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y contraseña
+    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y validación con usuarios_vrp
     usuario_actual_sesion = str(st.session_state.get("usuario_actual", "")).strip().lower()
 
     if usuario_actual_sesion != "pedro.templos@miaa.mx":
@@ -1060,15 +1060,41 @@ if st.session_state.active_tab == "📍 Registros":
     else:
       if not st.session_state.get("gestor_bd_autenticado", False):
         st.markdown("### 🔐 Sección Protegida - Gestión BD")
-        pass_gestor = st.text_input("Ingrese la contraseña de seguridad para acceder a Gestión BD:", type="password", key="pass_gestor_input")
+        pass_gestor = st.text_input("Ingrese la contraseña de la base de datos de usuarios_vrp para acceder:", type="password", key="pass_gestor_input")
         if st.button("Desbloquear Gestión BD"):
-          if pass_gestor == "MIAA2026":  # Contraseña requerida
-            st.session_state.gestor_bd_autenticado = True
-            st.success("¡Acceso concedido!")
-            t.sleep(0.5)
-            st.rerun()
-          else:
-            st.error("Contraseña incorrecta.")
+          # Validación contra la tabla/base de datos usuarios_vrp
+          try:
+            query_val_pass = text('SELECT 1 FROM "Agua_potable"."usuarios_vrp" WHERE password = :pwd LIMIT 1;')
+            # O si prefieres validar la contraseña general configurada para el acceso a dicha BD:
+            # Aquí realizamos la consulta de verificación en la base de datos
+            res_pass = ejecutar_sql(query_val_pass, {"pwd": pass_gestor})
+            
+            # Nota: Asegúrate de ajustar la consulta si validas contra un usuario específico en usuarios_vrp
+            valido_db = False
+            if hasattr(res_pass, "rowcount") and res_pass.rowcount > 0:
+              valido_db = True
+            else:
+              # Fallback alternativo si ejecutas fetchone
+              filas_pwd = res_pass.fetchall() if hasattr(res_pass, "fetchall") else []
+              if len(filas_pwd) > 0:
+                valido_db = True
+
+            if pass_gestor and (valido_db or pass_gestor == st.session_state.get("db_password_real", "")):
+              st.session_state.gestor_bd_autenticado = True
+              st.success("¡Acceso concedido mediante la contraseña de usuarios_vrp!")
+              t.sleep(0.5)
+              st.rerun()
+            else:
+              st.error("Contraseña incorrecta o no coincide con la base de datos de usuarios_vrp.")
+          except Exception as e_pwd:
+            # En caso de que la estructura requiera validar el texto directamente contra el registro del usuario en la BD
+            try:
+              query_user_pwd = text('SELECT password FROM "Agua_potable"."usuarios_vrp" WHERE correo = :correo LIMIT 1;')
+              res_up = conn_or_execute(query_user_pwd, {"correo": usuario_actual_sesion}) # Ajusta según tu función de ejecución
+              # Validación directa por seguridad de entorno
+              st.error(f"Error al validar credenciales en usuarios_vrp: {e_pwd}")
+            except Exception:
+              st.error("Contraseña incorrecta.")
       else:
         # Pestaña desbloqueada para Pedro Templos
         col_t_title, col_t_btn = st.columns([4, 1])
@@ -1164,7 +1190,6 @@ if st.session_state.active_tab == "📍 Registros":
                   actualizados_count = 0
                   insertados_count = 0
                   
-                  # Procesamiento por lotes de 50 en 50
                   total_filas = len(df_csv_input)
                   tamano_lote = 50
                   
@@ -1185,7 +1210,6 @@ if st.session_state.active_tab == "📍 Registros":
                           except:
                             continue
 
-                          # Verificamos si existe id_0 en la BD
                           check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
                           res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
 
@@ -1204,7 +1228,6 @@ if st.session_state.active_tab == "📍 Registros":
                             params_dict[col_p] = val_val
 
                           if res_chk:
-                            # Actualizar (UPDATE)
                             if set_clauses:
                               sql_update_csv = text(f"""
                                         UPDATE "Agua_potable"."VRP_Oficial" 
@@ -1217,7 +1240,6 @@ if st.session_state.active_tab == "📍 Registros":
                               except Exception:
                                 pass
                           else:
-                            # Insertar nuevo registro (INSERT)
                             sql_insert_csv = text(f"""
                                         INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
                                         VALUES ({", ".join(insert_vals)});
@@ -1228,7 +1250,6 @@ if st.session_state.active_tab == "📍 Registros":
                             except Exception:
                               pass
 
-                    # Actualizar barra de progreso
                     porcentaje = min(1.0, (i + tamano_lote) / total_filas)
                     progress_bar.progress(porcentaje)
                     status_text.text(f"Procesando registros... {min(i + tamano_lote, total_filas)} de {total_filas}")
