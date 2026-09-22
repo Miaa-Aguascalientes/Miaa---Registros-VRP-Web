@@ -1402,7 +1402,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         SELECT 
             objectid as fid,
             sector,
-            ST_AsGeoJSON(ST_Transform(geom, 4326)) as geojson
+            ST_AsGeoJSON(ST_Force2D(ST_Transform(geom, 4326))) as geojson
         FROM "Sectorizacion"."Sectores_hidr"
         WHERE geom IS NOT NULL;
     """
@@ -1499,7 +1499,8 @@ elif st.session_state.active_tab == "🗺️ Mapa":
                   sticky=True,
               ),
           ).add_to(fg_sectores)
-        except Exception:
+        except Exception as e:
+          print(f"Error procesando sector: {e}")  # Esto te dirá si hay un registro corrupto
           continue
 
     fg_sectores.add_to(m)
