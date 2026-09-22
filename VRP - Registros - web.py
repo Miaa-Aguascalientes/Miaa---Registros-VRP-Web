@@ -1052,7 +1052,7 @@ if st.session_state.active_tab == "📍 Registros":
                   )
 
   with tab_gestor_bd:
-    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y validación con usuarios_vrp
+    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y contraseña
     usuario_actual_sesion = str(st.session_state.get("usuario_actual", "")).strip().lower()
 
     if usuario_actual_sesion != "pedro.templos@miaa.mx":
@@ -1060,41 +1060,15 @@ if st.session_state.active_tab == "📍 Registros":
     else:
       if not st.session_state.get("gestor_bd_autenticado", False):
         st.markdown("### 🔐 Sección Protegida - Gestión BD")
-        pass_gestor = st.text_input("Ingrese la contraseña de la base de datos de usuarios_vrp para acceder:", type="password", key="pass_gestor_input")
+        pass_gestor = st.text_input("Ingrese la contraseña de seguridad para acceder a Gestión BD:", type="password", key="pass_gestor_input")
         if st.button("Desbloquear Gestión BD"):
-          # Validación contra la tabla/base de datos usuarios_vrp
-          try:
-            query_val_pass = text('SELECT 1 FROM "Agua_potable"."usuarios_vrp" WHERE password = :pwd LIMIT 1;')
-            # O si prefieres validar la contraseña general configurada para el acceso a dicha BD:
-            # Aquí realizamos la consulta de verificación en la base de datos
-            res_pass = ejecutar_sql(query_val_pass, {"pwd": pass_gestor})
-            
-            # Nota: Asegúrate de ajustar la consulta si validas contra un usuario específico en usuarios_vrp
-            valido_db = False
-            if hasattr(res_pass, "rowcount") and res_pass.rowcount > 0:
-              valido_db = True
-            else:
-              # Fallback alternativo si ejecutas fetchone
-              filas_pwd = res_pass.fetchall() if hasattr(res_pass, "fetchall") else []
-              if len(filas_pwd) > 0:
-                valido_db = True
-
-            if pass_gestor and (valido_db or pass_gestor == st.session_state.get("db_password_real", "")):
-              st.session_state.gestor_bd_autenticado = True
-              st.success("¡Acceso concedido mediante la contraseña de usuarios_vrp!")
-              t.sleep(0.5)
-              st.rerun()
-            else:
-              st.error("Contraseña incorrecta o no coincide con la base de datos de usuarios_vrp.")
-          except Exception as e_pwd:
-            # En caso de que la estructura requiera validar el texto directamente contra el registro del usuario en la BD
-            try:
-              query_user_pwd = text('SELECT password FROM "Agua_potable"."usuarios_vrp" WHERE correo = :correo LIMIT 1;')
-              res_up = conn_or_execute(query_user_pwd, {"correo": usuario_actual_sesion}) # Ajusta según tu función de ejecución
-              # Validación directa por seguridad de entorno
-              st.error(f"Error al validar credenciales en usuarios_vrp: {e_pwd}")
-            except Exception:
-              st.error("Contraseña incorrecta.")
+          if pass_gestor == "MIAA2026":  # Contraseña requerida
+            st.session_state.gestor_bd_autenticado = True
+            st.success("¡Acceso concedido!")
+            t.sleep(0.5)
+            st.rerun()
+          else:
+            st.error("Contraseña incorrecta.")
       else:
         # Pestaña desbloqueada para Pedro Templos
         col_t_title, col_t_btn = st.columns([4, 1])
@@ -1106,7 +1080,7 @@ if st.session_state.active_tab == "📍 Registros":
             st.rerun()
 
         st.info(
-            "📌 Administra el vaciado masivo, actualizaciones e inserciones masivas por CSV (en bloques de 50 en 50) usando `id_0` como identificador."
+            "📌 Administra el vaciado masivo, actualizaciones e inserciones masivas por CSV usando `id_0` como identificador, y traspasos de información."
         )
 
         st.markdown("---")
@@ -1143,10 +1117,12 @@ if st.session_state.active_tab == "📍 Registros":
               st.session_state.confirmar_borrado_total = False
               st.rerun()
 
+# SECCION -------------------------------------------------------------------------- INCERCION MASIVA CON ARCHIVO CSV CARGADO --------------------------------------------------------------------------------------
+
         st.markdown("---")
-        st.markdown("#### 2️⃣ Actualización e Inserción Masiva por Lotes (CSV de 50 en 50)")
+        st.markdown("#### 2️⃣ Actualización e Inserción Masiva (CSV)")
         st.write(
-            "Sube un archivo CSV que contenga obligatoriamente la columna identificadora `id_0` para actualizar registros existentes o insertar nuevos en bloques de 50."
+            "Sube un archivo CSV que contenga obligatoriamente la columna identificadora `id_0` para actualizar registros existentes o insertar nuevos automáticamente."
         )
 
         archivo_csv_subido = st.file_uploader(
@@ -1183,79 +1159,69 @@ if st.session_state.active_tab == "📍 Registros":
                   ],
               )
 
-              if st.button("🚀 Ejecutar Inserción/Actualización en Lotes de 50 en 50"):
+              if st.button("🚀 Ejecutar Actualización e Inserción Masiva desde CSV"):
                 if not columnas_a_procesar:
                   st.warning("Debes seleccionar al menos una columna para procesar.")
                 else:
                   actualizados_count = 0
                   insertados_count = 0
-                  
-                  total_filas = len(df_csv_input)
-                  tamano_lote = 50
-                  
-                  progress_bar = st.progress(0)
-                  status_text = st.empty()
+                  with st.spinner("Procesando registros en la base de datos (Actualizando/Insertando)..."):
+                    for _, row_c in df_csv_input.iterrows():
+                      val_id_0 = row_c[col_id_csv]
+                      if pd.isna(val_id_0):
+                        continue
+                      try:
+                        val_id_0_int = int(val_id_0)
+                      except:
+                        continue
 
-                  for i in range(0, total_filas, tamano_lote):
-                    lote_df = df_csv_input.iloc[i:i + tamano_lote]
-                    
-                    with st.session_state.db_engine.connect() as conn:
-                      with conn.begin():
-                        for _, row_c in lote_df.iterrows():
-                          val_id_0 = row_c[col_id_csv]
-                          if pd.isna(val_id_0):
-                            continue
+                      # Comprobar si existe id_0 en la BD
+                      df_check, err_chk = obtener_datos(
+                          'SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0',
+                          {"id0": val_id_0_int}
+                      )
+
+                      params_dict = {"id_0": val_id_0_int}
+                      set_clauses = []
+                      insert_cols = ["id_0"]
+                      insert_vals = [":id_0"]
+
+                      for col_p in columnas_a_procesar:
+                        val_val = row_c[col_p]
+                        if pd.isna(val_val):
+                          val_val = None
+                        set_clauses.append(f'"{col_p}" = :{col_p}')
+                        insert_cols.append(f'"{col_p}"')
+                        insert_vals.append(f':{col_p}')
+                        params_dict[col_p] = val_val
+
+                      if not err_chk and not df_check.empty:
+                        # Ya existe -> Actualizar (UPDATE)
+                        if set_clauses:
+                          sql_update_csv = f"""
+                                    UPDATE "Agua_potable"."VRP_Oficial" 
+                                    SET {", ".join(set_clauses)}
+                                    WHERE id_0 = :id_0;
+                                """
                           try:
-                            val_id_0_int = int(val_id_0)
-                          except:
-                            continue
-
-                          check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
-                          res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
-
-                          params_dict = {"id_0": val_id_0_int}
-                          set_clauses = []
-                          insert_cols = ["id_0"]
-                          insert_vals = [":id_0"]
-
-                          for col_p in columnas_a_procesar:
-                            val_val = row_c[col_p]
-                            if pd.isna(val_val):
-                              val_val = None
-                            set_clauses.append(f'"{col_p}" = :{col_p}')
-                            insert_cols.append(f'"{col_p}"')
-                            insert_vals.append(f':{col_p}')
-                            params_dict[col_p] = val_val
-
-                          if res_chk:
-                            if set_clauses:
-                              sql_update_csv = text(f"""
-                                        UPDATE "Agua_potable"."VRP_Oficial" 
-                                        SET {", ".join(set_clauses)}
-                                        WHERE id_0 = :id_0;
-                                    """)
-                              try:
-                                conn.execute(sql_update_csv, params_dict)
-                                actualizados_count += 1
-                              except Exception:
-                                pass
-                          else:
-                            sql_insert_csv = text(f"""
-                                        INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
-                                        VALUES ({", ".join(insert_vals)});
-                                    """)
-                            try:
-                              conn.execute(sql_insert_csv, params_dict)
-                              insertados_count += 1
-                            except Exception:
-                              pass
-
-                    porcentaje = min(1.0, (i + tamano_lote) / total_filas)
-                    progress_bar.progress(porcentaje)
-                    status_text.text(f"Procesando registros... {min(i + tamano_lote, total_filas)} de {total_filas}")
+                            ejecutar_sql(sql_update_csv, params_dict)
+                            actualizados_count += 1
+                          except Exception:
+                            pass
+                      else:
+                        # No existe -> Insertar nuevo registro (INSERT)
+                        sql_insert_csv = f"""
+                                    INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
+                                    VALUES ({", ".join(insert_vals)});
+                                """
+                        try:
+                          ejecutar_sql(sql_insert_csv, params_dict)
+                          insertados_count += 1
+                        except Exception:
+                          pass
 
                   st.success(
-                      f"¡Proceso por lotes finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
+                      f"¡Proceso finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
                   )
                   t.sleep(1.5)
                   st.rerun()
@@ -1263,7 +1229,7 @@ if st.session_state.active_tab == "📍 Registros":
           except Exception as e_csv:
             st.error(f"Error al leer el archivo CSV: {e_csv}")
 
-# SECCION -----------------------------------------------------------PARA ESER EL TRASPASO BIDIRECCIONAL ENTRE AMBAS FUENTES DE DATOS --------------------------------------------------------------------------
+# SECCION -----------------------------------------------------------------PARA IMPORTAR LOS REGISTROS DE AMBAS FUENTES DE DATOS ---------------------------------------------------------------------------------
 
         st.markdown("---")
         st.markdown(
@@ -1907,7 +1873,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     else:
       st.warning("El campo ID es obligatorio.")
 
-# 11 SECCION ----------------------------------------------------------------- EDITAR Y ELIMINAR ----------------------------------------------------------------------------------------------
+# 11 ----------------------------------------------------------------- EDITAR Y ELIMINAR ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.session_state.get("busqueda_edit_val", "")
