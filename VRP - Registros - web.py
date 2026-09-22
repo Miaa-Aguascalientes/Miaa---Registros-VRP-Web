@@ -2439,8 +2439,8 @@ elif st.session_state.active_tab == "⚙️ Editar":
 st.markdown(
     """
     <div style="text-align: center; color: #94A3B8; font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid rgba(0, 229, 255, 0.15); padding-top: 1rem;">
-        © 2026 MIAA &bull; Sistema de Gestión Válvulas Reductoras de Presión (Escritorio)
+        © 2026 MIAA &bull; Todos los derechos reservados
     </div>
-""",
+    """,
     unsafe_allow_html=True,
 )
