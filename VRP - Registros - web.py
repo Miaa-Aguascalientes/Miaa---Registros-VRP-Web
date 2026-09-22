@@ -821,7 +821,8 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-    sheet_url_editable = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?rm=embedded&gid=769091515#gid=769091515"
+    # Enlace actualizado con la nueva URL y gid 263245831
+    sheet_url_editable = "https://docs.google.com/spreadsheets/d/1dufcnf2gJhFemhB8hJ_UQB7DdsrywdVhqXYXSAIF65Y/edit?rm=embedded&gid=263245831#gid=263245831"
 
     st.markdown(
         f"""
@@ -836,28 +837,36 @@ if st.session_state.active_tab == "📍 Registros":
 
     st.link_button(
         "🔗 Abrir hoja directamente en pestaña de Google Sheets",
-        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
+        "https://docs.google.com/spreadsheets/d/1dufcnf2gJhFemhB8hJ_UQB7DdsrywdVhqXYXSAIF65Y/edit?gid=263245831#gid=263245831",
     )
 
   with tab_comparativa:
     st.markdown(
-        "### 🔍 Auditoría y Comparativa: BD vs Hoja '2.Informe visitas a VRP´s'"
+        "### 🔍 Auditoría y Comparativa: BD vs Hoja Google Sheets (Fila 4 en adelante)"
     )
     st.info(
-        "📌 **Prioridad:** Base de Datos. Esta herramienta evalúa la pestaña"
-        " específica de Sheets frente a PostgreSQL independientemente de"
-        " mayúsculas o minúsculas en 'ID'."
+        "📌 **Prioridad:** Base de Datos. Esta herramienta procesa la hoja de Google Sheets omitiendo las primeras 3 filas para iniciar los registros desde la fila 4."
     )
 
     if st.button("🔄 Ejecutar Comparación de Datos"):
-      with st.spinner("Procesando datos de la pestaña especificada..."):
+      with st.spinner("Procesando datos de la hoja a partir de la fila 4..."):
         query_audit = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial";'
         df_bd, err_audit_bd = obtener_datos(query_audit)
 
-        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
+        # URL de exportación CSV con gid 263245831
+        csv_sheets_url = "https://docs.google.com/spreadsheets/d/1dufcnf2gJhFemhB8hJ_UQB7DdsrywdVhqXYXSAIF65Y/gviz/tq?tqx=out:csv&gid=263245831"
 
         try:
-          df_sheets = pd.read_csv(csv_sheets_url)
+          df_sheets_raw = pd.read_csv(csv_sheets_url)
+          # Omitir filas superiores para tomar los datos desde la fila 4 en adelante (header en fila 4 / índice 3)
+          # Si Pandas lee la fila 1 como cabecera por defecto, reasignamos la fila 3 (índice 3) como columnas y filtramos desde el índice 4 en adelante:
+          if len(df_sheets_raw) >= 3:
+            # Tomamos la fila 3 del df raw como nuevos nombres de columnas y el resto como datos
+            nueva_fila_header = df_sheets_raw.iloc[2].values
+            df_sheets = df_sheets_raw.iloc[3:].copy()
+            df_sheets.columns = nueva_fila_header
+          else:
+            df_sheets = df_sheets_raw.copy()
           err_sheets = None
         except Exception as e:
           err_sheets = str(e)
@@ -867,7 +876,7 @@ if st.session_state.active_tab == "📍 Registros":
           st.error(f"❌ Error al consultar la Base de Datos: {err_audit_bd}")
         elif err_sheets:
           st.error(
-              f"❌ Error al descargar datos de la pestaña de Sheets:"
+              f"❌ Error al descargar datos de la hoja de Sheets:"
               f" {err_sheets}."
           )
         else:
@@ -880,8 +889,8 @@ if st.session_state.active_tab == "📍 Registros":
 
           if not col_id_sheets:
             st.error(
-                "❌ No se encontró la columna 'ID' o 'id' en la pestaña de"
-                " Sheets."
+                "❌ No se encontró la columna 'ID' o 'id' en la hoja de"
+                " Sheets a partir de la fila 4."
                 f" Columnas detectadas: {list(df_sheets.columns)}"
             )
           elif not col_id_bd:
@@ -918,7 +927,7 @@ if st.session_state.active_tab == "📍 Registros":
 
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             col_m1.metric("Registros BD", len(ids_bd))
-            col_m2.metric("Registros en Pestaña Sheets", len(ids_sheets))
+            col_m2.metric("Registros en Sheets (Fila 4+)", len(ids_sheets))
             col_m3.metric(
                 "⚠️ En Sheets y NO en BD",
                 len(ids_solo_sheets),
@@ -929,16 +938,16 @@ if st.session_state.active_tab == "📍 Registros":
             st.markdown("---")
 
             st.markdown(
-                "#### 🚨 1. Registros presentes en '2.Informe visitas a VRP´s'"
+                "#### 🚨 1. Registros presentes en Google Sheets (Fila 4+)"
                 " que NO existen en la Base de Datos"
             )
             if not df_solo_sheets.empty:
               st.warning(
                   f"Se encontraron **{len(df_solo_sheets)}** registros en la"
-                  " pestaña de Sheets que no están registrados en PostgreSQL:"
+                  " hoja que no están registrados en PostgreSQL:"
               )
               cols_mostrar_sheets = [
-                  c for c in df_solo_sheets.columns if c != "id_clean"
+                  c for c in df_solo_sheets.columns if c != "id_clean" and pd.notna(c)
               ]
               st.dataframe(
                   df_solo_sheets[cols_mostrar_sheets],
@@ -947,7 +956,7 @@ if st.session_state.active_tab == "📍 Registros":
               )
             else:
               st.success(
-                  "✅ Todos los registros de la pestaña de Sheets existen en la"
+                  "✅ Todos los registros de la hoja de Google Sheets existen en la"
                   " Base de Datos."
               )
 
@@ -955,7 +964,7 @@ if st.session_state.active_tab == "📍 Registros":
               if not df_solo_bd.empty:
                 st.info(
                     f"Hay **{len(df_solo_bd)}** registros de PostgreSQL que no"
-                    " se encuentran en la pestaña de Sheets:"
+                    " se encuentran en la hoja:"
                 )
                 cols_mostrar_bd = [
                     c for c in df_bd.columns if c != "id_clean"
@@ -968,7 +977,7 @@ if st.session_state.active_tab == "📍 Registros":
               else:
                 st.success(
                     "✅ Todos los registros de la Base de Datos están"
-                    " presentes en la pestaña de Sheets."
+                    " presentes en la hoja."
                 )
 
             with st.expander("🔍 3. Diferencias de atributos en IDs comunes"):
@@ -980,7 +989,7 @@ if st.session_state.active_tab == "📍 Registros":
               cols_map_sh = {
                   str(c).strip().lower(): c
                   for c in df_sheets.columns
-                  if c not in ["id_clean", name_id_sheets]
+                  if c not in ["id_clean", name_id_sheets] and pd.notna(c)
               }
 
               columnas_comunes_keys = list(
@@ -1289,9 +1298,15 @@ if st.session_state.active_tab == "📍 Registros":
         query_bd_traspaso = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial";'
         df_bd_t, err_t_bd = obtener_datos(query_bd_traspaso)
 
-        csv_sheets_traspaso_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
+        csv_sheets_traspaso_url = "https://docs.google.com/spreadsheets/d/1dufcnf2gJhFemhB8hJ_UQB7DdsrywdVhqXYXSAIF65Y/gviz/tq?tqx=out:csv&gid=263245831"
         try:
-          df_sh_t = pd.read_csv(csv_sheets_traspaso_url)
+          df_sh_raw = pd.read_csv(csv_sheets_traspaso_url)
+          if len(df_sh_raw) >= 3:
+            nueva_head = df_sh_raw.iloc[2].values
+            df_sh_t = df_sh_raw.iloc[3:].copy()
+            df_sh_t.columns = nueva_head
+          else:
+            df_sh_t = df_sh_raw.copy()
           err_t_sh = None
         except Exception as e_sh_t:
           df_sh_t = pd.DataFrame()
@@ -1301,8 +1316,8 @@ if st.session_state.active_tab == "📍 Registros":
           st.error("❌ No se pudieron cargar los datos de ambas fuentes para realizar el traspaso.")
         elif not df_bd_t.empty and not df_sh_t.empty:
           if "De Google Sheets hacia Base de Datos" in traspaso_dir:
-            st.info("Se sincronizarán los campos seleccionados tomando como fuente Google Sheets y emparejándolos por el campo ID.")
-            cols_sh_disp = [c for c in df_sh_t.columns if str(c).strip().lower() not in ["id_clean"]]
+            st.info("Se sincronizarán los campos seleccionados tomando como fuente Google Sheets (fila 4 en adelante) y emparejándolos por el campo ID.")
+            cols_sh_disp = [str(c) for c in df_sh_t.columns if str(c).strip().lower() not in ["id_clean"] and pd.notna(c)]
             campos_a_pasar_sh = st.multiselect(
                 "Selecciona los campos de Sheets que quieres pasar a la BD:",
                 options=cols_sh_disp,
