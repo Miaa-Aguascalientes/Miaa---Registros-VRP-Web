@@ -1080,7 +1080,7 @@ if st.session_state.active_tab == "📍 Registros":
             st.rerun()
 
         st.info(
-            "📌 Administra el vaciado masivo, actualizaciones e inserciones masivas por CSV usando `id_0` como identificador, y traspasos de información."
+            "📌 Administra el vaciado masivo, actualizaciones e inserciones masivas por CSV (en bloques de 50 en 50) usando `id_0` como identificador."
         )
 
         st.markdown("---")
@@ -1118,9 +1118,9 @@ if st.session_state.active_tab == "📍 Registros":
               st.rerun()
 
         st.markdown("---")
-        st.markdown("#### 2️⃣ Actualización e Inserción Masiva (CSV)")
+        st.markdown("#### 2️⃣ Actualización e Inserción Masiva por Lotes (CSV de 50 en 50)")
         st.write(
-            "Sube un archivo CSV que contenga obligatoriamente la columna identificadora `id_0` para actualizar registros existentes o insertar nuevos automáticamente."
+            "Sube un archivo CSV que contenga obligatoriamente la columna identificadora `id_0` para actualizar registros existentes o insertar nuevos en bloques de 50."
         )
 
         archivo_csv_subido = st.file_uploader(
@@ -1157,75 +1157,92 @@ if st.session_state.active_tab == "📍 Registros":
                   ],
               )
 
-              if st.button("🚀 Ejecutar Actualización e Inserción Masiva desde CSV"):
+              if st.button("🚀 Ejecutar Inserción/Actualización en Lotes de 50 en 50"):
                 if not columnas_a_procesar:
                   st.warning("Debes seleccionar al menos una columna para procesar.")
                 else:
                   actualizados_count = 0
                   insertados_count = 0
-                  with st.spinner("Procesando registros en la base de datos (Actualizando/Insertando)..."):
-                    for _, row_c in df_csv_input.iterrows():
-                      val_id_0 = row_c[col_id_csv]
-                      if pd.isna(val_id_0):
-                        continue
-                      try:
-                        val_id_0_int = int(val_id_0)
-                      except:
-                        continue
+                  
+                  # Procesamiento por lotes de 50 en 50
+                  total_filas = len(df_csv_input)
+                  tamano_lote = 50
+                  
+                  progress_bar = st.progress(0)
+                  status_text = st.empty()
 
-                      # Comprobar si existe id_0 en la BD
-                      df_check, err_chk = obtener_datos(
-                          'SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0',
-                          {"id0": val_id_0_int}
-                      )
-
-                      params_dict = {"id_0": val_id_0_int}
-                      set_clauses = []
-                      insert_cols = ["id_0"]
-                      insert_vals = [":id_0"]
-
-                      for col_p in columnas_a_procesar:
-                        val_val = row_c[col_p]
-                        if pd.isna(val_val):
-                          val_val = None
-                        set_clauses.append(f'"{col_p}" = :{col_p}')
-                        insert_cols.append(f'"{col_p}"')
-                        insert_vals.append(f':{col_p}')
-                        params_dict[col_p] = val_val
-
-                      if not err_chk and not df_check.empty:
-                        # Ya existe -> Actualizar (UPDATE)
-                        if set_clauses:
-                          sql_update_csv = f"""
-                                    UPDATE "Agua_potable"."VRP_Oficial" 
-                                    SET {", ".join(set_clauses)}
-                                    WHERE id_0 = :id_0;
-                                """
+                  for i in range(0, total_filas, tamano_lote):
+                    lote_df = df_csv_input.iloc[i:i + tamano_lote]
+                    
+                    with st.session_state.db_engine.connect() as conn:
+                      with conn.begin():
+                        for _, row_c in lote_df.iterrows():
+                          val_id_0 = row_c[col_id_csv]
+                          if pd.isna(val_id_0):
+                            continue
                           try:
-                            ejecutar_sql(sql_update_csv, params_dict)
-                            actualizados_count += 1
-                          except Exception:
-                            pass
-                      else:
-                        # No existe -> Insertar nuevo registro (INSERT)
-                        sql_insert_csv = f"""
-                                    INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
-                                    VALUES ({", ".join(insert_vals)});
-                                """
-                        try:
-                          ejecutar_sql(sql_insert_csv, params_dict)
-                          insertados_count += 1
-                        except Exception:
-                          pass
+                            val_id_0_int = int(val_id_0)
+                          except:
+                            continue
+
+                          # Verificamos si existe id_0 en la BD
+                          check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
+                          res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
+
+                          params_dict = {"id_0": val_id_0_int}
+                          set_clauses = []
+                          insert_cols = ["id_0"]
+                          insert_vals = [":id_0"]
+
+                          for col_p in columnas_a_procesar:
+                            val_val = row_c[col_p]
+                            if pd.isna(val_val):
+                              val_val = None
+                            set_clauses.append(f'"{col_p}" = :{col_p}')
+                            insert_cols.append(f'"{col_p}"')
+                            insert_vals.append(f':{col_p}')
+                            params_dict[col_p] = val_val
+
+                          if res_chk:
+                            # Actualizar (UPDATE)
+                            if set_clauses:
+                              sql_update_csv = text(f"""
+                                        UPDATE "Agua_potable"."VRP_Oficial" 
+                                        SET {", ".join(set_clauses)}
+                                        WHERE id_0 = :id_0;
+                                    """)
+                              try:
+                                conn.execute(sql_update_csv, params_dict)
+                                actualizados_count += 1
+                              except Exception:
+                                pass
+                          else:
+                            # Insertar nuevo registro (INSERT)
+                            sql_insert_csv = text(f"""
+                                        INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
+                                        VALUES ({", ".join(insert_vals)});
+                                    """)
+                            try:
+                              conn.execute(sql_insert_csv, params_dict)
+                              insertados_count += 1
+                            except Exception:
+                              pass
+
+                    # Actualizar barra de progreso
+                    porcentaje = min(1.0, (i + tamano_lote) / total_filas)
+                    progress_bar.progress(porcentaje)
+                    status_text.text(f"Procesando registros... {min(i + tamano_lote, total_filas)} de {total_filas}")
 
                   st.success(
-                      f"¡Proceso finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
+                      f"¡Proceso por lotes finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
                   )
                   t.sleep(1.5)
                   st.rerun()
 
           except Exception as e_csv:
             st.error(f"Error al leer el archivo CSV: {e_csv}")
+
+# SECCION -----------------------------------------------------------PARA ESER EL TRASPASO BIDIRECCIONAL ENTRE AMBAS FUENTES DE DATOS --------------------------------------------------------------------------
 
         st.markdown("---")
         st.markdown(
@@ -1869,7 +1886,7 @@ elif st.session_state.active_tab == "➕ Añadir":
     else:
       st.warning("El campo ID es obligatorio.")
 
-# 11 ----------------------------------------------------------------- EDITAR Y ELIMINAR ----------------------------------------------------------------------------------------------
+# 11 SECCION ----------------------------------------------------------------- EDITAR Y ELIMINAR ----------------------------------------------------------------------------------------------
 
 elif st.session_state.active_tab == "⚙️ Editar":
   busqueda_edit = st.session_state.get("busqueda_edit_val", "")
