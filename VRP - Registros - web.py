@@ -1002,6 +1002,46 @@ if st.session_state.active_tab == "📍 Registros":
                 )
                 diferencias_list = []
 
+                def son_valores_equivalentes(val1, val2, es_fecha=False):
+                  s1 = (
+                      str(val1).strip().lower()
+                      if pd.notna(val1)
+                      else ""
+                  )
+                  s2 = (
+                      str(val2).strip().lower()
+                      if pd.notna(val2)
+                      else ""
+                  )
+
+                  s1 = "" if s1 in ["nan", "none", "nat", ""] else s1
+                  s2 = "" if s2 in ["nan", "none", "nat", ""] else s2
+
+                  if s1 == s2:
+                    return True
+
+                  if es_fecha:
+                    try:
+                      dt1 = pd.to_datetime(val1, dayfirst=True, errors="coerce")
+                      if pd.isna(dt1):
+                        dt1 = pd.to_datetime(val1, errors="coerce")
+                      dt2 = pd.to_datetime(val2, dayfirst=True, errors="coerce")
+                      if pd.isna(dt2):
+                        dt2 = pd.to_datetime(val2, errors="coerce")
+                      if pd.notna(dt1) and pd.notna(dt2):
+                        return dt1.date() == dt2.date()
+                    except Exception:
+                      pass
+
+                  try:
+                    f1 = float(s1)
+                    f2 = float(s2)
+                    return f1 == f2
+                  except ValueError:
+                    pass
+
+                  return False
+
                 for key_col in columnas_comunes_keys:
                   col_bd_real = cols_map_bd[key_col]
                   col_sh_real = cols_map_sh[key_col]
@@ -1021,42 +1061,22 @@ if st.session_state.active_tab == "📍 Registros":
                       col_bd_name in df_merged.columns
                       and col_sh_name in df_merged.columns
                   ):
-                    def son_valores_equivalentes(val1, val2):
-                      s1 = (
-                          str(val1).strip().lower()
-                          if pd.notna(val1)
-                          else ""
-                      )
-                      s2 = (
-                          str(val2).strip().lower()
-                          if pd.notna(val2)
-                          else ""
-                      )
-
-                      s1 = "" if s1 in ["nan", "none", "nat", ""] else s1
-                      s2 = "" if s2 in ["nan", "none", "nat", ""] else s2
-
-                      if s1 == s2:
-                        return True
-
-                      try:
-                        f1 = float(s1)
-                        f2 = float(s2)
-                        return f1 == f2
-                      except ValueError:
-                        pass
-
-                      return False
+                    es_col_fecha = col_bd_real in COLUMNAS_FECHA
 
                     for _, row_d in df_merged.iterrows():
                       v_bd = row_d[col_bd_name]
                       v_sh = row_d[col_sh_name]
 
-                      if not son_valores_equivalentes(v_bd, v_sh):
+                      if not son_valores_equivalentes(v_bd, v_sh, es_fecha=es_col_fecha):
+                        v_bd_mostrar = (
+                            formatear_fecha_str(v_bd)
+                            if es_col_fecha
+                            else v_bd
+                        )
                         diferencias_list.append({
                             "ID Válvula": row_d["id_clean"],
                             "Campo": col_bd_real,
-                            "Valor en BD (Prioritario)": v_bd,
+                            "Valor en BD (Prioritario)": v_bd_mostrar,
                             "Valor en Sheets": v_sh,
                         })
 
