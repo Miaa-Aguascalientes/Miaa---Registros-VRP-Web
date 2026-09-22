@@ -1165,8 +1165,8 @@ if st.session_state.active_tab == "📍 Registros":
                 else:
                   actualizados_count = 0
                   insertados_count = 0
+                  errores_count = 0
                   
-                  # Procesamiento por lotes de 50 en 50
                   total_filas = len(df_csv_input)
                   tamano_lote = 50
                   
@@ -1176,67 +1176,68 @@ if st.session_state.active_tab == "📍 Registros":
                   for i in range(0, total_filas, tamano_lote):
                     lote_df = df_csv_input.iloc[i:i + tamano_lote]
                     
-                    with st.session_state.db_engine.connect() as conn:
-                      with conn.begin():
-                        for _, row_c in lote_df.iterrows():
-                          val_id_0 = row_c[col_id_csv]
-                          if pd.isna(val_id_0):
-                            continue
-                          try:
-                            val_id_0_int = int(val_id_0)
-                          except:
-                            continue
+                    try:
+                      with st.session_state.db_engine.connect() as conn:
+                        with conn.begin():
+                          for _, row_c in lote_df.iterrows():
+                            val_id_0 = row_c[col_id_csv]
+                            if pd.isna(val_id_0):
+                              continue
+                            try:
+                              val_id_0_int = int(val_id_0)
+                            except:
+                              continue
 
-                          # Verificamos si existe id_0 en la BD
-                          check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
-                          res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
+                            # Verificamos si existe id_0 en la BD
+                            check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
+                            res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
 
-                          params_dict = {"id_0": val_id_0_int}
-                          set_clauses = []
-                          insert_cols = ["id_0"]
-                          insert_vals = [":id_0"]
+                            params_dict = {"id_0": val_id_0_int}
+                            set_clauses = []
+                            insert_cols = ["id_0"]
+                            insert_vals = [":id_0"]
 
-                          for col_p in columnas_a_procesar:
-                            val_val = row_c[col_p]
-                            if pd.isna(val_val):
-                              val_val = None
-                            set_clauses.append(f'"{col_p}" = :{col_p}')
-                            insert_cols.append(f'"{col_p}"')
-                            insert_vals.append(f':{col_p}')
-                            params_dict[col_p] = val_val
+                            for col_p in columnas_a_procesar:
+                              val_val = row_c[col_p]
+                              if pd.isna(val_val):
+                                val_val = None
+                              set_clauses.append(f'"{col_p}" = :{col_p}')
+                              insert_cols.append(f'"{col_p}"')
+                              insert_vals.append(f':{col_p}')
+                              params_dict[col_p] = val_val
 
-                          if res_chk:
-                            # Actualizar (UPDATE)
-                            if set_clauses:
-                              sql_update_csv = text(f"""
+                            # Uso de begin_nested() (SAVEPOINT) para aislar errores por fila sin romper el lote
+                            try:
+                              with conn.begin_nested():
+                                if res_chk:
+                                  if set_clauses:
+                                    sql_update_csv = text(f"""
                                         UPDATE "Agua_potable"."VRP_Oficial" 
                                         SET {", ".join(set_clauses)}
                                         WHERE id_0 = :id_0;
                                     """)
-                              try:
-                                conn.execute(sql_update_csv, params_dict)
-                                actualizados_count += 1
-                              except Exception:
-                                pass
-                          else:
-                            # Insertar nuevo registro (INSERT)
-                            sql_insert_csv = text(f"""
+                                    conn.execute(sql_update_csv, params_dict)
+                                    actualizados_count += 1
+                                else:
+                                  sql_insert_csv = text(f"""
                                         INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
                                         VALUES ({", ".join(insert_vals)});
                                     """)
-                            try:
-                              conn.execute(sql_insert_csv, params_dict)
-                              insertados_count += 1
-                            except Exception:
-                              pass
+                                  conn.execute(sql_insert_csv, params_dict)
+                                  insertados_count += 1
+                            except Exception as ex_fila:
+                              errores_count += 1
+                              continue
 
-                    # Actualizar barra de progreso
+                    except Exception as e_lote:
+                      st.error(f"Error crítico en el lote {i}: {e_lote}")
+
                     porcentaje = min(1.0, (i + tamano_lote) / total_filas)
                     progress_bar.progress(porcentaje)
                     status_text.text(f"Procesando registros... {min(i + tamano_lote, total_filas)} de {total_filas}")
 
                   st.success(
-                      f"¡Proceso por lotes finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
+                      f"¡Proceso por lotes finalizado con éxito! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count} | Errores omitidos: {errores_count}."
                   )
                   t.sleep(1.5)
                   st.rerun()
