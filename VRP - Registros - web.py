@@ -653,230 +653,309 @@ if st.session_state.active_tab == "📍 Registros":
       unsafe_allow_html=True,
   )
 
-  tab_registros, tab_bd_completa, tab_sheets, tab_comparativa, tab_gestor_bd = (
+  tab_registros, tab_bd_completa, tab_sheets, tab_gestor_bd, tab_comparativa = (
       st.tabs([
           "📍 Registros",
           "🗄️ Tabla Base de Datos Completa",
           "📊 2.Informe visitas a VRP´s (Sheets)",
-          "🔍 Comparativa (BD vs Sheets)",
           "🛠️ Gestión BD",
+          "🔍 Comparativa (BD vs Sheets)",
       ])
   )
 
-  # ... (resto de pestañas anteriores sin cambios: tab_registros, tab_bd_completa, tab_sheets, tab_comparativa) ...
+  with tab_registros:
+    busqueda = st.text_input(
+        "🔍 Buscar válvula (ID, Num. Serie, Domicilio, Col.):",
+        placeholder="Ej. VF01, Centro...",
+    )
 
-  with tab_gestor_bd:
-    if st.session_state.get("usuario_actual") != "pedro.templos@miaa.mx":
-      st.error(
-          "⛔ Acceso denegado. Esta sección está protegida y solo el usuario"
-          " pedro.templos@miaa.mx puede acceder."
-      )
+    if busqueda and busqueda.strip() != "":
+      filtro = f"%{busqueda.strip()}%"
+      query = f"""
+                SELECT {COLUMNAS_VPRS} 
+                FROM "Agua_potable"."VRP_Oficial" 
+                WHERE id ILIKE :filtro 
+                   OR num_serie ILIKE :filtro 
+                   OR domicilio ILIKE :filtro 
+                   OR colonia ILIKE :filtro 
+                ORDER BY objectid
+            """
+      df_vprs, error_db = obtener_datos(query, {"filtro": filtro})
     else:
-      if "gestor_bd_autenticado" not in st.session_state:
-        st.session_state.gestor_bd_autenticado = False
+      query = (
+          f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial" ORDER BY objectid'
+          " LIMIT 15"
+      )
+      df_vprs, error_db = obtener_datos(query)
 
-      if not st.session_state.gestor_bd_autenticado:
-        st.warning(
-            "🔐 Zona protegida. Ingrese su contraseña para acceder a la Gestión"
-            " de Base de Datos."
+    if error_db:
+      st.error(f"❌ Error al consultar PostgreSQL: {error_db}")
+    elif not df_vprs.empty:
+      if not busqueda or busqueda.strip() == "":
+        st.markdown(
+            "<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+            " 10px;'>Mostrando primeros 15 registros.</p>",
+            unsafe_allow_html=True,
         )
-        pass_gestor = st.text_input(
-            "Contraseña de Seguridad",
-            type="password",
-            key="pass_gestor_input",
-        )
-        if st.button("Verificar Acceso", key="btn_verify_gestor"):
-          query_pass = """
-                        SELECT password 
-                        FROM usuarios_vrp 
-                        WHERE usuario = 'pedro.templos@miaa.mx' AND password = :pas
-                    """
-          df_p, err_p = obtener_datos_mysql(
-              query_pass, {"pas": pass_gestor.strip()}
-          )
-          if not err_p and not df_p.empty:
-            st.session_state.gestor_bd_autenticado = True
-            st.success("¡Acceso autorizado!")
-            t.sleep(0.5)
-            st.rerun()
-          else:
-            st.error("Contraseña incorrecta.")
-        st.stop()
       else:
         st.markdown(
-            "### 🛠️ Herramientas de Gestión y Mantenimiento de la BD"
-        )
-        st.info(
-            "📌 Administra el vaciado masivo, actualizaciones e inserciones"
-            " mediante CSV usando `id_0` como identificador único."
+            f"<p style='color: #94A3B8; font-size: 0.85rem; margin-bottom:"
+            f" 10px;'>Se encontraron {len(df_vprs)} registros.</p>",
+            unsafe_allow_html=True,
         )
 
-        st.markdown("---")
-        st.markdown(
-            "#### 1️⃣ Zona de Peligro: Vaciar Tabla de Base de Datos"
-        )
-        st.warning(
-            "⚠️ Esta acción eliminará **todos** los registros de la tabla"
-            ' `"Agua_potable"."VRP_Oficial"`.'
-        )
-
-        if "confirmar_borrado_total" not in st.session_state:
-          st.session_state.confirmar_borrado_total = False
-
-        if not st.session_state.confirmar_borrado_total:
-          if st.button("🗑️ Eliminar TODOS los registros de la BD"):
-            st.session_state.confirmar_borrado_total = True
-            st.rerun()
-        else:
-          st.error(
-              "🚨 ¿Estás completamente seguro? Esta acción no se puede deshacer."
-          )
-          col_bt_del1, col_bt_del2 = st.columns(2)
-          with col_bt_del1:
-            if st.button("⚠️ Sí, borrar absolutamente todo"):
-              try:
-                ejecutar_sql('DELETE FROM "Agua_potable"."VRP_Oficial";')
-                st.session_state.confirmar_borrado_total = False
-                st.success("¡Todos los registros han sido eliminados de la BD!")
-                t.sleep(1)
-                st.rerun()
-              except Exception as ex_all:
-                st.error(f"Error al vaciar la tabla: {ex_all}")
-          with col_bt_del2:
-            if st.button("❌ Cancelar borrado masivo"):
-              st.session_state.confirmar_borrado_total = False
-              st.rerun()
-
-        st.markdown("---")
-        st.markdown(
-            "#### 2️⃣ Actualización e Inserción Masiva desde CSV (Identificador:"
-            " id_0)"
-        )
-        st.write(
-            "Sube un archivo CSV que contenga la columna `id_0`. El sistema"
-            " detectará automáticamente el identificador y actualizará o"
-            " insertará los registros según corresponda."
-        )
-
-        archivo_csv_subido = st.file_uploader(
-            "Cargar archivo CSV", type=["csv"], key="csv_gestor_uploader"
-        )
-
-        if archivo_csv_subido is not None:
-          try:
-            df_csv_input = pd.read_csv(archivo_csv_subido)
-            st.success(
-                f"CSV cargado correctamente ({len(df_csv_input)} filas"
-                " detectadas)."
+      for idx, row in df_vprs.iterrows():
+        serie_val = row["num_serie"]
+        serie_texto = (
+            ""
+            if (
+                pd.isna(serie_val)
+                or str(serie_val).strip().lower() in ["nan", "none", ""]
             )
-            st.dataframe(df_csv_input.head(5), use_container_width=True)
+            else f" | Num. Serie: {serie_val}"
+        )
 
-            cols_csv = [str(c).strip() for c in df_csv_input.columns]
-            col_id0_match = [c for c in cols_csv if c.lower() == "id_0"]
+        card_html = f"""
+                    <div class="user-card">
+                        <span style="font-size: 0.95rem; font-weight: bold; color: #F8FAFC;">ID: {row['id']}{serie_texto}</span><br>
+                        <span style="color: #00E5FF; font-size: 0.85rem;">📍 {row['domicilio'] or 'Sin domicilio'}, Col. {row['colonia'] or 'Sin colonia'}</span>
+                    </div>
+                """
+        st.markdown(card_html, unsafe_allow_html=True)
 
-            if not col_id0_match:
-              st.error(
-                  "❌ El archivo CSV no contiene la columna obligatoria `id_0`."
+        with st.expander("🔍 Ver detalles completos y fotografías"):
+          geom_str = (
+              f"POINT ({row['coord_x']} {row['coord_y']})"
+              if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
+              else "Sin geometría"
+          )
+          detalle_html = f"""
+                        <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
+                            <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca']} &nbsp;|&nbsp; <b>Modelo:</b> {row['modelo']} &nbsp;|&nbsp; <b>Trim:</b> {row['trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
+                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {row['fecha_vis']}<br>
+                            <b>Geom:</b> {geom_str}<br>
+                            <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
+                            <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
+                            <b>Observaciones:</b> {row['obs']}
+                        </span>
+                    """
+          st.markdown(detalle_html, unsafe_allow_html=True)
+
+          col_img1, col_img2 = st.columns(2)
+          with col_img1:
+            img_bytes = procesar_bytes_foto(row["fotos"])
+            if img_bytes is not None and len(img_bytes) > 0:
+              st.markdown(
+                  "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                  " 10px; margin-bottom: 5px;'>📸 Fotografía 1:</p>",
+                  unsafe_allow_html=True,
               )
-            else:
-              colname_id0 = col_id0_match[0]
-              st.info(
-                  f"✅ Columna identificadora detectada automáticamente:"
-                  f" `{colname_id0}`"
+              st.image(
+                  img_bytes,
+                  caption=f"ID: {row['id']} (Foto 1)",
+                  use_container_width=True,
               )
 
-              columnas_a_procesar = [c for c in cols_csv if c.lower() != "id_0"]
-              columnas_seleccionadas = st.multiselect(
-                  "Selecciona las columnas que deseas actualizar/insertar:",
-                  options=columnas_a_procesar,
-                  default=columnas_a_procesar,
+          with col_img2:
+            img_bytes_2 = procesar_bytes_foto(row["fotos_2"])
+            if img_bytes_2 is not None and len(img_bytes_2) > 0:
+              st.markdown(
+                  "<p style='color: #00E5FF; font-size: 0.85rem; margin-top:"
+                  " 10px; margin-bottom: 5px;'>📸 Fotografía 2:</p>",
+                  unsafe_allow_html=True,
               )
+              st.image(
+                  img_bytes_2,
+                  caption=f"ID: {row['id']} (Foto 2)",
+                  use_container_width=True,
+              )
+    else:
+      st.info("No se encontraron registros.")
 
-              if st.button("🚀 Ejecutar Actualización e Inserción Masiva"):
-                if not columnas_seleccionadas:
-                  st.warning(
-                      "Selecciona al menos una columna para procesar."
-                  )
-                else:
-                  actualizados_count = 0
-                  insertados_count = 0
-                  with st.spinner(
-                      "Procesando registros en la base de datos..."
-                  ):
-                    for _, row_c in df_csv_input.iterrows():
-                      val_id0 = row_c[colname_id0]
-                      if pd.isna(val_id0):
-                        continue
-                      try:
-                        val_id0_int = int(val_id0)
-                      except:
-                        continue
+  with tab_bd_completa:
+    st.markdown("### Tabla Completa de VRP_Oficial (Base de Datos)")
 
-                      # Verificar si el id_0 ya existe en la BD
-                      df_check, err_chk = obtener_datos(
-                          'SELECT objectid FROM "Agua_potable"."VRP_Oficial"'
-                          " WHERE id_0 = :id0",
-                          {"id0": val_id0_int},
-                      )
+    query_completa = (
+        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial" ORDER BY objectid ASC;'
+    )
+    df_completo, err_bd_comp = obtener_datos(query_completa)
 
-                      if err_chk:
-                        continue
+    if err_bd_comp:
+      st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
+    elif not df_completo.empty:
+      st.dataframe(
+          df_completo, use_container_width=True, hide_index=True, height=650
+      )
+      st.caption(f"Total de registros en base de datos: {len(df_completo)}")
+    else:
+      st.warning("⚠️ No se encontraron registros en la base de datos.")
 
-                      if not df_check.empty:
-                        # Actualizar registro existente
-                        set_clauses = []
-                        params_dict = {"id0": val_id0_int}
-                        for col in columnas_seleccionadas:
-                          val_val = row_c[col]
-                          if pd.isna(val_val):
-                            val_val = None
-                          set_clauses.append(f'"{col}" = :{col}')
-                          params_dict[col] = val_val
+  with tab_sheets:
+    st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
-                        if set_clauses:
-                          sql_upd = f"""
-                                        UPDATE "Agua_potable"."VRP_Oficial" 
-                                        SET {", ".join(set_clauses)}
-                                        WHERE id_0 = :id0;
-                                    """
-                          try:
-                            ejecutar_sql(sql_upd, params_dict)
-                            actualizados_count += 1
-                          except Exception:
-                            pass
-                      else:
-                        # Insertar nuevo registro
-                        cols_ins = [colname_id0] + columnas_seleccionadas
-                        vals_ins = [":id0"] + [
-                            f":{col}" for col in columnas_seleccionadas
-                        ]
-                        params_ins = {"id0": val_id0_int}
-                        for col in columnas_seleccionadas:
-                          val_val = row_c[col]
-                          if pd.isna(val_val):
-                            val_val = None
-                          params_ins[col] = val_val
+    sheet_url_editable = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit?rm=embedded&gid=769091515#gid=769091515"
 
-                        sql_ins = f"""
-                                        INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join([f'"{c}"' for c in cols_ins])})
-                                        VALUES ({", ".join(vals_ins)});
-                                    """
-                        try:
-                          ejecutar_sql(sql_ins, params_ins)
-                          insertados_count += 1
-                        except Exception:
-                          pass
+    st.markdown(
+        f"""
+        <iframe 
+            src="{sheet_url_editable}" 
+            style="width: 100%; height: 80vh; border: 1px solid #334155; border-radius: 0px 0px 8px 8px;" 
+            allowfullscreen>
+        </iframe>
+        """,
+        unsafe_allow_html=True,
+    )
 
-                  st.success(
-                      f"¡Proceso finalizado! Registros actualizados:"
-                      f" {actualizados_count} | Registros insertados:"
-                      f" {insertados_count}"
-                  )
-                  t.sleep(1)
-                  st.rerun()
+    st.link_button(
+        "🔗 Abrir hoja directamente en pestaña de Google Sheets",
+        "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
+    )
 
-          except Exception as e_csv:
-            st.error(f"Error al leer el archivo CSV: {e_csv}")
+  with tab_gestor_bd:
+    st.markdown("### 🛠️ Herramientas de Gestión y Mantenimiento de la BD")
+    st.info(
+        "📌 Administra el vaciado masivo, actualizaciones por CSV y traspaso"
+        " selectivo de información entre Google Sheets y PostgreSQL."
+    )
+
+    st.markdown("---")
+    st.markdown(
+        "#### 1️⃣ Zona de Peligro: Vaciar Tabla de Base de Datos"
+    )
+    st.warning(
+        "⚠️ Esta acción eliminará **todos** los registros de la tabla"
+        ' `"Agua_potable"."VRP_Oficial"`. Utilízala con extrema precaución.'
+    )
+
+    if "confirmar_borrado_total" not in st.session_state:
+      st.session_state.confirmar_borrado_total = False
+
+    if not st.session_state.confirmar_borrado_total:
+      if st.button("🗑️ Eliminar TODOS los registros de la BD"):
+        st.session_state.confirmar_borrado_total = True
+        st.rerun()
+    else:
+      st.error(
+          "🚨 ¿Estás completamente seguro? Esta acción no se puede deshacer."
+      )
+      col_bt_del1, col_bt_del2 = st.columns(2)
+      with col_bt_del1:
+        if st.button("⚠️ Sí, borrar absolutamente todo"):
+          try:
+            ejecutar_sql('DELETE FROM "Agua_potable"."VRP_Oficial";')
+            st.session_state.confirmar_borrado_total = False
+            st.success("¡Todos los registros han sido eliminados de la BD!")
+            t.sleep(1)
+            st.rerun()
+          except Exception as ex_all:
+            st.error(f"Error al vaciar la tabla: {ex_all}")
+      with col_bt_del2:
+        if st.button("❌ Cancelar borrado masivo"):
+          st.session_state.confirmar_borrado_total = False
+          st.rerun()
+
+    st.markdown("---")
+    st.markdown(
+        "#### 2️⃣ Actualización Masiva o por Columnas Independientes (CSV)"
+    )
+    st.write(
+        "Sube un archivo CSV con una columna identificadora (`id`) y las"
+        " columnas que desees actualizar o insertar masivamente."
+    )
+
+    archivo_csv_subido = st.file_uploader(
+        "Cargar archivo CSV para actualización",
+        type=["csv"],
+        key="csv_gestor_uploader",
+    )
+
+    if archivo_csv_subido is not None:
+      try:
+        df_csv_input = pd.read_csv(archivo_csv_subido)
+        st.success(
+            f"CSV cargado correctamente ({len(df_csv_input)} filas detectadas)."
+        )
+        st.dataframe(df_csv_input.head(5), use_container_width=True)
+
+        cols_csv = list(df_csv_input.columns)
+        cols_id_sugerencia = [
+            c for c in cols_csv if str(c).strip().lower() == "id"
+        ]
+        default_id_idx = (
+            cols_csv.index(cols_id_sugerencia[0]) if cols_id_sugerencia else 0
+        )
+
+        col_map1, col_map2 = st.columns(2)
+        with col_map1:
+          columna_id_csv = st.selectbox(
+              "Selecciona la columna del CSV que actúa como Identificador (ID):",
+              options=cols_csv,
+              index=default_id_idx,
+          )
+
+        with col_map2:
+          columnas_a_actualizar = st.multiselect(
+              "Selecciona qué campos/columnas deseas actualizar en la BD:",
+              options=[c for c in cols_csv if c != columna_id_csv],
+              default=[
+                  c
+                  for c in cols_csv
+                  if c != columna_id_csv
+                  and c
+                  in [
+                      "estatus",
+                      "domicilio",
+                      "colonia",
+                      "observaciones",
+                      "obs",
+                      "diametro",
+                      "marca",
+                  ]
+              ],
+          )
+
+        if st.button("🚀 Ejecutar Actualización Masiva desde CSV"):
+          if not columnas_a_actualizar:
+            st.warning("Debes seleccionar al menos una columna para actualizar.")
+          else:
+            actualizados_count = 0
+            with st.spinner("Actualizando registros en la base de datos..."):
+              for _, row_c in df_csv_input.iterrows():
+                val_id_key = str(row_c[columna_id_csv]).strip()
+                if pd.isna(val_id_key) or val_id_key in ["nan", "None", ""]:
+                  continue
+
+                set_clauses = []
+                params_dict = {"id_val": val_id_key}
+
+                for col_upd in columnas_a_actualizar:
+                  val_val = row_c[col_upd]
+                  if pd.isna(val_val):
+                    val_val = None
+                  set_clauses.append(f'"{col_upd}" = :{col_upd}')
+                  params_dict[col_upd] = val_val
+
+                if set_clauses:
+                  sql_update_csv = f"""
+                                    UPDATE "Agua_potable"."VRP_Oficial" 
+                                    SET {", ".join(set_clauses)}
+                                    WHERE TRIM(id) ILIKE :id_val;
+                                """
+                  try:
+                    ejecutar_sql(sql_update_csv, params_dict)
+                    actualizados_count += 1
+                  except Exception:
+                    pass
+
+            st.success(
+                f"¡Proceso finalizado! Se intentaron actualizar"
+                f" {actualizados_count} registros."
+            )
+            t.sleep(1)
+            st.rerun()
+
+      except Exception as e_csv:
+        st.error(f"Error al leer el archivo CSV: {e_csv}")
 
     st.markdown("---")
     st.markdown(
