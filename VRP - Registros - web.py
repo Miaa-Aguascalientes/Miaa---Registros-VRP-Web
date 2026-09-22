@@ -25,6 +25,8 @@ if "active_tab" not in st.session_state:
   st.session_state.active_tab = "📍 Registros"
 if "autenticado" not in st.session_state:
   st.session_state.autenticado = False
+if "gestor_bd_autenticado" not in st.session_state:
+  st.session_state.gestor_bd_autenticado = False
 
 zona_mx = ZoneInfo("America/Mexico_City")
 API_KEY_CARTO = "cb1_26ji_1_864817f3cb73c0bdbe0daccd"
@@ -178,7 +180,6 @@ def parsear_fecha_segura(val_fecha):
 
 
 def agregar_capas_base_mapa(m):
-  """Función auxiliar para inyectar todas las capas base en cualquier mapa de Folium."""
   folium.TileLayer(
       tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
       name="Vista Satélite",
@@ -268,7 +269,6 @@ st.write(
         padding-right: 1rem !important;
     }
 
-    /* --- NAVEGACIÓN TIPO TARJETAS / TABS (SIN CÍRCULOS DE RADIO) --- */
     div.row-widget.stRadio > div {
         display: flex;
         flex-direction: column;
@@ -590,6 +590,7 @@ with st.sidebar:
 
   if st.button("Cerrar Sesión", key="btn_logout", use_container_width=True):
     st.session_state.autenticado = False
+    st.session_state.gestor_bd_autenticado = False
     st.rerun()
 
 # 07 SECCION ------------------------------------------------------------------------ CABECERA PRINCIPAL ---------------------------------------------------------------------------------------------------------
@@ -653,13 +654,14 @@ if st.session_state.active_tab == "📍 Registros":
       unsafe_allow_html=True,
   )
 
-  tab_registros, tab_bd_completa, tab_sheets, tab_gestor_bd, tab_comparativa = (
+  # Pestaña de "Gestión BD" movida al último y configurada con las demás
+  tab_registros, tab_bd_completa, tab_sheets, tab_comparativa, tab_gestor_bd = (
       st.tabs([
           "📍 Registros",
           "🗄️ Tabla Base de Datos Completa",
           "📊 2.Informe visitas a VRP´s (Sheets)",
-          "🛠️ Gestión BD",
           "🔍 Comparativa (BD vs Sheets)",
+          "🛠️ Gestión BD",
       ])
   )
 
@@ -810,271 +812,6 @@ if st.session_state.active_tab == "📍 Registros":
         "🔗 Abrir hoja directamente en pestaña de Google Sheets",
         "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/edit#gid=769091515",
     )
-
-  with tab_gestor_bd:
-    st.markdown("### 🛠️ Herramientas de Gestión y Mantenimiento de la BD")
-    st.info(
-        "📌 Administra el vaciado masivo, actualizaciones por CSV y traspaso"
-        " selectivo de información entre Google Sheets y PostgreSQL."
-    )
-
-    st.markdown("---")
-    st.markdown(
-        "#### 1️⃣ Zona de Peligro: Vaciar Tabla de Base de Datos"
-    )
-    st.warning(
-        "⚠️ Esta acción eliminará **todos** los registros de la tabla"
-        ' `"Agua_potable"."VRP_Oficial"`. Utilízala con extrema precaución.'
-    )
-
-    if "confirmar_borrado_total" not in st.session_state:
-      st.session_state.confirmar_borrado_total = False
-
-    if not st.session_state.confirmar_borrado_total:
-      if st.button("🗑️ Eliminar TODOS los registros de la BD"):
-        st.session_state.confirmar_borrado_total = True
-        st.rerun()
-    else:
-      st.error(
-          "🚨 ¿Estás completamente seguro? Esta acción no se puede deshacer."
-      )
-      col_bt_del1, col_bt_del2 = st.columns(2)
-      with col_bt_del1:
-        if st.button("⚠️ Sí, borrar absolutamente todo"):
-          try:
-            ejecutar_sql('DELETE FROM "Agua_potable"."VRP_Oficial";')
-            st.session_state.confirmar_borrado_total = False
-            st.success("¡Todos los registros han sido eliminados de la BD!")
-            t.sleep(1)
-            st.rerun()
-          except Exception as ex_all:
-            st.error(f"Error al vaciar la tabla: {ex_all}")
-      with col_bt_del2:
-        if st.button("❌ Cancelar borrado masivo"):
-          st.session_state.confirmar_borrado_total = False
-          st.rerun()
-
-    st.markdown("---")
-    st.markdown(
-        "#### 2️⃣ Actualización Masiva o por Columnas Independientes (CSV)"
-    )
-    st.write(
-        "Sube un archivo CSV con una columna identificadora (`id`) y las"
-        " columnas que desees actualizar o insertar masivamente."
-    )
-
-    archivo_csv_subido = st.file_uploader(
-        "Cargar archivo CSV para actualización",
-        type=["csv"],
-        key="csv_gestor_uploader",
-    )
-
-    if archivo_csv_subido is not None:
-      try:
-        df_csv_input = pd.read_csv(archivo_csv_subido)
-        st.success(
-            f"CSV cargado correctamente ({len(df_csv_input)} filas detectadas)."
-        )
-        st.dataframe(df_csv_input.head(5), use_container_width=True)
-
-        cols_csv = list(df_csv_input.columns)
-        cols_id_sugerencia = [
-            c for c in cols_csv if str(c).strip().lower() == "id"
-        ]
-        default_id_idx = (
-            cols_csv.index(cols_id_sugerencia[0]) if cols_id_sugerencia else 0
-        )
-
-        col_map1, col_map2 = st.columns(2)
-        with col_map1:
-          columna_id_csv = st.selectbox(
-              "Selecciona la columna del CSV que actúa como Identificador (ID):",
-              options=cols_csv,
-              index=default_id_idx,
-          )
-
-        with col_map2:
-          columnas_a_actualizar = st.multiselect(
-              "Selecciona qué campos/columnas deseas actualizar en la BD:",
-              options=[c for c in cols_csv if c != columna_id_csv],
-              default=[
-                  c
-                  for c in cols_csv
-                  if c != columna_id_csv
-                  and c
-                  in [
-                      "estatus",
-                      "domicilio",
-                      "colonia",
-                      "observaciones",
-                      "obs",
-                      "diametro",
-                      "marca",
-                  ]
-              ],
-          )
-
-        if st.button("🚀 Ejecutar Actualización Masiva desde CSV"):
-          if not columnas_a_actualizar:
-            st.warning("Debes seleccionar al menos una columna para actualizar.")
-          else:
-            actualizados_count = 0
-            with st.spinner("Actualizando registros en la base de datos..."):
-              for _, row_c in df_csv_input.iterrows():
-                val_id_key = str(row_c[columna_id_csv]).strip()
-                if pd.isna(val_id_key) or val_id_key in ["nan", "None", ""]:
-                  continue
-
-                set_clauses = []
-                params_dict = {"id_val": val_id_key}
-
-                for col_upd in columnas_a_actualizar:
-                  val_val = row_c[col_upd]
-                  if pd.isna(val_val):
-                    val_val = None
-                  set_clauses.append(f'"{col_upd}" = :{col_upd}')
-                  params_dict[col_upd] = val_val
-
-                if set_clauses:
-                  sql_update_csv = f"""
-                                    UPDATE "Agua_potable"."VRP_Oficial" 
-                                    SET {", ".join(set_clauses)}
-                                    WHERE TRIM(id) ILIKE :id_val;
-                                """
-                  try:
-                    ejecutar_sql(sql_update_csv, params_dict)
-                    actualizados_count += 1
-                  except Exception:
-                    pass
-
-            st.success(
-                f"¡Proceso finalizado! Se intentaron actualizar"
-                f" {actualizados_count} registros."
-            )
-            t.sleep(1)
-            st.rerun()
-
-      except Exception as e_csv:
-        st.error(f"Error al leer el archivo CSV: {e_csv}")
-
-    st.markdown("---")
-    st.markdown(
-        "#### 3️⃣ Traspaso Bidireccional Selectivo (Sheets ⇄ Base de Datos)"
-    )
-    st.write(
-        "Elige la dirección del flujo de información y selecciona únicamente"
-        " los campos que deseas transferir."
-    )
-
-    traspaso_dir = st.radio(
-        "Dirección del Traspaso:",
-        [
-            "📤 De Google Sheets hacia Base de Datos",
-            "📥 De Base de Datos hacia Google Sheets (Exportación)",
-        ],
-        horizontal=True,
-    )
-
-    query_bd_traspaso = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial";'
-    df_bd_t, err_t_bd = obtener_datos(query_bd_traspaso)
-
-    csv_sheets_traspaso_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
-    try:
-      df_sh_t = pd.read_csv(csv_sheets_traspaso_url)
-      err_t_sh = None
-    except Exception as e_sh_t:
-      df_sh_t = pd.DataFrame()
-      err_t_sh = str(e_sh_t)
-
-    if err_t_bd or err_t_sh:
-      st.error(
-          "❌ No se pudieron cargar los datos de ambas fuentes para realizar el"
-          f" traspaso. (BD err: {err_t_bd} | Sheets err: {err_t_sh})"
-      )
-    elif not df_bd_t.empty and not df_sh_t.empty:
-      if "De Google Sheets hacia Base de Datos" in traspaso_dir:
-        st.info(
-            "Se sincronizarán los campos seleccionados tomando como fuente la"
-            " pestaña de Google Sheets y emparejándolos por el campo ID."
-        )
-
-        cols_sh_disp = [
-            c
-            for c in df_sh_t.columns
-            if str(c).strip().lower() not in ["id_clean"]
-        ]
-        campos_a_pasar_sh = st.multiselect(
-            "Selecciona los campos de Sheets que quieres pasar a la BD:",
-            options=cols_sh_disp,
-        )
-
-        if st.button("🔄 Sostener e Importar Campos Seleccionados desde Sheets"):
-          if not campos_a_pasar_sh:
-            st.warning("Selecciona al menos un campo para traspasar.")
-          else:
-            actualizados_sh_db = 0
-            with st.spinner("Traspasando información..."):
-              for _, row_sh in df_sh_t.iterrows():
-                id_sh_val = str(row_sh.get("id", "")).strip()
-                if not id_sh_val or id_sh_val.lower() in ["nan", "none", ""]:
-                  continue
-
-                set_parts = []
-                params_sh = {"id_val": id_sh_val}
-                for c_sh in campos_a_pasar_sh:
-                  val_cell = row_sh[c_sh]
-                  if pd.isna(val_cell):
-                    val_cell = None
-                  # Buscar si la columna existe en la BD
-                  if c_sh in df_bd_t.columns:
-                    set_parts.append(f'"{c_sh}" = :{c_sh}')
-                    params_sh[c_sh] = val_cell
-
-                if set_parts:
-                  sql_trasp_sh = f"""
-                                    UPDATE "Agua_potable"."VRP_Oficial" 
-                                    SET {", ".join(set_parts)}
-                                    WHERE TRIM(id) ILIKE :id_val;
-                                """
-                  try:
-                    ejecutar_sql(sql_trasp_sh, params_sh)
-                    actualizados_sh_db += 1
-                  except Exception:
-                    pass
-
-            st.success(
-                f"¡Traspaso completado! Se actualizaron"
-                f" {actualizados_sh_db} registros en la BD desde Sheets."
-            )
-            t.sleep(1)
-            st.rerun()
-
-      else:
-        st.info(
-            "📌 Nota sobre exportación a Sheets: Para actualizar directamente"
-            " la hoja de Google Sheets de forma automatizada, descarga el"
-            " reporte filtrado en CSV o cópialo desde la tabla de Base de Datos"
-            " Completa."
-        )
-        cols_bd_disp = [
-            c
-            for c in df_bd_t.columns
-            if c not in ["geom", "coord_x", "coord_y", "id_clean"]
-        ]
-        campos_a_pasar_bd = st.multiselect(
-            "Selecciona los campos de la BD que deseas exportar:",
-            options=cols_bd_disp,
-        )
-
-        if campos_a_pasar_bd:
-          df_exportable = df_bd_t[["id"] + campos_a_pasar_bd].copy()
-          csv_export = df_exportable.to_csv(index=False).encode("utf-8")
-          st.download_button(
-              label="📥 Descargar CSV con Campos Seleccionados de la BD",
-              data=csv_export,
-              file_name="traspaso_bd_a_sheets.csv",
-              mime="text/csv",
-          )
 
   with tab_comparativa:
     st.markdown(
@@ -1258,7 +995,6 @@ if st.session_state.active_tab == "📍 Registros":
                       col_bd_name in df_merged.columns
                       and col_sh_name in df_merged.columns
                   ):
-                    # Función auxiliar para comparar considerando equivalencia numérica (ej. 700 == 700.0)
                     def son_valores_equivalentes(val1, val2):
                       s1 = (
                           str(val1).strip().lower()
@@ -1271,14 +1007,12 @@ if st.session_state.active_tab == "📍 Registros":
                           else ""
                       )
 
-                      # Limpiar cadenas vacías comunes
                       s1 = "" if s1 in ["nan", "none", "nat", ""] else s1
                       s2 = "" if s2 in ["nan", "none", "nat", ""] else s2
 
                       if s1 == s2:
                         return True
 
-                      # Intentar conversión numérica para evitar falsos positivos por decimales (.0)
                       try:
                         f1 = float(s1)
                         f2 = float(s2)
@@ -1288,7 +1022,6 @@ if st.session_state.active_tab == "📍 Registros":
 
                       return False
 
-                    # Evaluar fila por fila para aplicar la regla de equivalencia
                     for _, row_d in df_merged.iterrows():
                       v_bd = row_d[col_bd_name]
                       v_sh = row_d[col_sh_name]
@@ -1317,6 +1050,270 @@ if st.session_state.active_tab == "📍 Registros":
                       "✅ Los valores en las columnas coincidentes son"
                       " idénticos para todos los IDs en común."
                   )
+
+  with tab_gestor_bd:
+    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y contraseña
+    usuario_actual_sesion = str(st.session_state.get("usuario_actual", "")).strip().lower()
+
+    if usuario_actual_sesion != "pedro.templos@miaa.mx":
+      st.error("⛔ Acceso denegado. Esta sección está protegida y es exclusiva para el usuario pedro.templos@miaa.mx.")
+    else:
+      if not st.session_state.get("gestor_bd_autenticado", False):
+        st.markdown("### 🔐 Sección Protegida - Gestión BD")
+        pass_gestor = st.text_input("Ingrese la contraseña de seguridad para acceder a Gestión BD:", type="password", key="pass_gestor_input")
+        if st.button("Desbloquear Gestión BD"):
+          if pass_gestor == "MIAA2026":  # Contraseña requerida
+            st.session_state.gestor_bd_autenticado = True
+            st.success("¡Acceso concedido!")
+            t.sleep(0.5)
+            st.rerun()
+          else:
+            st.error("Contraseña incorrecta.")
+      else:
+        # Pestaña desbloqueada para Pedro Templos
+        col_t_title, col_t_btn = st.columns([4, 1])
+        with col_t_title:
+          st.markdown("### 🛠️ Herramientas de Gestión y Mantenimiento de la BD")
+        with col_t_btn:
+          if st.button("🔒 Bloquear"):
+            st.session_state.gestor_bd_autenticado = False
+            st.rerun()
+
+        st.info(
+            "📌 Administra el vaciado masivo, actualizaciones e inserciones masivas por CSV usando `id_0` como identificador, y traspasos de información."
+        )
+
+        st.markdown("---")
+        st.markdown("#### 1️⃣ Zona de Peligro: Vaciar Tabla de Base de Datos")
+        st.warning(
+            "⚠️ Esta acción eliminará **todos** los registros de la tabla"
+            ' `"Agua_potable"."VRP_Oficial"`. Utilízala con extrema precaución.'
+        )
+
+        if "confirmar_borrado_total" not in st.session_state:
+          st.session_state.confirmar_borrado_total = False
+
+        if not st.session_state.confirmar_borrado_total:
+          if st.button("🗑️ Eliminar TODOS los registros de la BD"):
+            st.session_state.confirmar_borrado_total = True
+            st.rerun()
+        else:
+          st.error(
+              "🚨 ¿Estás completamente seguro? Esta acción no se puede deshacer."
+          )
+          col_bt_del1, col_bt_del2 = st.columns(2)
+          with col_bt_del1:
+            if st.button("⚠️ Sí, borrar absolutamente todo"):
+              try:
+                ejecutar_sql('DELETE FROM "Agua_potable"."VRP_Oficial";')
+                st.session_state.confirmar_borrado_total = False
+                st.success("¡Todos los registros han sido eliminados de la BD!")
+                t.sleep(1)
+                st.rerun()
+              except Exception as ex_all:
+                st.error(f"Error al vaciar la tabla: {ex_all}")
+          with col_bt_del2:
+            if st.button("❌ Cancelar borrado masivo"):
+              st.session_state.confirmar_borrado_total = False
+              st.rerun()
+
+        st.markdown("---")
+        st.markdown("#### 2️⃣ Actualización e Inserción Masiva (CSV)")
+        st.write(
+            "Sube un archivo CSV que contenga obligatoriamente la columna identificadora `id_0` para actualizar registros existentes o insertar nuevos automáticamente."
+        )
+
+        archivo_csv_subido = st.file_uploader(
+            "Cargar archivo CSV",
+            type=["csv"],
+            key="csv_gestor_uploader",
+        )
+
+        if archivo_csv_subido is not None:
+          try:
+            df_csv_input = pd.read_csv(archivo_csv_subido)
+            df_csv_input.columns = [str(c).strip() for c in df_csv_input.columns]
+
+            if "id_0" not in df_csv_input.columns and "ID_0" not in df_csv_input.columns:
+              st.error("❌ El archivo CSV debe contener obligatoriamente una columna llamada `id_0` como identificador.")
+            else:
+              col_id_csv = "id_0" if "id_0" in df_csv_input.columns else "ID_0"
+              st.success(
+                  f"CSV cargado correctamente ({len(df_csv_input)} filas detectadas). Identificador principal: `id_0`."
+              )
+              st.dataframe(df_csv_input.head(5), use_container_width=True)
+
+              cols_csv = list(df_csv_input.columns)
+              columnas_a_procesar = st.multiselect(
+                  "Selecciona qué columnas deseas actualizar/insertar en la BD:",
+                  options=[c for c in cols_csv if c.lower() != "id_0"],
+                  default=[
+                      c for c in cols_csv 
+                      if c.lower() != "id_0" and c.lower() in [
+                          "id", "estatus", "domicilio", "colonia", "obs", "observaciones", 
+                          "diametro", "marca", "modelo", "trim", "sect_hidr", "cota_terr",
+                          "cal_antd", "cal_antn", "cal_postd", "cal_postn", "tipo_valv", "num_serie"
+                      ]
+                  ],
+              )
+
+              if st.button("🚀 Ejecutar Actualización e Inserción Masiva desde CSV"):
+                if not columnas_a_procesar:
+                  st.warning("Debes seleccionar al menos una columna para procesar.")
+                else:
+                  actualizados_count = 0
+                  insertados_count = 0
+                  with st.spinner("Procesando registros en la base de datos (Actualizando/Insertando)..."):
+                    for _, row_c in df_csv_input.iterrows():
+                      val_id_0 = row_c[col_id_csv]
+                      if pd.isna(val_id_0):
+                        continue
+                      try:
+                        val_id_0_int = int(val_id_0)
+                      except:
+                        continue
+
+                      # Comprobar si existe id_0 en la BD
+                      df_check, err_chk = obtener_datos(
+                          'SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0',
+                          {"id0": val_id_0_int}
+                      )
+
+                      params_dict = {"id_0": val_id_0_int}
+                      set_clauses = []
+                      insert_cols = ["id_0"]
+                      insert_vals = [":id_0"]
+
+                      for col_p in columnas_a_procesar:
+                        val_val = row_c[col_p]
+                        if pd.isna(val_val):
+                          val_val = None
+                        set_clauses.append(f'"{col_p}" = :{col_p}')
+                        insert_cols.append(f'"{col_p}"')
+                        insert_vals.append(f':{col_p}')
+                        params_dict[col_p] = val_val
+
+                      if not err_chk and not df_check.empty:
+                        # Ya existe -> Actualizar (UPDATE)
+                        if set_clauses:
+                          sql_update_csv = f"""
+                                    UPDATE "Agua_potable"."VRP_Oficial" 
+                                    SET {", ".join(set_clauses)}
+                                    WHERE id_0 = :id_0;
+                                """
+                          try:
+                            ejecutar_sql(sql_update_csv, params_dict)
+                            actualizados_count += 1
+                          except Exception:
+                            pass
+                      else:
+                        # No existe -> Insertar nuevo registro (INSERT)
+                        sql_insert_csv = f"""
+                                    INSERT INTO "Agua_potable"."VRP_Oficial" ({", ".join(insert_cols)})
+                                    VALUES ({", ".join(insert_vals)});
+                                """
+                        try:
+                          ejecutar_sql(sql_insert_csv, params_dict)
+                          insertados_count += 1
+                        except Exception:
+                          pass
+
+                  st.success(
+                      f"¡Proceso finalizado! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count}."
+                  )
+                  t.sleep(1.5)
+                  st.rerun()
+
+          except Exception as e_csv:
+            st.error(f"Error al leer el archivo CSV: {e_csv}")
+
+        st.markdown("---")
+        st.markdown(
+            "#### 3️⃣ Traspaso Bidireccional Selectivo (Sheets ⇄ Base de Datos)"
+        )
+        traspaso_dir = st.radio(
+            "Dirección del Traspaso:",
+            [
+                "📤 De Google Sheets hacia Base de Datos",
+                "📥 De Base de Datos hacia Google Sheets (Exportación)",
+            ],
+            horizontal=True,
+        )
+
+        query_bd_traspaso = f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial";'
+        df_bd_t, err_t_bd = obtener_datos(query_bd_traspaso)
+
+        csv_sheets_traspaso_url = "https://docs.google.com/spreadsheets/d/1am_DvVrUYPYqXnH8Pt3xoeMuG6BFr4z2x8PBRNskB-M/gviz/tq?tqx=out:csv&gid=769091515"
+        try:
+          df_sh_t = pd.read_csv(csv_sheets_traspaso_url)
+          err_t_sh = None
+        except Exception as e_sh_t:
+          df_sh_t = pd.DataFrame()
+          err_t_sh = str(e_sh_t)
+
+        if err_t_bd or err_t_sh:
+          st.error("❌ No se pudieron cargar los datos de ambas fuentes para realizar el traspaso.")
+        elif not df_bd_t.empty and not df_sh_t.empty:
+          if "De Google Sheets hacia Base de Datos" in traspaso_dir:
+            st.info("Se sincronizarán los campos seleccionados tomando como fuente Google Sheets y emparejándolos por el campo ID.")
+            cols_sh_disp = [c for c in df_sh_t.columns if str(c).strip().lower() not in ["id_clean"]]
+            campos_a_pasar_sh = st.multiselect(
+                "Selecciona los campos de Sheets que quieres pasar a la BD:",
+                options=cols_sh_disp,
+            )
+
+            if st.button("🔄 Importar Campos Seleccionados desde Sheets"):
+              if not campos_a_pasar_sh:
+                st.warning("Selecciona al menos un campo para traspasar.")
+              else:
+                actualizados_sh_db = 0
+                with st.spinner("Traspasando información..."):
+                  for _, row_sh in df_sh_t.iterrows():
+                    id_sh_val = str(row_sh.get("id", "")).strip()
+                    if not id_sh_val or id_sh_val.lower() in ["nan", "none", ""]:
+                      continue
+
+                    set_parts = []
+                    params_sh = {"id_val": id_sh_val}
+                    for c_sh in campos_a_pasar_sh:
+                      val_cell = row_sh[c_sh]
+                      if pd.isna(val_cell):
+                        val_cell = None
+                      if c_sh in df_bd_t.columns:
+                        set_parts.append(f'"{c_sh}" = :{c_sh}')
+                        params_sh[c_sh] = val_cell
+
+                    if set_parts:
+                      sql_trasp_sh = f"""
+                                        UPDATE "Agua_potable"."VRP_Oficial" 
+                                        SET {", ".join(set_parts)}
+                                        WHERE TRIM(id) ILIKE :id_val;
+                                    """
+                      try:
+                        ejecutar_sql(sql_trasp_sh, params_sh)
+                        actualizados_sh_db += 1
+                      except Exception:
+                        pass
+
+                st.success(f"¡Traspaso completado! Se actualizaron {actualizados_sh_db} registros en la BD desde Sheets.")
+                t.sleep(1)
+                st.rerun()
+          else:
+            cols_bd_disp = [c for c in df_bd_t.columns if c not in ["geom", "coord_x", "coord_y", "id_clean"]]
+            campos_a_pasar_bd = st.multiselect(
+                "Selecciona los campos de la BD que deseas exportar:",
+                options=cols_bd_disp,
+            )
+
+            if campos_a_pasar_bd:
+              df_exportable = df_bd_t[["id"] + campos_a_pasar_bd].copy()
+              csv_export = df_exportable.to_csv(index=False).encode("utf-8")
+              st.download_button(
+                  label="📥 Descargar CSV con Campos Seleccionados de la BD",
+                  data=csv_export,
+                  file_name="traspaso_bd_a_sheets.csv",
+                  mime="text/csv",
+              )
 
 # 09 SECCION ------------------------------------------------------------ MAPA DE VRPs Y SECTORES HIDRÁULICOS (POSTGIS) -----------------------------------------------------------------------------------------
 
@@ -1590,7 +1587,6 @@ elif st.session_state.active_tab == "➕ Añadir":
   if "add_coord_y_input" not in st.session_state:
     st.session_state["add_coord_y_input"] = 0.0
 
-  # FILA 1
   a_c1, a_c2, a_c3, a_c4 = st.columns(4)
   with a_c1:
     st.text_input(
@@ -1607,7 +1603,6 @@ elif st.session_state.active_tab == "➕ Añadir":
   with a_c4:
     val_marca = st.text_input("Marca", key="add_marca")
 
-  # FILA 2
   a_c5, a_c6, a_c7, a_c8 = st.columns(4)
   with a_c5:
     val_num_serie = st.text_input("Num. Serie", key="add_num_serie")
@@ -1620,7 +1615,6 @@ elif st.session_state.active_tab == "➕ Añadir":
   with a_c8:
     val_trim = st.text_input("Trim", key="add_trim")
 
-  # FILA 3
   a_c9, a_c10, a_c11, a_c12 = st.columns(4)
   with a_c9:
     val_domicilio = st.text_input("Domicilio", key="add_dom")
@@ -1636,7 +1630,6 @@ elif st.session_state.active_tab == "➕ Añadir":
   with a_c12:
     val_sect_hidr = st.text_input("Sector Hidráulico (sect_hidr)", key="add_sect_hidr")
 
-  # FILA 4 (Mapa + Coordenadas y Calibraciones)
   col_coord_left, col_map_right = st.columns([1, 1])
 
   with col_map_right:
@@ -1958,7 +1951,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
           else str(row["num_serie"])
       )
 
-      # FILA 1
       e_c1, e_c2, e_c3, e_c4 = st.columns(4)
       with e_c1:
         st.text_input(
@@ -1984,7 +1976,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
             key=f"mar_{row['objectid']}",
         )
 
-      # FILA 2
       e_c5, e_c6, e_c7, e_c8 = st.columns(4)
       with e_c5:
         e_num_serie = st.text_input(
@@ -2009,7 +2000,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
             key=f"trim_{row['objectid']}",
         )
 
-      # FILA 3
       e_c9, e_c10, e_c11, e_c12 = st.columns(4)
       with e_c9:
         e_domicilio = st.text_input(
@@ -2037,7 +2027,6 @@ elif st.session_state.active_tab == "⚙️ Editar":
             key=f"sec_{row['objectid']}",
         )
 
-      # FILA 4 (Mapa + Coordenadas)
       col_coord_left, col_map_right = st.columns([1, 1])
 
       with col_map_right:
