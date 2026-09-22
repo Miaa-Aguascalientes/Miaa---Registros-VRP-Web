@@ -50,8 +50,50 @@ OPCIONES_ESTADO_VALVULA = [
     "Pendiente",
 ]
 
-# 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VRP_Oficial) --------------------------------------------------------------------------------------
+COLUMNAS_FECHA = ["fecha_inst", "fecha_vis", "fecha_mtto", "fecha_tim", "_ult_visita"]
 
+def parsear_fecha_segura(val_fecha):
+  if (
+      pd.isna(val_fecha)
+      or val_fecha is None
+      or str(val_fecha).strip() in ["", "nan", "None", "NaT"]
+  ):
+    return datetime.date.today()
+  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
+    return val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
+  try:
+    return pd.to_datetime(val_fecha, dayfirst=True).date()
+  except Exception:
+    return datetime.date.today()
+
+def formatear_fecha_str(val_fecha):
+  if (
+      pd.isna(val_fecha)
+      or val_fecha is None
+      or str(val_fecha).strip() in ["", "nan", "None", "NaT"]
+  ):
+    return ""
+  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
+    d = val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
+    return d.strftime("%d/%m/%Y")
+  try:
+    dt = pd.to_datetime(val_fecha, dayfirst=True)
+    if pd.isna(dt):
+      return str(val_fecha)
+    return dt.strftime("%d/%m/%Y")
+  except Exception:
+    return str(val_fecha)
+
+def formatear_columnas_fecha(df):
+  if df is None or df.empty:
+    return df
+  df_copia = df.copy()
+  for col in COLUMNAS_FECHA:
+    if col in df_copia.columns:
+      df_copia[col] = df_copia[col].apply(formatear_fecha_str)
+  return df_copia
+
+# 02 SECCION -------------------------------------------------------------------------- CONEXIÓN A BASE DE DATOS POSTGRESQL (VRP_Oficial) --------------------------------------------------------------------------------------
 
 def crear_nuevo_engine():
   pg = st.secrets["postgres"]
@@ -64,10 +106,8 @@ def crear_nuevo_engine():
       connect_args={"connect_timeout": 60},
   )
 
-
 if "db_engine" not in st.session_state:
   st.session_state.db_engine = crear_nuevo_engine()
-
 
 def obtener_datos(query, params=None):
   for intento in range(2):
@@ -95,7 +135,6 @@ def obtener_datos(query, params=None):
           return pd.DataFrame(), str(e2)
   return pd.DataFrame(), "Error de conexión persistente."
 
-
 def ejecutar_sql(query, params=None):
   with st.session_state.db_engine.connect() as conn:
     with conn.begin():
@@ -103,7 +142,6 @@ def ejecutar_sql(query, params=None):
           text(query) if isinstance(query, str) else query, params or {}
       )
   return True
-
 
 # 03 SECCION ------------------------------------------------------------------- CONEXIÓN A MYSQL (USUARIOS / LOGIN) --------------------------------------------------------------------------------------------------
 def crear_engine_mysql():
@@ -117,10 +155,8 @@ def crear_engine_mysql():
       connect_args={"connect_timeout": 60},
   )
 
-
 if "db_mysql_engine" not in st.session_state:
   st.session_state.db_mysql_engine = crear_engine_mysql()
-
 
 def obtener_datos_mysql(query, params=None):
   for intento in range(2):
@@ -148,7 +184,6 @@ def obtener_datos_mysql(query, params=None):
           return pd.DataFrame(), str(e2)
   return pd.DataFrame(), "Error de conexión persistente a MySQL."
 
-
 def procesar_bytes_foto(foto_data):
   if foto_data is None:
     return None
@@ -162,40 +197,6 @@ def procesar_bytes_foto(foto_data):
     except:
       return None
   return None
-
-
-def parsear_fecha_segura(val_fecha):
-  if (
-      pd.isna(val_fecha)
-      or val_fecha is None
-      or str(val_fecha).strip() in ["", "nan", "None"]
-  ):
-    return datetime.date.today()
-  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
-    return val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
-  try:
-    return pd.to_datetime(val_fecha).date()
-  except Exception:
-    return datetime.date.today()
-
-
-def formatear_fecha_ddmmaaaa(val_fecha):
-  if (
-      pd.isna(val_fecha)
-      or val_fecha is None
-      or str(val_fecha).strip() in ["", "nan", "None", "NaT"]
-  ):
-    return "Sin fecha"
-  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
-    return val_fecha.strftime("%d/%m/%Y")
-  try:
-    dt = pd.to_datetime(val_fecha)
-    if pd.notna(dt):
-      return dt.strftime("%d/%m/%Y")
-  except Exception:
-    pass
-  return str(val_fecha)
-
 
 def agregar_capas_base_mapa(m):
   folium.TileLayer(
@@ -229,7 +230,6 @@ def agregar_capas_base_mapa(m):
       overlay=False,
       control=True,
   ).add_to(m)
-
 
 # 04 SECCION ------------------------------------------------------------- ESTILOS CSS CON BARRA LATERAL FIJA Y LOGOTIPO MÁS ARRIBA --------------------------------------------------------------------------------
 st.write(
@@ -748,11 +748,11 @@ if st.session_state.active_tab == "📍 Registros":
               if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
               else "Sin geometría"
           )
-          fecha_vis_fmt = formatear_fecha_ddmmaaaa(row["fecha_vis"])
           detalle_html = f"""
                         <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
                             <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca']} &nbsp;|&nbsp; <b>Modelo:</b> {row['modelo']} &nbsp;|&nbsp; <b>Trim:</b> {row['trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
-                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {fecha_vis_fmt}<br>
+                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {formatear_fecha_str(row['fecha_vis'])}<br>
+                            <b>Fecha Inst.:</b> {formatear_fecha_str(row['fecha_inst'])} &nbsp;|&nbsp; <b>Fecha Mtto:</b> {formatear_fecha_str(row['fecha_mtto'])}<br>
                             <b>Geom:</b> {geom_str}<br>
                             <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
                             <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
@@ -803,12 +803,9 @@ if st.session_state.active_tab == "📍 Registros":
     if err_bd_comp:
       st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
     elif not df_completo.empty:
-      if "fecha_vis" in df_completo.columns:
-        df_completo["fecha_vis"] = df_completo["fecha_vis"].apply(
-            formatear_fecha_ddmmaaaa
-        )
+      df_completo_fmt = formatear_columnas_fecha(df_completo)
       st.dataframe(
-          df_completo, use_container_width=True, hide_index=True, height=650
+          df_completo_fmt, use_container_width=True, hide_index=True, height=650
       )
       st.caption(f"Total de registros en base de datos: {len(df_completo)}")
     else:
