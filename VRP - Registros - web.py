@@ -62,7 +62,12 @@ def parsear_fecha_segura(val_fecha):
   if isinstance(val_fecha, (datetime.date, datetime.datetime)):
     return val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
   try:
-    return pd.to_datetime(val_fecha, dayfirst=True).date()
+    dt = pd.to_datetime(val_fecha, dayfirst=True, errors="coerce")
+    if pd.isna(dt):
+      dt = pd.to_datetime(val_fecha, errors="coerce")
+    if pd.isna(dt):
+      return datetime.date.today()
+    return dt.date()
   except Exception:
     return datetime.date.today()
 
@@ -77,7 +82,9 @@ def formatear_fecha_str(val_fecha):
     d = val_fecha if isinstance(val_fecha, datetime.date) else val_fecha.date()
     return d.strftime("%d/%m/%Y")
   try:
-    dt = pd.to_datetime(val_fecha, dayfirst=True)
+    dt = pd.to_datetime(val_fecha, dayfirst=True, errors="coerce")
+    if pd.isna(dt):
+      dt = pd.to_datetime(val_fecha, errors="coerce")
     if pd.isna(dt):
       return str(val_fecha)
     return dt.strftime("%d/%m/%Y")
