@@ -179,6 +179,24 @@ def parsear_fecha_segura(val_fecha):
     return datetime.date.today()
 
 
+def formatear_fecha_ddmmaaaa(val_fecha):
+  if (
+      pd.isna(val_fecha)
+      or val_fecha is None
+      or str(val_fecha).strip() in ["", "nan", "None", "NaT"]
+  ):
+    return "Sin fecha"
+  if isinstance(val_fecha, (datetime.date, datetime.datetime)):
+    return val_fecha.strftime("%d/%m/%Y")
+  try:
+    dt = pd.to_datetime(val_fecha)
+    if pd.notna(dt):
+      return dt.strftime("%d/%m/%Y")
+  except Exception:
+    pass
+  return str(val_fecha)
+
+
 def agregar_capas_base_mapa(m):
   folium.TileLayer(
       tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
@@ -730,10 +748,11 @@ if st.session_state.active_tab == "📍 Registros":
               if pd.notna(row["coord_x"]) and pd.notna(row["coord_y"])
               else "Sin geometría"
           )
+          fecha_vis_fmt = formatear_fecha_ddmmaaaa(row["fecha_vis"])
           detalle_html = f"""
                         <span style="color: #94A3B8; font-size: 0.8rem; line-height: 1.6;">
                             <b>Diámetro:</b> {row['diametro']} pulgadas &nbsp;|&nbsp; <b>Marca:</b> {row['marca']} &nbsp;|&nbsp; <b>Modelo:</b> {row['modelo']} &nbsp;|&nbsp; <b>Trim:</b> {row['trim']} &nbsp;|&nbsp; <b>Cota:</b> {row['cota_terr']}<br>
-                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {row['fecha_vis']}<br>
+                            <b>Sector:</b> {row['sect_hidr']} &nbsp;|&nbsp; <b>Estado:</b> {row['estatus']} &nbsp;|&nbsp; <b>Última Visita:</b> {fecha_vis_fmt}<br>
                             <b>Geom:</b> {geom_str}<br>
                             <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
                             <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
@@ -784,6 +803,10 @@ if st.session_state.active_tab == "📍 Registros":
     if err_bd_comp:
       st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
     elif not df_completo.empty:
+      if "fecha_vis" in df_completo.columns:
+        df_completo["fecha_vis"] = df_completo["fecha_vis"].apply(
+            formatear_fecha_ddmmaaaa
+        )
       st.dataframe(
           df_completo, use_container_width=True, hide_index=True, height=650
       )
