@@ -654,7 +654,6 @@ if st.session_state.active_tab == "📍 Registros":
       unsafe_allow_html=True,
   )
 
-  # Pestaña de "Gestión BD" movida al último y configurada con las demás
   tab_registros, tab_bd_completa, tab_sheets, tab_comparativa, tab_gestor_bd = (
       st.tabs([
           "📍 Registros",
@@ -1052,7 +1051,6 @@ if st.session_state.active_tab == "📍 Registros":
                   )
 
   with tab_gestor_bd:
-    # RESTRICCIÓN DE SEGURIDAD: Solo pedro.templos@miaa.mx y contraseña
     usuario_actual_sesion = str(st.session_state.get("usuario_actual", "")).strip().lower()
 
     if usuario_actual_sesion != "pedro.templos@miaa.mx":
@@ -1062,7 +1060,7 @@ if st.session_state.active_tab == "📍 Registros":
         st.markdown("### 🔐 Sección Protegida - Gestión BD")
         pass_gestor = st.text_input("Ingrese la contraseña de seguridad para acceder a Gestión BD:", type="password", key="pass_gestor_input")
         if st.button("Desbloquear Gestión BD"):
-          if pass_gestor == "MIAA2026":  # Contraseña requerida
+          if pass_gestor == "MIAA2026":
             st.session_state.gestor_bd_autenticado = True
             st.success("¡Acceso concedido!")
             t.sleep(0.5)
@@ -1070,7 +1068,6 @@ if st.session_state.active_tab == "📍 Registros":
           else:
             st.error("Contraseña incorrecta.")
       else:
-        # Pestaña desbloqueada para Pedro Templos
         col_t_title, col_t_btn = st.columns([4, 1])
         with col_t_title:
           st.markdown("### 🛠️ Herramientas de Gestión y Mantenimiento de la BD")
@@ -1116,8 +1113,6 @@ if st.session_state.active_tab == "📍 Registros":
             if st.button("❌ Cancelar borrado masivo"):
               st.session_state.confirmar_borrado_total = False
               st.rerun()
-
-# SECCION -------------------------------------------------------------------------- INCERCION MASIVA CON ARCHIVO CSV CARGADO --------------------------------------------------------------------------------------
 
         st.markdown("---")
         st.markdown("#### 2️⃣ Actualización e Inserción Masiva (CSV)")
@@ -1166,6 +1161,7 @@ if st.session_state.active_tab == "📍 Registros":
                   actualizados_count = 0
                   insertados_count = 0
                   errores_count = 0
+                  lista_errores_detalle = []
                   
                   total_filas = len(df_csv_input)
                   tamano_lote = 50
@@ -1188,7 +1184,6 @@ if st.session_state.active_tab == "📍 Registros":
                             except:
                               continue
 
-                            # Verificamos si existe id_0 en la BD
                             check_query = text('SELECT objectid FROM "Agua_potable"."VRP_Oficial" WHERE id_0 = :id0')
                             res_chk = conn.execute(check_query, {"id0": val_id_0_int}).fetchone()
 
@@ -1206,7 +1201,6 @@ if st.session_state.active_tab == "📍 Registros":
                               insert_vals.append(f':{col_p}')
                               params_dict[col_p] = val_val
 
-                            # Uso de begin_nested() (SAVEPOINT) para aislar errores por fila sin romper el lote
                             try:
                               with conn.begin_nested():
                                 if res_chk:
@@ -1227,6 +1221,8 @@ if st.session_state.active_tab == "📍 Registros":
                                   insertados_count += 1
                             except Exception as ex_fila:
                               errores_count += 1
+                              if len(lista_errores_detalle) < 5:
+                                lista_errores_detalle.append(f"ID_0 {val_id_0_int}: {str(ex_fila)}")
                               continue
 
                     except Exception as e_lote:
@@ -1237,15 +1233,18 @@ if st.session_state.active_tab == "📍 Registros":
                     status_text.text(f"Procesando registros... {min(i + tamano_lote, total_filas)} de {total_filas}")
 
                   st.success(
-                      f"¡Proceso por lotes finalizado con éxito! Registros actualizados: {actualizados_count} | Registros insertados: {insertados_count} | Errores omitidos: {errores_count}."
+                      f"¡Proceso por lotes finalizado! Actualizados: {actualizados_count} | Insertados: {insertados_count} | Errores omitidos: {errores_count}."
                   )
+                  if lista_errores_detalle:
+                    st.warning("⚠️ Primeros errores detallados detectados en las filas:")
+                    for err_det in lista_errores_detalle:
+                      st.code(err_det)
+
                   t.sleep(1.5)
                   st.rerun()
 
           except Exception as e_csv:
             st.error(f"Error al leer el archivo CSV: {e_csv}")
-
-# SECCION -----------------------------------------------------------------PARA IMPORTAR LOS REGISTROS DE AMBAS FUENTES DE DATOS ---------------------------------------------------------------------------------
 
         st.markdown("---")
         st.markdown(
