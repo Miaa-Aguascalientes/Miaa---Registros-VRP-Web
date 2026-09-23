@@ -444,31 +444,81 @@ st.write(
         height: auto !important;
         border-radius: 8px !important;
     }
+
+    /* Animaciones y Estilos Dinámicos para el Login */
+    @keyframes fadeInSlide {
+        0% {
+            opacity: 0;
+            transform: translateY(25px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes pulseGlow {
+        0% {
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+        50% {
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.35);
+        }
+        100% {
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+        }
+    }
+
+    @keyframes floatLogo {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
+    .login-container-animated {
+        animation: fadeInSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        background: linear-gradient(145deg, #0D1424 0%, #0A0F1D 100%);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        border-radius: 14px;
+        padding: 35px 40px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        animation: fadeInSlide 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards, pulseGlow 4s infinite ease-in-out;
+        margin-top: 4vh;
+    }
+
+    .login-logo-animated {
+        animation: floatLogo 3s infinite ease-in-out;
+    }
 </style>""",
     unsafe_allow_html=True,
 )
 
 # 05 SECCION ------------------------------------------------------------------- SISTEMA DE LOGIN CONECTADO A MYSQL -----------------------------------------------------------------------------------------------
 if not st.session_state.autenticado:
-  st.markdown(
-      """
-        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; margin-bottom: 20px; margin-top: 0px;">
-            <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" style="width: 180px; height: auto;" />
-        </div>
-    """,
-      unsafe_allow_html=True,
-  )
+  # Contenedor principal centrado mediante columnas de Streamlit
+  _, col_centro, _ = st.columns([1, 1.4, 1])
 
-  st.markdown(
-      '<h3 style="color: #00E5FF; font-size: 1.4rem; font-weight: 800; margin-bottom: 20px;">Acceso al Sistema - Gestión de Válvulas Reductoras de Presión</h3>',
-      unsafe_allow_html=True,
-  )
+  with col_centro:
+    st.markdown(
+        """
+        <div class="login-container-animated">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; margin-bottom: 25px;">
+                <img src="https://raw.githubusercontent.com/Miaa-Aguascalientes/Logos/38504978c8f77a4dac38ad476f74dbdee6af2cad/LogoMIAA.svg" class="login-logo-animated" style="width: 200px; height: auto; margin-bottom: 15px;" />
+                <h3 style="color: #00E5FF; font-size: 1.5rem; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px;">Acceso al Sistema</h3>
+                <p style="color: #94A3B8; font-size: 0.9rem; margin: 0;">Gestión de Válvulas Reductoras de Presión</p>
+            </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-  col_login1, col_login2 = st.columns([1, 2])
-  with col_login1:
     with st.form("login_form"):
       usuario_input = st.text_input("Usuario")
       password_input = st.text_input("Contraseña", type="password")
+      
+      st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
       submit_login = st.form_submit_button(
           "Iniciar Sesión", use_container_width=True
       )
@@ -499,6 +549,8 @@ if not st.session_state.autenticado:
             st.error("Usuario o contraseña incorrectos.")
         else:
           st.warning("Por favor, ingrese usuario y contraseña.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
   st.stop()
 
 # 05.1. SECCION ------------------------------------------------------------- DETERMINAR ROL DEL USUARIO -----------------------------------------------------------------------------------------------------------
@@ -1398,7 +1450,6 @@ elif st.session_state.active_tab == "🗺️ Mapa":
     """
   df_mapa, err_mapa = obtener_datos(query_mapa)
 
-  # [SOLUCIÓN AQUÍ] Agregado ST_MakeValid y conversión segura para evitar fallos de polígonos
   query_sectores = """
         SELECT 
             objectid as fid,
