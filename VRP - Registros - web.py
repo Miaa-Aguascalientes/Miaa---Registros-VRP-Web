@@ -581,7 +581,7 @@ with st.sidebar:
   if es_operador:
     opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
   else:
-    opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️ Editar"]
+    opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️️ Editar"]
 
   if (
       "active_tab" not in st.session_state
@@ -1190,7 +1190,7 @@ if st.session_state.active_tab == "📍 Registros":
           st.session_state.confirmar_borrado_total = False
 
         if not st.session_state.confirmar_borrado_total:
-          if st.button("🗑️ Eliminar TODOS los registros de la BD"):
+          if st.button("🗑️️ Eliminar TODOS los registros de la BD"):
             st.session_state.confirmar_borrado_total = True
             st.rerun()
         else:
@@ -1838,15 +1838,15 @@ elif st.session_state.active_tab == "➕ Añadir":
 
     cc1, cc2 = st.columns(2)
     with cc1:
-      val_cal_antd = st.number_input("Calibración Ant. Día (cal_antd)", value=0.0, key="add_cand")
+      val_cal_antd = st.text_input("Calibración Ant. Día (cal_antd)", value="0.0", key="add_cand")
     with cc2:
-      val_cal_antn = st.number_input("Calibración Ant. Noche (cal_antn)", value=0.0, key="add_cann")
+      val_cal_antn = st.text_input("Calibración Ant. Noche (cal_antn)", value="0.0", key="add_cann")
 
     cc3, cc4 = st.columns(2)
     with cc3:
-      val_cal_postd = st.number_input("Calibración Post. Día (cal_postd)", value=0.0, key="add_cpostd")
+      val_cal_postd = st.text_input("Calibración Post. Día (cal_postd)", value="0.0", key="add_cpostd")
     with cc4:
-      val_cal_postn = st.number_input("Calibración Post. Noche (cal_postn)", value=0.0, key="add_cpostn")
+      val_cal_postn = st.text_input("Calibración Post. Noche (cal_postn)", value="0.0", key="add_cpostn")
 
     cc5, cc6 = st.columns(2)
     with cc5:
@@ -2234,45 +2234,33 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         cc1, cc2 = st.columns(2)
         with cc1:
-          try:
-            val_cantd_f = float(row["cal_antd"] or 0.0)
-          except:
-            val_cantd_f = 0.0
-          e_cal_antd = st.number_input(
+          val_cantd_str = str(row["cal_antd"] if pd.notna(row["cal_antd"]) else "0.0")
+          e_cal_antd = st.text_input(
               "Calibración Ant. Día (cal_antd)",
-              value=val_cantd_f,
+              value=val_cantd_str,
               key=f"cand_{row['id_0']}",
           )
         with cc2:
-          try:
-            val_cantn_f = float(row["cal_antn"] or 0.0)
-          except:
-            val_cantn_f = 0.0
-          e_cal_antn = st.number_input(
+          val_cantn_str = str(row["cal_antn"] if pd.notna(row["cal_antn"]) else "0.0")
+          e_cal_antn = st.text_input(
               "Calibración Ant. Noche (cal_antn)",
-              value=val_cantn_f,
+              value=val_cantn_str,
               key=f"cann_{row['id_0']}",
           )
 
         cc3, cc4 = st.columns(2)
         with cc3:
-          try:
-            val_cpostd_f = float(row["cal_postd"] or 0.0)
-          except:
-            val_cpostd_f = 0.0
-          e_cal_postd = st.number_input(
+          val_cpostd_str = str(row["cal_postd"] if pd.notna(row["cal_postd"]) else "0.0")
+          e_cal_postd = st.text_input(
               "Calibración Post. Día (cal_postd)",
-              value=val_cpostd_f,
+              value=val_cpostd_str,
               key=f"cpostd_{row['id_0']}",
           )
         with cc4:
-          try:
-            val_cpostn_f = float(row["cal_postn"] or 0.0)
-          except:
-            val_cpostn_f = 0.0
-          e_cal_postn = st.number_input(
+          val_cpostn_str = str(row["cal_postn"] if pd.notna(row["cal_postn"]) else "0.0")
+          e_cal_postn = st.text_input(
               "Calibración Post. Noche (cal_postn)",
-              value=val_cpostn_f,
+              value=val_cpostn_str,
               key=f"cpostn_{row['id_0']}",
           )
 
