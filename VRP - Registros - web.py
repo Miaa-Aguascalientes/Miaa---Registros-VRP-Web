@@ -581,7 +581,7 @@ with st.sidebar:
   if es_operador:
     opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
   else:
-    opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️️ Editar"]
+    opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️ Editar"]
 
   if (
       "active_tab" not in st.session_state
@@ -737,7 +737,7 @@ if st.session_state.active_tab == "📍 Registros":
           "🗄️ Tabla Base de Datos Completa",
           "📊 2.Informe visitas a VRP´s (Sheets)",
           "🔍 Comparativa (BD vs Sheets)",
-          "🛠️ Gestión BD",
+          "🛠️️ Gestión BD",
       ])
   )
 
@@ -1190,7 +1190,7 @@ if st.session_state.active_tab == "📍 Registros":
           st.session_state.confirmar_borrado_total = False
 
         if not st.session_state.confirmar_borrado_total:
-          if st.button("🗑️️ Eliminar TODOS los registros de la BD"):
+          if st.button("🗑️ Eliminar TODOS los registros de la BD"):
             st.session_state.confirmar_borrado_total = True
             st.rerun()
         else:
@@ -1471,7 +1471,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         "descalibrada": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
         "habilitada": {"color": "#38B6FF", "emoji": "🔷", "forma": "rombo"},
         "no opera": {"color": "#A0A0A0", "emoji": "⚫", "forma": "circulo"},
-        "pendiente": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
+        "pendiente": {"color": "#F1C40F", "emoji": "⚠️️", "forma": "triangulo"},
         "amarillo": {"color": "#F1C40F", "emoji": "🟡", "forma": "circulo"},
     }
 
@@ -1972,10 +1972,10 @@ elif st.session_state.active_tab == "➕ Añadir":
                 "sect_hidr": val_sect_hidr,
                 "cota_terr": val_cota,
                 "estatus": val_estat,
-                "cal_antd": val_cal_antd,
-                "cal_antn": val_cal_antn,
-                "cal_postd": val_cal_postd,
-                "cal_postn": val_cal_postn,
+                "cal_antd": val_cal_antd if val_cal_antd.strip() != "" else None,
+                "cal_antn": val_cal_antn if val_cal_antn.strip() != "" else None,
+                "cal_postd": val_cal_postd if val_cal_postd.strip() != "" else None,
+                "cal_postn": val_cal_postn if val_cal_postn.strip() != "" else None,
                 "fecha_vis": val_fecha_vis,
                 "obs": val_obs,
                 "fotos": foto_bytes,
@@ -2234,14 +2234,14 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         cc1, cc2 = st.columns(2)
         with cc1:
-          val_cantd_str = str(row["cal_antd"] if pd.notna(row["cal_antd"]) else "0.0")
+          val_cantd_str = str(row["cal_antd"]) if pd.notna(row["cal_antd"]) and str(row["cal_antd"]).strip().lower() not in ["nan", "none"] else "0.0"
           e_cal_antd = st.text_input(
               "Calibración Ant. Día (cal_antd)",
               value=val_cantd_str,
               key=f"cand_{row['id_0']}",
           )
         with cc2:
-          val_cantn_str = str(row["cal_antn"] if pd.notna(row["cal_antn"]) else "0.0")
+          val_cantn_str = str(row["cal_antn"]) if pd.notna(row["cal_antn"]) and str(row["cal_antn"]).strip().lower() not in ["nan", "none"] else "0.0"
           e_cal_antn = st.text_input(
               "Calibración Ant. Noche (cal_antn)",
               value=val_cantn_str,
@@ -2250,14 +2250,14 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         cc3, cc4 = st.columns(2)
         with cc3:
-          val_cpostd_str = str(row["cal_postd"] if pd.notna(row["cal_postd"]) else "0.0")
+          val_cpostd_str = str(row["cal_postd"]) if pd.notna(row["cal_postd"]) and str(row["cal_postd"]).strip().lower() not in ["nan", "none"] else "0.0"
           e_cal_postd = st.text_input(
               "Calibración Post. Día (cal_postd)",
               value=val_cpostd_str,
               key=f"cpostd_{row['id_0']}",
           )
         with cc4:
-          val_cpostn_str = str(row["cal_postn"] if pd.notna(row["cal_postn"]) else "0.0")
+          val_cpostn_str = str(row["cal_postn"]) if pd.notna(row["cal_postn"]) and str(row["cal_postn"]).strip().lower() not in ["nan", "none"] else "0.0"
           e_cal_postn = st.text_input(
               "Calibración Post. Noche (cal_postn)",
               value=val_cpostn_str,
@@ -2397,10 +2397,10 @@ elif st.session_state.active_tab == "⚙️ Editar":
                   "sect_hidr": e_sect_hidr,
                   "cota_terr": e_cota,
                   "estatus": e_estat,
-                  "cal_antd": e_cal_antd,
-                  "cal_antn": e_cal_antn,
-                  "cal_postd": e_cal_postd,
-                  "cal_postn": e_cal_postn,
+                  "cal_antd": e_cal_antd if e_cal_antd.strip() != "" else None,
+                  "cal_antn": e_cal_antn if e_cal_antn.strip() != "" else None,
+                  "cal_postd": e_cal_postd if e_cal_postd.strip() != "" else None,
+                  "cal_postn": e_cal_postn if e_cal_postn.strip() != "" else None,
                   "fecha_vis": e_fecha_vis,
                   "obs": e_obs,
                   "fotos": foto_bytes_final,
