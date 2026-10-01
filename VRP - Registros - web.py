@@ -579,7 +579,7 @@ with st.sidebar:
   )
 
   if es_operador:
-    opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️ Editar"]
+    opciones_menu = ["📍 Registros", "🗺️ Mapa", "⚙️️ Editar"]
   else:
     opciones_menu = ["📍 Registros", "🗺️ Mapa", "➕ Añadir", "⚙️ Editar"]
 
@@ -815,6 +815,7 @@ if st.session_state.active_tab == "📍 Registros":
                             <b>Geom:</b> {geom_str}<br>
                             <b>Cal Ant Día:</b> {row['cal_antd']} &nbsp;|&nbsp; <b>Cal Ant Noche:</b> {row['cal_antn']}<br>
                             <b>Cal Post Día:</b> {row['cal_postd']} &nbsp;|&nbsp; <b>Cal Post Noche:</b> {row['cal_postn']}<br>
+                            <b>Programación Horaria (prog_hor):</b> {row['prog_hor']}<br>
                             <b>Observaciones:</b> {row['obs']}
                         </span>
                     """
@@ -1248,7 +1249,7 @@ if st.session_state.active_tab == "📍 Registros":
                       if c.lower() != "id_0" and c.lower() in [
                           "id", "estatus", "domicilio", "colonia", "obs", "observaciones", 
                           "diametro", "marca", "modelo", "trim", "sect_hidr", "cota_terr",
-                          "cal_antd", "cal_antn", "cal_postd", "cal_postn", "tipo_valv", "num_serie"
+                          "cal_antd", "cal_antn", "cal_postd", "cal_postn", "prog_hor", "tipo_valv", "num_serie"
                       ]
                   ],
               )
@@ -1471,7 +1472,7 @@ elif st.session_state.active_tab == "🗺️ Mapa":
         "descalibrada": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
         "habilitada": {"color": "#38B6FF", "emoji": "🔷", "forma": "rombo"},
         "no opera": {"color": "#A0A0A0", "emoji": "⚫", "forma": "circulo"},
-        "pendiente": {"color": "#F1C40F", "emoji": "⚠️️", "forma": "triangulo"},
+        "pendiente": {"color": "#F1C40F", "emoji": "⚠️", "forma": "triangulo"},
         "amarillo": {"color": "#F1C40F", "emoji": "🟡", "forma": "circulo"},
     }
 
@@ -1850,15 +1851,17 @@ elif st.session_state.active_tab == "➕ Añadir":
 
     cc5, cc6 = st.columns(2)
     with cc5:
-      val_tipo_valv = st.text_input("Tipo Válvula (tipo_valv)", key="add_tipovalv")
+      val_prog_hor = st.text_input("Programación Horaria (prog_hor)", key="add_prog_hor")
     with cc6:
-      val_fecha_obj = st.date_input(
-          "Fecha Visita (fecha_vis)",
-          value=datetime.date.today(),
-          format="DD/MM/YYYY",
-          key="add_fecha",
-      )
-      val_fecha_vis = val_fecha_obj.strftime("%d/%m/%Y")
+      val_tipo_valv = st.text_input("Tipo Válvula (tipo_valv)", key="add_tipovalv")
+
+    val_fecha_obj = st.date_input(
+        "Fecha Visita (fecha_vis)",
+        value=datetime.date.today(),
+        format="DD/MM/YYYY",
+        key="add_fecha",
+    )
+    val_fecha_vis = val_fecha_obj.strftime("%d/%m/%Y")
 
   val_obs = st.text_area("Observaciones (obs)", key="add_obs")
 
@@ -1952,7 +1955,7 @@ elif st.session_state.active_tab == "➕ Añadir":
                         :id_0, :id, :num_serie, NULL, :tipo_valv, :diametro, :marca, :modelo, :trim, 
                         NULL, :domicilio, :colonia, :sect_hidr, NULL, :cota_terr, :estatus, 
                         NULL, :cal_antd, :cal_antn, :fecha_vis, NULL, NULL, :cal_postd, :cal_postn, 
-                        NULL, NULL, NULL, NULL, :obs, NULL, NULL, NULL, 
+                        :prog_hor, NULL, NULL, NULL, :obs, NULL, NULL, NULL, 
                         :fotos, :fotos_2, ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                     )
                 """
@@ -1976,6 +1979,7 @@ elif st.session_state.active_tab == "➕ Añadir":
                 "cal_antn": val_cal_antn if val_cal_antn.strip() != "" else None,
                 "cal_postd": val_cal_postd if val_cal_postd.strip() != "" else None,
                 "cal_postn": val_cal_postn if val_cal_postn.strip() != "" else None,
+                "prog_hor": val_prog_hor if val_prog_hor.strip() != "" else None,
                 "fecha_vis": val_fecha_vis,
                 "obs": val_obs,
                 "fotos": foto_bytes,
@@ -2266,20 +2270,27 @@ elif st.session_state.active_tab == "⚙️ Editar":
 
         cc5, cc6 = st.columns(2)
         with cc5:
+          val_prog_hor_str = str(row["prog_hor"]) if pd.notna(row["prog_hor"]) and str(row["prog_hor"]).strip().lower() not in ["nan", "none"] else ""
+          e_prog_hor = st.text_input(
+              "Programación Horaria (prog_hor)",
+              value=val_prog_hor_str,
+              key=f"prog_hor_{row['id_0']}",
+          )
+        with cc6:
           e_tipo_valv = st.text_input(
               "Tipo Válvula (tipo_valv)",
               value=str(row["tipo_valv"] or ""),
               key=f"tipval_{row['id_0']}",
           )
-        with cc6:
-          fecha_def = parsear_fecha_segura(row["fecha_vis"])
-          e_fecha_obj = st.date_input(
-              "Fecha Visita (fecha_vis)",
-              value=fecha_def,
-              format="DD/MM/YYYY",
-              key=f"fec_{row['id_0']}",
-          )
-          e_fecha_vis = e_fecha_obj.strftime("%d/%m/%Y")
+
+        fecha_def = parsear_fecha_segura(row["fecha_vis"])
+        e_fecha_obj = st.date_input(
+            "Fecha Visita (fecha_vis)",
+            value=fecha_def,
+            format="DD/MM/YYYY",
+            key=f"fec_{row['id_0']}",
+        )
+        e_fecha_vis = e_fecha_obj.strftime("%d/%m/%Y")
 
       e_obs = st.text_area(
           "Observaciones (obs)",
@@ -2377,7 +2388,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                             domicilio = :domicilio, colonia = :colonia, sect_hidr = :sect_hidr, 
                             cota_terr = :cota_terr, estatus = :estatus, cal_antd = :cal_antd, 
                             cal_antn = :cal_antn, fecha_vis = :fecha_vis, cal_postd = :cal_postd, 
-                            cal_postn = :cal_postn, obs = :obs, fotos = :fotos, fotos_2 = :fotos_2,
+                            cal_postn = :cal_postn, prog_hor = :prog_hor, obs = :obs, fotos = :fotos, fotos_2 = :fotos_2,
                             geom = ST_SetSRID(ST_MakePoint(:coord_x, :coord_y), 32613)
                         WHERE id_0 = :id_0
                     """
@@ -2401,6 +2412,7 @@ elif st.session_state.active_tab == "⚙️ Editar":
                   "cal_antn": e_cal_antn if e_cal_antn.strip() != "" else None,
                   "cal_postd": e_cal_postd if e_cal_postd.strip() != "" else None,
                   "cal_postn": e_cal_postn if e_cal_postn.strip() != "" else None,
+                  "prog_hor": e_prog_hor if e_prog_hor.strip() != "" else None,
                   "fecha_vis": e_fecha_vis,
                   "obs": e_obs,
                   "fotos": foto_bytes_final,
