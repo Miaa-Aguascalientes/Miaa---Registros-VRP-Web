@@ -855,13 +855,15 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_bd_completa:
     st.markdown("### Tabla Completa de VRP_Oficial (Base de Datos)")
 
-    # 1. Selector de Rango de Fechas
+    # 1. Selector de Rango de Fechas con "Hoy" y "Ayer"
     col_filtro_f, _ = st.columns([2, 3])
     with col_filtro_f:
       opcion_fecha = st.selectbox(
           "📅 Filtrar por Rango de Fecha de Visita (fecha_vis):",
           options=[
               "Todas las fechas",
+              "Hoy",
+              "Ayer",
               "Esta semana",
               "La semana pasada",
               "Este mes",
@@ -887,9 +889,16 @@ if st.session_state.active_tab == "📍 Registros":
       
       # Obtener fecha actual en la zona horaria local
       hoy = datetime.datetime.now(zona_mx).date()
+      ayer = hoy - datetime.timedelta(days=1)
 
       # 4. Lógica de filtrado según el selector
-      if opcion_fecha == "Esta semana":
+      if opcion_fecha == "Hoy":
+        df_filtrado = df_completo[df_completo["_fecha_vis_dt"] == hoy]
+
+      elif opcion_fecha == "Ayer":
+        df_filtrado = df_completo[df_completo["_fecha_vis_dt"] == ayer]
+
+      elif opcion_fecha == "Esta semana":
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
         fin_semana = inicio_semana + datetime.timedelta(days=6)
         df_filtrado = df_completo[
