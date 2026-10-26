@@ -855,19 +855,89 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_bd_completa:
     st.markdown("### Tabla Completa de VRP_Oficial (Base de Datos)")
 
-    query_completa = (
-        f'SELECT {COLUMNAS_VPRS} FROM "Agua_potable"."VRP_Oficial" ORDER BY id_0 ASC;'
-    )
+    # 1. Selector de Rango de Fechas
+    col_filtro_f, _ = st.columns([2, 3])
+    with col_filtro_f:
+      opcion_fecha = st.selectbox(
+          "📅 Filtrar por Rango de Fecha de Visita (fecha_vis):",
+          options=[
+              "Todas las fechas",
+              "Esta semana",
+              "La semana pasada",
+              "Este mes",
+              "El último mes",
+          ],
+          index=0,
+          key="filtro_rango_fecha_vis",
+      )
+
+    # 2. Consulta SQL ordenada de la fecha más reciente a la más antigua (NULLS LAST)
+    query_completa = f"""
+        SELECT {COLUMNAS_VPRS} 
+        FROM "Agua_potable"."VRP_Oficial" 
+        ORDER BY TO_DATE(NULLIF(TRIM(fecha_vis), ''), 'DD/MM/YYYY') DESC NULLS LAST, id_0 DESC;
+    """
     df_completo, err_bd_comp = obtener_datos(query_completa)
 
     if err_bd_comp:
       st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
     elif not df_completo.empty:
-      df_completo_fmt = formatear_columnas_fecha(df_completo)
+      # 3. Convertir columna temporalmente a objeto date para filtrado numérico preciso
+      df_completo["_fecha_vis_dt"] = df_completo["fecha_vis"].apply(parsear_fecha_segura)
+      
+      # Obtener fecha actual en la zona horaria local
+      hoy = datetime.datetime.now(zona_mx).date()
+
+      # 4. Lógica de filtrado según el selector
+      if opcion_fecha == "Esta semana":
+        # Lunes de esta semana hasta el domingo
+        inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
+        fin_semana = inicio_semana + datetime.timedelta(days=6)
+        df_filtrado = df_completo[
+            (df_completo["_fecha_vis_dt"] >= inicio_semana)
+            & (df_completo["_fecha_vis_dt"] <= fin_semana)
+        ]
+
+      elif opcion_fecha == "La semana pasada":
+        # Lunes y domingo de la semana previa
+        inicio_sem_pasada = hoy - datetime.timedelta(days=hoy.weekday() + 7)
+        fin_sem_pasada = inicio_sem_pasada + datetime.timedelta(days=6)
+        df_filtrado = df_completo[
+            (df_completo["_fecha_vis_dt"] >= inicio_sem_pasada)
+            & (df_completo["_fecha_vis_dt"] <= fin_sem_pasada)
+        ]
+
+      elif opcion_fecha == "Este mes":
+        # Primer día del mes actual hasta hoy/fin de mes
+        inicio_mes = hoy.replace(day=1)
+        df_filtrado = df_completo[
+            (df_completo["_fecha_vis_dt"] >= inicio_mes)
+            & (df_completo["_fecha_vis_dt"] <= hoy)
+        ]
+
+      elif opcion_fecha == "El último mes":
+        # Rango de los últimos 30 días calendario
+        hace_30_dias = hoy - datetime.timedelta(days=30)
+        df_filtrado = df_completo[
+            (df_completo["_fecha_vis_dt"] >= hace_30_dias)
+            & (df_completo["_fecha_vis_dt"] <= hoy)
+        ]
+
+      else:
+        df_filtrado = df_completo.copy()
+
+      # Eliminar columna auxiliar de fecha
+      df_filtrado = df_filtrado.drop(columns=["_fecha_vis_dt"])
+
+      # 5. Formatear y renderizar la tabla
+      df_completo_fmt = formatear_columnas_fecha(df_filtrado)
       st.dataframe(
           df_completo_fmt, use_container_width=True, hide_index=True, height=650
       )
-      st.caption(f"Total de registros en base de datos: {len(df_completo)}")
+      st.caption(
+          f"Mostrando **{len(df_completo_fmt)}** de {len(df_completo)} registros"
+          f" totales (Filtro: {opcion_fecha})."
+      )
     else:
       st.warning("⚠️ No se encontraron registros en la base de datos.")
 
