@@ -855,7 +855,7 @@ if st.session_state.active_tab == "📍 Registros":
   with tab_bd_completa:
     st.markdown("### Tabla Completa de VRP_Oficial (Base de Datos)")
 
-    # 1. Selector de Rango de Fechas con "Hoy" y "Ayer"
+    # 1. Selector de Rango de Fechas
     col_filtro_f, _ = st.columns([2, 3])
     with col_filtro_f:
       opcion_fecha = st.selectbox(
@@ -873,9 +873,17 @@ if st.session_state.active_tab == "📍 Registros":
           key="filtro_rango_fecha_vis",
       )
 
-    # 2. Consulta SQL ordenada de la fecha más reciente a la más antigua directamente
+    # 2. OPTIMIZACIÓN: Columnas SIN fotos para que la consulta vuele (rápida y ligera)
+    COLUMNAS_VPRS_LIGERAS = """
+        id_0, id, num_serie, fecha_inst, tipo_valv, diametro, marca, modelo, trim, 
+        control_au, domicilio, colonia, sect_hidr, distrito, cota_terr, estatus, condicion, 
+        cal_antd, cal_antn, fecha_vis, p_ab, p_arr, cal_postd, cal_postn, prog_hor, 
+        fecha_mtto, tim_cambio, fecha_tim, obs, _ult_visita, _p_ab, _p_arr,
+        ST_X(geom) as coord_x, ST_Y(geom) as coord_y
+    """
+
     query_completa = f"""
-        SELECT {COLUMNAS_VPRS} 
+        SELECT {COLUMNAS_VPRS_LIGERAS} 
         FROM "Agua_potable"."VRP_Oficial" 
         ORDER BY fecha_vis DESC NULLS LAST, id_0 DESC;
     """
@@ -934,7 +942,7 @@ if st.session_state.active_tab == "📍 Registros":
       # Eliminar columna auxiliar de fecha
       df_filtrado = df_filtrado.drop(columns=["_fecha_vis_dt"])
 
-      # 5. Formatear y renderizar la tabla
+      # 5. Formatear y renderizar la tabla de forma ligera
       df_completo_fmt = formatear_columnas_fecha(df_filtrado)
       st.dataframe(
           df_completo_fmt, use_container_width=True, hide_index=True, height=650
@@ -945,7 +953,7 @@ if st.session_state.active_tab == "📍 Registros":
       )
     else:
       st.warning("⚠️ No se encontraron registros en la base de datos.")
-
+        
   with tab_sheets:
     st.markdown("### Hoja de Cálculo: 2.Informe visitas a VRP´s")
 
