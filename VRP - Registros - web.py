@@ -871,18 +871,18 @@ if st.session_state.active_tab == "📍 Registros":
           key="filtro_rango_fecha_vis",
       )
 
-    # 2. Consulta SQL ordenada de la fecha más reciente a la más antigua (NULLS LAST)
+    # 2. Consulta SQL ordenada de la fecha más reciente a la más antigua directamente
     query_completa = f"""
         SELECT {COLUMNAS_VPRS} 
         FROM "Agua_potable"."VRP_Oficial" 
-        ORDER BY TO_DATE(NULLIF(TRIM(fecha_vis), ''), 'DD/MM/YYYY') DESC NULLS LAST, id_0 DESC;
+        ORDER BY fecha_vis DESC NULLS LAST, id_0 DESC;
     """
     df_completo, err_bd_comp = obtener_datos(query_completa)
 
     if err_bd_comp:
       st.error(f"❌ Error al consultar la base de datos: {err_bd_comp}")
     elif not df_completo.empty:
-      # 3. Convertir columna temporalmente a objeto date para filtrado numérico preciso
+      # 3. Convertir columna de forma segura para el filtrado dinámico
       df_completo["_fecha_vis_dt"] = df_completo["fecha_vis"].apply(parsear_fecha_segura)
       
       # Obtener fecha actual en la zona horaria local
@@ -890,7 +890,6 @@ if st.session_state.active_tab == "📍 Registros":
 
       # 4. Lógica de filtrado según el selector
       if opcion_fecha == "Esta semana":
-        # Lunes de esta semana hasta el domingo
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
         fin_semana = inicio_semana + datetime.timedelta(days=6)
         df_filtrado = df_completo[
@@ -899,7 +898,6 @@ if st.session_state.active_tab == "📍 Registros":
         ]
 
       elif opcion_fecha == "La semana pasada":
-        # Lunes y domingo de la semana previa
         inicio_sem_pasada = hoy - datetime.timedelta(days=hoy.weekday() + 7)
         fin_sem_pasada = inicio_sem_pasada + datetime.timedelta(days=6)
         df_filtrado = df_completo[
@@ -908,7 +906,6 @@ if st.session_state.active_tab == "📍 Registros":
         ]
 
       elif opcion_fecha == "Este mes":
-        # Primer día del mes actual hasta hoy/fin de mes
         inicio_mes = hoy.replace(day=1)
         df_filtrado = df_completo[
             (df_completo["_fecha_vis_dt"] >= inicio_mes)
@@ -916,7 +913,6 @@ if st.session_state.active_tab == "📍 Registros":
         ]
 
       elif opcion_fecha == "El último mes":
-        # Rango de los últimos 30 días calendario
         hace_30_dias = hoy - datetime.timedelta(days=30)
         df_filtrado = df_completo[
             (df_completo["_fecha_vis_dt"] >= hace_30_dias)
